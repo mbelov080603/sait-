@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Контакты Global Basket — маршруты для retail, опта и будущего CRM-подключения."
+    />
+    <title>Global Basket | Контакты</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Prata&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles/global.css" />
+  </head>
+  <body data-page="contacts" data-nav="contacts">
+    <div data-site-header></div>
+
+    <main>
+      <section class="page-hero">
+        <div class="shell">
+          <div class="breadcrumb">
+            <a href="/">Главная</a>
+            <span>/</span>
+            <span>Контакты</span>
+          </div>
+          <div class="hero-copy">
+            <p class="eyebrow">Контакты</p>
+            <h1>Контакты</h1>
+            <p>
+              Здесь собраны основные каналы связи по заказам, retail-запросам и
+              дальнейшему подключению CRM или мессенджеров.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="page-section">
+        <div class="shell content-grid">
+          <div class="info-grid" id="contacts-cards"></div>
+          <form class="panel contact-form" data-demo-form>
+            <div class="section-head section-head--compact">
+              <p class="eyebrow">Запрос</p>
+              <h2>Оставьте контакт и сценарий запроса.</h2>
+            </div>
+            <label>
+              <span>Имя</span>
+              <input type="text" placeholder="Как к вам обращаться" required />
+            </label>
+            <label>
+              <span>Контакт</span>
+              <input type="text" placeholder="Телефон, email или Telegram" required />
+            </label>
+            <label>
+              <span>Комментарий</span>
+              <textarea rows="5" placeholder="Например: retail, опт, прайс, запуск категории"></textarea>
+            </label>
+            <button class="button" type="submit">Отправить запрос</button>
+            <p class="form-note" data-form-note>
+              Эта форма уже встроена в реальную структуру сайта и готова к подключению backend-обработки.
+            </p>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <div data-site-footer></div>
+
+    <script src="/scripts/data.js"></script>
+    <script src="/scripts/main.js"></script>
+  </body>
+</html>

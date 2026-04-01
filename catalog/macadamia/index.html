@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Карточка товара Global Basket: очищенная макадамия, premium-подача, галерея, свойства, FAQ и сервисные сценарии."
+    />
+    <title>Global Basket | Очищенная макадамия</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Prata&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles/global.css" />
+  </head>
+  <body data-page="product" data-nav="catalog">
+    <div data-site-header></div>
+
+    <main>
+      <section class="page-hero">
+        <div class="shell">
+          <div class="breadcrumb">
+            <a href="/">Главная</a>
+            <span>/</span>
+            <a href="/catalog/">Каталог</a>
+            <span>/</span>
+            <span>Очищенная макадамия</span>
+          </div>
+          <div class="product-layout">
+            <div class="product-gallery panel" id="product-gallery"></div>
+            <div class="product-summary panel" id="product-summary"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page-section">
+        <div class="shell content-grid">
+          <div class="panel">
+            <div class="section-head section-head--compact">
+              <p class="eyebrow">Польза макадамии</p>
+              <h2>Карточка товара раскрывает не только продукт, но и его контекст.</h2>
+            </div>
+            <div class="nutrient-grid" id="product-nutrients"></div>
+          </div>
+          <div class="panel panel--image">
+            <img src="/assets/benefits-card.png" alt="Польза макадамии" />
+          </div>
+        </div>
+      </section>
+
+      <section class="page-section page-section--compact">
+        <div class="shell content-grid">
+          <article class="panel">
+            <div class="section-head section-head--compact">
+              <p class="eyebrow">Почему эта PDP ощущается крупной</p>
+              <h2>Товарная страница строится как полноценный e-commerce экран, а не как короткая заявка.</h2>
+            </div>
+            <ul class="checklist">
+              <li>Большая верхняя зона с галереей и purchase-panel.</li>
+              <li>Блок пользы и editorial-слой с визуальной карточкой.</li>
+              <li>FAQ и похожие разделы, которые расширяют маршрут пользователя.</li>
+              <li>Сервисные переходы в доставку, опт и брендовые страницы.</li>
+            </ul>
+          </article>
+          <article class="panel panel--image">
+            <img src="/assets/basket.png" alt="Подача продукта Global Basket" />
+          </article>
+        </div>
+      </section>
+
+      <section class="page-section">
+        <div class="shell">
+          <div class="section-head">
+            <p class="eyebrow">FAQ</p>
+            <h2>Ответы на вопросы по продукту, каталогу и следующему этапу масштабирования.</h2>
+          </div>
+          <div class="faq-list" id="product-faq"></div>
+        </div>
+      </section>
+
+      <section class="page-section page-section--tinted">
+        <div class="shell" id="product-related"></div>
+      </section>
+    </main>
+
+    <div data-site-footer></div>
+
+    <script src="/scripts/data.js"></script>
+    <script src="/scripts/main.js"></script>
+  </body>
+</html>
