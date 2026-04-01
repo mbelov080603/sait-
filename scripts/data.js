@@ -123,10 +123,11 @@ window.GlobalBasketData = {
   ],
   shelves: {
     featured: {
-      title: "Выгодная полка",
-      eyebrow: "Главная витрина",
+      title: "Хиты витрины",
+      eyebrow: "Лучшие предложения",
       description:
-        "На первом экране магазина показываем главный продукт запуска и рядом раскрываем будущие направления каталога.",
+        "Главный товар запуска и соседние направления каталога собраны в первую коммерческую полку магазина.",
+      cta: { label: "Смотреть каталог", href: "/catalog/" },
       items: [
         { type: "product", productId: "macadamia", label: "Хит бренда" },
         {
@@ -153,10 +154,11 @@ window.GlobalBasketData = {
       ],
     },
     novelty: {
-      title: "Новинки витрины",
-      eyebrow: "Структура как у большого магазина",
+      title: "Новинки каталога",
+      eyebrow: "Новые поступления",
       description:
-        "Даже при одной активной SKU лента полок ощущается живой за счет категорий, подборок и editorial-слоев.",
+        "Даже стартовый ассортимент выглядит живым, когда рядом есть подборки, сценарии покупки и новые направления.",
+      cta: { label: "Все новинки", href: "/catalog/" },
       items: [
         { type: "product", productId: "macadamia", label: "Новинка каталога", imageKey: "detailImage" },
         {
@@ -180,9 +182,10 @@ window.GlobalBasketData = {
       ],
     },
     related: {
-      title: "Похожие разделы",
-      eyebrow: "Следующий шаг каталога",
+      title: "Полезные разделы магазина",
+      eyebrow: "Навигация по сайту",
       description: "Не копируем чужой ассортимент, а показываем направление развития магазина.",
+      cta: { label: "Открыть разделы", href: "/about/" },
       items: [
         {
           type: "collection",
@@ -211,6 +214,35 @@ window.GlobalBasketData = {
       text:
         "Магазин собран как полноценная витрина: поиск, каталог, сервисные страницы и отдельная карточка главного продукта уже работают как единая система.",
     },
+    quickCategories: [
+      { mark: "ОР", label: "Орехи", note: "Активная категория", href: "/categories/premium-nuts/" },
+      { mark: "СФ", label: "Сухофрукты", note: "Скоро", href: "/catalog/" },
+      { mark: "СМ", label: "Смеси", note: "Roadmap", href: "/catalog/" },
+      { mark: "ПН", label: "Наборы", note: "Праздничные SKU", href: "/catalog/" },
+    ],
+    merchBand: [
+      {
+        eyebrow: "Retail",
+        title: "Для маркетплейсов и retail-полки",
+        text: "Стартовая подача уже выглядит как готовая коммерческая витрина.",
+        href: "/catalog/macadamia/",
+        cta: "Retail-сценарий",
+      },
+      {
+        eyebrow: "Сервис",
+        title: "Опт, логистика и упаковка",
+        text: "Отдельный блок под условия закупки и расширение ассортимента.",
+        href: "/delivery/",
+        cta: "Сервисные условия",
+      },
+      {
+        eyebrow: "Бренд",
+        title: "Чистый состав и спокойная айдентика",
+        text: "Ленточные промо-блоки поддерживают продажи и брендовый контекст.",
+        href: "/about/",
+        cta: "О бренде",
+      },
+    ],
     banners: [
       {
         variant: "primary",
@@ -219,6 +251,7 @@ window.GlobalBasketData = {
         image: "/assets/catalog-front.png",
         href: "/catalog/macadamia/",
         cta: "Карточка товара",
+        ribbon: "Любимая позиция для первой полки и главного экрана магазина",
       },
       {
         variant: "side",
@@ -353,7 +386,7 @@ window.GlobalBasketData = {
         ],
       },
       {
-        title: "Информация",
+        title: "Покупателям",
         links: [
           { label: "О бренде", href: "/about/" },
           { label: "Доставка и оплата", href: "/delivery/" },
@@ -361,11 +394,19 @@ window.GlobalBasketData = {
         ],
       },
       {
+        title: "Сервис",
+        links: [
+          { label: "Оптовые условия", href: "/delivery/" },
+          { label: "Retail-сценарии", href: "/catalog/macadamia/" },
+          { label: "Написать нам", href: "/contacts/" },
+        ],
+      },
+      {
         title: "Контент",
         links: [
           { label: "Журнал", href: "/journal/" },
-          { label: "Оптовые условия", href: "/delivery/" },
-          { label: "Написать нам", href: "/contacts/" },
+          { label: "Истории о продукте", href: "/journal/" },
+          { label: "Новости витрины", href: "/catalog/" },
         ],
       },
     ],

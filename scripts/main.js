@@ -89,6 +89,13 @@ const renderHeader = () => {
               <path d="M10.5 4a6.5 6.5 0 1 0 4 11.6l4.2 4.2 1.4-1.4-4.2-4.2A6.5 6.5 0 0 0 10.5 4zm0 2a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9z"/>
             </svg>
           </span>
+          <label class="search-form__scope">
+            <select aria-label="Раздел поиска">
+              <option>Каталог</option>
+              <option>Орехи</option>
+              <option>Разделы</option>
+            </select>
+          </label>
           <input
             type="search"
             name="q"
@@ -247,18 +254,38 @@ const renderShelf = (selector, shelf) => {
     .join("");
 
   mount.innerHTML = `
-    <div class="section-head">
-      <p class="eyebrow">${shelf.eyebrow}</p>
-      <h2>${shelf.title}</h2>
-      <p>${shelf.description}</p>
+    <div class="section-head section-head--store">
+      <div>
+        <p class="eyebrow">${shelf.eyebrow}</p>
+        <h2>${shelf.title}</h2>
+        <p>${shelf.description}</p>
+      </div>
+      ${shelf.cta ? `<a class="text-link section-head__link" href="${shelf.cta.href}">${shelf.cta.label}</a>` : ""}
     </div>
     <div class="shelf-grid">${items}</div>
   `;
 };
 
-const renderCategoryCards = (selector) => {
+const renderCategoryCards = (selector, variant = "default") => {
   const mount = $(selector);
   if (!mount) return;
+
+  if (variant === "quick") {
+    mount.innerHTML = store.home.quickCategories
+      .map(
+        (item) => `
+          <a class="quick-category" href="${item.href}">
+            <span class="quick-category__mark">${item.mark}</span>
+            <span class="quick-category__copy">
+              <strong>${item.label}</strong>
+              <small>${item.note}</small>
+            </span>
+          </a>
+        `,
+      )
+      .join("");
+    return;
+  }
 
   mount.innerHTML = store.categories
     .map(
@@ -316,6 +343,7 @@ const renderHome = () => {
             <h1>${primaryBanner.title}</h1>
             <p>${primaryBanner.text}</p>
             <a class="button button--small" href="${primaryBanner.href}">${primaryBanner.cta}</a>
+            <div class="hero-banner__ribbon">${primaryBanner.ribbon}</div>
           </div>
           <div class="hero-banner__media">
             <img src="${primaryBanner.image}" alt="${primaryBanner.title}" />
@@ -344,8 +372,23 @@ const renderHome = () => {
     `;
   }
 
-  renderCategoryCards("#home-categories");
+  renderCategoryCards("#home-categories", "quick");
   renderShelf("#home-featured-shelf", store.shelves.featured);
+  const merchBand = $("#home-merch-band");
+  if (merchBand) {
+    merchBand.innerHTML = store.home.merchBand
+      .map(
+        (item) => `
+          <article class="store-promo-card">
+            <p class="eyebrow">${item.eyebrow}</p>
+            <h3>${item.title}</h3>
+            <p>${item.text}</p>
+            <a class="text-link" href="${item.href}">${item.cta}</a>
+          </article>
+        `,
+      )
+      .join("");
+  }
   renderShelf("#home-new-shelf", store.shelves.novelty);
   renderJournalList("#home-journal-cards");
 };
@@ -440,12 +483,39 @@ const renderCatalog = () => {
         `;
   }
 
+  const quickBand = $("#catalog-quick-band");
+  if (quickBand) {
+    quickBand.innerHTML = `
+      <article class="store-promo-card">
+        <p class="eyebrow">Retail</p>
+        <h3>Готово для витрины и полки</h3>
+        <p>Карточка товара, категория и сервисная логика уже собраны как магазинный сценарий.</p>
+        <a class="text-link" href="/catalog/macadamia/">Открыть SKU</a>
+      </article>
+      <article class="store-promo-card">
+        <p class="eyebrow">Чистый состав</p>
+        <h3>Без соли и сахара</h3>
+        <p>Фокус на натуральном продукте и понятной продуктовой аргументации внутри каталога.</p>
+        <a class="text-link" href="/about/">Узнать о бренде</a>
+      </article>
+      <article class="store-promo-card">
+        <p class="eyebrow">Опт</p>
+        <h3>Коммерческий запрос без лишних шагов</h3>
+        <p>Доставка, упаковка и рабочие условия вынесены в отдельный сервисный маршрут.</p>
+        <a class="text-link" href="/delivery/">Сервисные условия</a>
+      </article>
+    `;
+  }
+
   const collections = $("#catalog-collections");
   if (collections) {
     collections.innerHTML = `
-      <div class="section-head">
-        <p class="eyebrow">Большой каталог даже при одной SKU</p>
-        <h2>Вместо пустоты показываем направления роста и сценарии покупки.</h2>
+      <div class="section-head section-head--store">
+        <div>
+          <p class="eyebrow">Промо и подборки</p>
+          <h2>Вместо пустоты показываем направления роста и сценарии покупки.</h2>
+        </div>
+        <a class="text-link section-head__link" href="/delivery/">Сервис для бизнеса</a>
       </div>
       <div class="article-grid">
         <article class="panel">
