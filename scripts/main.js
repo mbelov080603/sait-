@@ -1,59 +1,33 @@
 const store = window.GlobalBasketData;
-const productMap = Object.fromEntries(store.products.map((product) => [product.id, product]));
+const product = store.product;
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
 const escapeQuery = (value = "") => value.trim().toLowerCase();
 
-const headerIcon = (type) => {
-  if (type === "heart") {
-    return `
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 20.5l-1.2-1.1C6 15 3 12.2 3 8.8 3 6.1 5.1 4 7.8 4c1.5 0 3 .7 4 1.9C12.9 4.7 14.4 4 15.9 4 18.6 4 20.7 6.1 20.7 8.8c0 3.4-3 6.2-7.8 10.6L12 20.5z"/>
-      </svg>
-    `;
-  }
-
-  if (type === "user") {
-    return `
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-3.3 0-6 1.9-6 4.3V20h12v-1.7C18 15.9 15.3 14 12 14z"/>
-      </svg>
-    `;
-  }
-
-  return `
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M7 7V5.8A2.8 2.8 0 0 1 9.8 3h4.4A2.8 2.8 0 0 1 17 5.8V7h2a1 1 0 0 1 1 1v9.5A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5V8a1 1 0 0 1 1-1zm2 0h6V5.8c0-.4-.4-.8-.8-.8H9.8c-.4 0-.8.4-.8.8z"/>
-    </svg>
-  `;
+const badgeToneMap = {
+  active: "active",
+  coming: "coming",
+  editorial: "editorial",
+  service: "service",
 };
+
+const renderBadge = (label, tone = "editorial") =>
+  `<span class="meta-badge meta-badge--${badgeToneMap[tone] || "editorial"}">${label}</span>`;
+
+const isCurrentNav = (item, currentPath) =>
+  (item.match || [item.href]).some((prefix) => currentPath.startsWith(prefix));
 
 const renderHeader = () => {
   const mount = $("[data-site-header]");
   if (!mount) return;
 
   const currentPath = window.location.pathname;
-  const utilityLinks = store.utilityLinks
-    .map((item) => `<a href="${item.href}">${item.label}</a>`)
-    .join("");
-  const headerLinks = store.headerLinks
+  const links = store.headerLinks
     .map(
-      (item) => `
-        <a class="${currentPath === item.href ? "is-current" : ""}" href="${item.href}">${item.label}</a>
-      `,
-    )
-    .join("");
-  const categories = store.categories
-    .map(
-      (item) => `
-        <a class="mega-card" href="${item.href}">
-          <strong>${item.name}</strong>
-          <span class="mega-card__status">${item.status}</span>
-          <p>${item.description}</p>
-        </a>
-      `,
+      (item) =>
+        `<a class="${isCurrentNav(item, currentPath) ? "is-current" : ""}" href="${item.href}">${item.label}</a>`,
     )
     .join("");
 
@@ -61,94 +35,69 @@ const renderHeader = () => {
     <div class="page-noise" aria-hidden="true"></div>
     <div class="utility-bar">
       <div class="shell utility-bar__inner">
-        <div class="utility-links">${utilityLinks}</div>
+        <div class="utility-bar__text">
+          ${store.serviceStrip.items.map((item) => `<span>${item}</span>`).join("")}
+        </div>
         <div class="utility-meta">
-          <span>${store.contact.email}</span>
-          <span>${store.contact.phone}</span>
+          <a href="${store.contact.phoneHref}">${store.contact.phone}</a>
         </div>
       </div>
     </div>
     <header class="site-header">
       <div class="shell site-header__inner">
-        <button class="catalog-toggle" type="button" data-catalog-toggle>
-          <span class="catalog-toggle__icon" aria-hidden="true"></span>
-          <span>Каталог</span>
-        </button>
-
-        <a class="brand-mark" href="/">
+        <a class="brand-mark" href="/" aria-label="На главную Global Basket">
           <img src="/assets/logo.jpg" alt="Логотип Global Basket" />
           <div>
             <strong>Global Basket</strong>
-            <span>Теплая витрина премиальных орехов</span>
+            <span>Премиальные орехи</span>
           </div>
         </a>
+
+        <nav class="main-nav" aria-label="Основная навигация">
+          ${links}
+        </nav>
 
         <form class="search-form" data-search-form action="/catalog/" method="get">
           <span class="search-form__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24">
-              <path d="M10.5 4a6.5 6.5 0 1 0 4 11.6l4.2 4.2 1.4-1.4-4.2-4.2A6.5 6.5 0 0 0 10.5 4zm0 2a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9z"/>
+              <path d="M10.5 4a6.5 6.5 0 1 0 4 11.6l4.2 4.2 1.4-1.4-4.2-4.2A6.5 6.5 0 0 0 10.5 4zm0 2a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9z"></path>
             </svg>
           </span>
-          <label class="search-form__scope">
-            <select aria-label="Раздел поиска">
-              <option>Каталог</option>
-              <option>Орехи</option>
-              <option>Разделы</option>
-            </select>
-          </label>
-          <input
-            type="search"
-            name="q"
-            placeholder="Поиск по каталогу"
-            aria-label="Поиск по каталогу"
-          />
+          <input type="search" name="q" placeholder="Поиск по каталогу" aria-label="Поиск по каталогу" />
         </form>
 
-        <div class="header-actions">
-          <a class="header-action" href="/catalog/" aria-label="Избранное">
-            ${headerIcon("heart")}
-          </a>
-          <a class="header-action" href="/contacts/" aria-label="Аккаунт">
-            ${headerIcon("user")}
-          </a>
-          <a class="header-action" href="/catalog/macadamia/" aria-label="Корзина">
-            ${headerIcon("bag")}
-          </a>
-        </div>
+        <a class="button button--small header-contact" href="${store.serviceStrip.cta.href}">
+          ${store.serviceStrip.cta.label}
+        </a>
 
-        <button class="mobile-menu-toggle" type="button" data-mobile-nav-toggle>
+        <button
+          class="mobile-menu-toggle"
+          type="button"
+          data-mobile-nav-toggle
+          aria-controls="mobile-nav"
+          aria-expanded="false"
+        >
           Меню
         </button>
       </div>
 
-      <div class="shell header-subnav">
-        <nav class="main-nav" aria-label="Быстрые разделы">
-          ${headerLinks}
-        </nav>
-        <div class="subnav-meta">
-          <span>${store.contact.hours}</span>
-          <a href="/catalog/macadamia/">SKU запуска</a>
-        </div>
-      </div>
-
-      <div class="mega-panel" data-mega-panel>
-        <div class="shell mega-panel__inner">
-          <div class="mega-panel__intro">
-            <p class="eyebrow">Структура каталога</p>
-            <h3>Магазинная архитектура с категориями, полками и сервисными маршрутами.</h3>
-            <p>
-              Стартуем с макадамии, но сразу показываем, как каталог будет расти
-              без ощущения пустой витрины.
-            </p>
-          </div>
-          <div class="mega-grid">${categories}</div>
-        </div>
-      </div>
-
-      <div class="mobile-nav" data-mobile-nav>
+      <div class="mobile-nav" id="mobile-nav" data-mobile-nav>
         <div class="shell mobile-nav__inner">
-          ${headerLinks}
-          <a href="/catalog/">Каталог</a>
+          <form class="search-form search-form--mobile" data-search-form action="/catalog/" method="get">
+            <span class="search-form__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M10.5 4a6.5 6.5 0 1 0 4 11.6l4.2 4.2 1.4-1.4-4.2-4.2A6.5 6.5 0 0 0 10.5 4zm0 2a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9z"></path>
+              </svg>
+            </span>
+            <input type="search" name="q" placeholder="Поиск по каталогу" aria-label="Поиск по каталогу" />
+          </form>
+          <div class="mobile-nav__links">${links}</div>
+          <div class="mobile-nav__actions">
+            <a class="button button--small" href="/contacts/">Связаться</a>
+            <a class="button button--ghost button--small" href="${store.contact.phoneHref}">
+              ${store.contact.phone}
+            </a>
+          </div>
         </div>
       </div>
     </header>
@@ -159,217 +108,234 @@ const renderFooter = () => {
   const mount = $("[data-site-footer]");
   if (!mount) return;
 
-  const columns = store.footer.columns
-    .map(
-      (column) => `
-        <div class="footer-column">
-          <strong>${column.title}</strong>
-          ${column.links.map((link) => `<a href="${link.href}">${link.label}</a>`).join("")}
-        </div>
-      `,
-    )
-    .join("");
-
   mount.innerHTML = `
     <footer class="site-footer">
       <div class="shell site-footer__inner">
         <div class="footer-brand">
           <strong>Global Basket</strong>
           <p>
-            Многостраничный food-магазин с акцентом на премиальную подачу,
-            категорийную структуру и отдельные товарные маршруты.
+            Магазин премиальных орехов с тёплой натуральной подачей и понятной структурой от главной страницы до карточки товара.
           </p>
           <span>${store.contact.phone}</span>
           <span>${store.contact.email}</span>
+          <span>${store.contact.hours}</span>
         </div>
-        <div class="footer-columns">${columns}</div>
+        <div class="footer-columns">
+          ${store.footer.columns
+            .map(
+              (column) => `
+                <div class="footer-column">
+                  <strong>${column.title}</strong>
+                  ${column.links
+                    .map((link) => `<a href="${link.href}">${link.label}</a>`)
+                    .join("")}
+                </div>
+              `,
+            )
+            .join("")}
+        </div>
       </div>
     </footer>
   `;
 };
 
-const renderProductCard = (item, options = {}) => {
-  const product = productMap[item.productId];
-  const image = options.imageKey
-    ? product[options.imageKey]
-    : item.imageKey
-      ? product[item.imageKey]
-      : product.image;
+const renderCategoryCard = (category) => {
+  if (category.href) {
+    return `
+      <a class="category-card" href="${category.href}">
+        ${renderBadge(category.statusLabel, category.status)}
+        <div class="category-card__body">
+          <strong>${category.name}</strong>
+          <p>${category.description}</p>
+        </div>
+        <span class="text-link">Смотреть раздел</span>
+      </a>
+    `;
+  }
 
   return `
-    <article class="product-tile">
-      <a class="product-tile__media" href="${product.href}">
-        <img src="${image}" alt="${product.shortName}" />
-        <span class="product-tile__badge">${item.label || product.badge}</span>
-      </a>
-      <div class="product-tile__body">
-        <div class="product-tile__meta">
-          <span>${product.category}</span>
-          <span>${product.availability}</span>
-        </div>
-        <h3><a href="${product.href}">${product.shortName}</a></h3>
-        <p>${product.excerpt}</p>
-        <ul class="product-tile__stats">
-          <li><strong>${product.weight}</strong><span>вес</span></li>
-          <li><strong>${product.origin}</strong><span>страна</span></li>
-          <li><strong>По запросу</strong><span>цена</span></li>
-        </ul>
-        <div class="product-tile__actions">
-          <a class="button button--small" href="${product.href}">Подробнее</a>
-          <a class="button button--ghost button--small" href="/delivery/">Опт и сервис</a>
-        </div>
+    <article class="category-card category-card--muted">
+      ${renderBadge(category.statusLabel, category.status)}
+      <div class="category-card__body">
+        <strong>${category.name}</strong>
+        <p>${category.description}</p>
       </div>
+      <span class="card-note">Раздел появится позже.</span>
     </article>
   `;
 };
 
-const renderTeaserCard = (item) => `
-  <article class="teaser-card">
-    <span class="teaser-card__status">${item.status || "Раздел"}</span>
-    <h3><a href="${item.href}">${item.title}</a></h3>
-    <p>${item.description}</p>
-    <a class="text-link" href="${item.href}">Открыть раздел</a>
-  </article>
-`;
+const renderSectionCard = (item) => {
+  const tone = item.tone || item.status || "editorial";
+  const badge = item.badge || item.statusLabel;
 
-const renderCollectionCard = (item) => `
-  <article class="collection-card">
-    <span class="collection-card__eyebrow">Коллекция</span>
-    <h3><a href="${item.href}">${item.title}</a></h3>
-    <p>${item.description}</p>
-    <a class="text-link" href="${item.href}">Смотреть</a>
-  </article>
-`;
-
-const renderShelf = (selector, shelf) => {
-  const mount = $(selector);
-  if (!mount || !shelf) return;
-
-  const items = shelf.items
-    .map((item) => {
-      if (item.type === "product") return renderProductCard(item);
-      if (item.type === "collection") return renderCollectionCard(item);
-      return renderTeaserCard(item);
-    })
-    .join("");
-
-  mount.innerHTML = `
-    <div class="section-head section-head--store">
-      <div>
-        <p class="eyebrow">${shelf.eyebrow}</p>
-        <h2>${shelf.title}</h2>
-        <p>${shelf.description}</p>
-      </div>
-      ${shelf.cta ? `<a class="text-link section-head__link" href="${shelf.cta.href}">${shelf.cta.label}</a>` : ""}
-    </div>
-    <div class="shelf-grid">${items}</div>
-  `;
-};
-
-const renderCategoryCards = (selector, variant = "default") => {
-  const mount = $(selector);
-  if (!mount) return;
-
-  if (variant === "quick") {
-    mount.innerHTML = store.home.quickCategories
-      .map(
-        (item) => `
-          <a class="quick-category" href="${item.href}">
-            <span class="quick-category__mark">${item.mark}</span>
-            <span class="quick-category__copy">
-              <strong>${item.label}</strong>
-              <small>${item.note}</small>
-            </span>
-          </a>
-        `,
-      )
-      .join("");
-    return;
-  }
-
-  mount.innerHTML = store.categories
-    .map(
-      (category) => `
-        <a class="category-card" href="${category.href}">
-          <span class="category-card__status">${category.status}</span>
-          <strong>${category.name}</strong>
-          <p>${category.description}</p>
-        </a>
-      `,
-    )
-    .join("");
-};
-
-const renderJournalList = (selector, linkLabel = "Читать раздел") => {
-  const mount = $(selector);
-  if (!mount) return;
-
-  mount.innerHTML = store.journal.posts
-    .map(
-      (post) => `
-        <article class="article-card">
-          <span class="article-card__eyebrow">Материал</span>
-          <h3><a href="${post.href}">${post.title}</a></h3>
-          <p>${post.excerpt}</p>
-          <a class="text-link" href="${post.href}">${linkLabel}</a>
-        </article>
-      `,
-    )
-    .join("");
-};
-
-const renderHome = () => {
-  const intro = $("#home-service-note");
-  if (intro) {
-    intro.innerHTML = `
-      <section class="support-strip">
-        <div class="support-strip__intro">
-          <p class="eyebrow">${store.home.intro.title}</p>
-          <p class="support-strip__lead">${store.home.intro.text}</p>
-        </div>
-        <a class="text-link support-strip__link" href="/catalog/">Открыть каталог</a>
-      </section>
+  if (item.href) {
+    return `
+      <article class="section-card">
+        ${renderBadge(badge, tone)}
+        <h3><a href="${item.href}">${item.title}</a></h3>
+        <p>${item.description}</p>
+        <a class="text-link" href="${item.href}">Смотреть раздел</a>
+      </article>
     `;
   }
 
-  const banners = $("#home-banners");
-  if (banners) {
-    const [primaryBanner, ...sideBanners] = store.home.banners;
-    banners.innerHTML = `
-      <div class="home-stage">
-        <article class="hero-banner hero-banner--primary">
-          <div class="hero-banner__copy">
-            <div class="hero-banner__brandplate">
-              <img src="/assets/logo.jpg" alt="Фирменный знак Global Basket" />
-              <div>
-                <strong>Global Basket</strong>
-                <span>Теплая натуральная подача premium nuts</span>
-              </div>
+  return `
+    <article class="section-card section-card--muted">
+      ${renderBadge(badge, tone)}
+      <h3>${item.title}</h3>
+      <p>${item.description}</p>
+      <span class="card-note">Скоро добавим этот раздел.</span>
+    </article>
+  `;
+};
+
+const renderArticleCard = (post) => `
+  <article class="article-card">
+    ${renderBadge("Материал", "editorial")}
+    <h3><a href="${post.href}">${post.title}</a></h3>
+    <p>${post.excerpt}</p>
+    <a class="text-link" href="${post.href}">Читать</a>
+  </article>
+`;
+
+const renderProductCard = () => `
+  <article class="product-tile">
+    <a class="product-tile__media" href="${product.href}">
+      <img src="${product.image}" alt="${product.shortName}" />
+      ${renderBadge("В наличии", "active")}
+    </a>
+    <div class="product-tile__body">
+      <div class="product-tile__meta">
+        <span>${product.category}</span>
+        <span>${product.availability}</span>
+      </div>
+      <h3><a href="${product.href}">${product.shortName}</a></h3>
+      <p>${product.excerpt}</p>
+      <ul class="product-tile__stats">
+        <li><strong>${product.weight}</strong><span>Фасовка</span></li>
+        <li><strong>${product.origin}</strong><span>Происхождение</span></li>
+        <li><strong>${product.priceShort}</strong><span>${product.priceNote}</span></li>
+      </ul>
+      <p class="product-tile__note">${product.price}</p>
+      <div class="product-tile__actions">
+        <a class="button button--small" href="${product.href}">Подробнее</a>
+        <a class="button button--ghost button--small" href="/contacts/">Уточнить условия</a>
+      </div>
+    </div>
+  </article>
+`;
+
+const renderHome = () => {
+  const hero = $("#home-hero");
+  if (hero) {
+    hero.innerHTML = `
+      <article class="home-hero">
+        <div class="home-hero__copy">
+          <div class="home-hero__brand">
+            <img src="/assets/logo.jpg" alt="Логотип Global Basket" />
+            <div>
+              <strong>${store.home.hero.eyebrow}</strong>
+              <span>Премиальные орехи</span>
             </div>
-            <p class="eyebrow">Global Basket</p>
-            <h1>${primaryBanner.title}</h1>
-            <p>${primaryBanner.text}</p>
-            <a class="button button--small" href="${primaryBanner.href}">${primaryBanner.cta}</a>
-            <div class="hero-banner__ribbon">${primaryBanner.ribbon}</div>
           </div>
-          <div class="hero-banner__media">
-            <img src="${primaryBanner.image}" alt="${primaryBanner.title}" />
+          ${renderBadge("В наличии", "active")}
+          <h1>${store.home.hero.title}</h1>
+          <p class="home-hero__lead">${store.home.hero.text}</p>
+          <div class="home-hero__actions">
+            <a class="button" href="${store.home.hero.primaryCta.href}">${store.home.hero.primaryCta.label}</a>
+            <a class="button button--ghost" href="${store.home.hero.secondaryCta.href}">
+              ${store.home.hero.secondaryCta.label}
+            </a>
           </div>
+          <dl class="fact-list">
+            ${store.home.hero.facts
+              .map(
+                (item) => `
+                  <div>
+                    <dt>${item.label}</dt>
+                    <dd>${item.value}</dd>
+                  </div>
+                `,
+              )
+              .join("")}
+          </dl>
+        </div>
+        <div class="home-hero__media">
+          <img src="${product.heroImage}" alt="${product.shortName}" />
+        </div>
+      </article>
+    `;
+  }
+
+  const categories = $("#home-categories");
+  if (categories) {
+    categories.innerHTML = store.categories.map(renderCategoryCard).join("");
+  }
+
+  const featured = $("#home-featured");
+  if (featured) {
+    featured.innerHTML = `
+      <div class="section-head section-head--store">
+        <div>
+          <p class="eyebrow">${store.home.featured.eyebrow}</p>
+          <h2>${store.home.featured.title}</h2>
+          <p>${store.home.featured.text}</p>
+        </div>
+        <a class="text-link section-head__link" href="/catalog/">В каталог</a>
+      </div>
+      <article class="panel featured-product">
+        <div class="featured-product__media">
+          <img src="${product.image}" alt="${product.shortName}" />
+        </div>
+        <div class="featured-product__body">
+          ${renderBadge("В наличии", "active")}
+          <h3>${product.shortName}</h3>
+          <p>${product.description}</p>
+          <dl class="featured-product__facts">
+            ${product.facts
+              .map(
+                (item) => `
+                  <div>
+                    <dt>${item.label}</dt>
+                    <dd>${item.value}</dd>
+                  </div>
+                `,
+              )
+              .join("")}
+          </dl>
+          <p class="featured-product__note">${store.home.featured.note}</p>
+          <div class="featured-product__actions">
+            <a class="button button--small" href="${product.href}">Подробнее</a>
+            <a class="button button--ghost button--small" href="/contacts/">Уточнить условия</a>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+  const benefits = $("#home-benefits");
+  if (benefits) {
+    benefits.innerHTML = `
+      <div class="section-head section-head--store">
+        <div>
+          <p class="eyebrow">Почему это работает</p>
+          <h2>Подача бренда и коммерческая ясность работают вместе, а не конкурируют друг с другом.</h2>
+          <p>На главной остаются только те блоки, которые помогают понять товар и перейти к нужному действию.</p>
+        </div>
+        <a class="text-link section-head__link" href="/about/">Смотреть раздел</a>
+      </div>
+      <div class="brand-story">
+        <article class="panel panel--image">
+          <img src="${product.benefitsCard}" alt="Карточка с преимуществами макадамии" />
         </article>
-        <div class="home-side-stack">
-          ${sideBanners
+        <div class="info-grid">
+          ${store.home.advantages
             .map(
-              (banner) => `
-                <article class="home-side-card">
-                  <div class="home-side-card__copy">
-                    <p class="eyebrow">Global Basket</p>
-                    <h3>${banner.title}</h3>
-                    <p>${banner.text}</p>
-                    <a class="button button--small" href="${banner.href}">${banner.cta}</a>
-                  </div>
-                  <div class="home-side-card__media">
-                    <img src="${banner.image}" alt="${banner.title}" />
-                  </div>
+              (item) => `
+                <article class="info-card">
+                  <strong>${item.title}</strong>
+                  <p>${item.text}</p>
                 </article>
               `,
             )
@@ -379,103 +345,53 @@ const renderHome = () => {
     `;
   }
 
-  renderCategoryCards("#home-categories", "quick");
-  renderShelf("#home-featured-shelf", store.shelves.featured);
-  const merchBand = $("#home-merch-band");
-  if (merchBand) {
-    merchBand.innerHTML = store.home.merchBand
-      .map(
-        (item) => `
-          <article class="store-promo-card">
-            <p class="eyebrow">${item.eyebrow}</p>
-            <h3>${item.title}</h3>
-            <p>${item.text}</p>
-            <a class="text-link" href="${item.href}">${item.cta}</a>
-          </article>
-        `,
-      )
-      .join("");
+  const future = $("#home-future");
+  if (future) {
+    future.innerHTML = store.home.future.map(renderSectionCard).join("");
   }
-  renderShelf("#home-new-shelf", store.shelves.novelty);
-  renderJournalList("#home-journal-cards");
+
+  const journal = $("#home-journal-cards");
+  if (journal) {
+    journal.innerHTML = store.journal.posts.map(renderArticleCard).join("");
+  }
 };
+
+const renderSidebarGroup = (group) => `
+  <article class="sidebar-card">
+    <strong>${group.title}</strong>
+    ${group.items
+      .map((item) =>
+        item.href
+          ? `<a href="${item.href}"><span>${item.label}</span></a>`
+          : `<div class="sidebar-card__static"><span>${item.label}</span><span>${item.note}</span></div>`,
+      )
+      .join("")}
+  </article>
+`;
 
 const renderCatalog = () => {
   const filters = $("#catalog-filters");
   if (filters) {
-    filters.innerHTML = `
-      <div class="sidebar-card">
-        <strong>Категории</strong>
-        ${store.categories
-          .map((category) => `<a href="${category.href}">${category.name} <span>${category.status}</span></a>`)
-          .join("")}
-      </div>
-      <div class="sidebar-card">
-        <strong>Сортировка</strong>
-        <a href="/catalog/">Хиты каталога</a>
-        <a href="/catalog/">Новинки витрины</a>
-        <a href="/delivery/">Для опта и retail</a>
-      </div>
-      <div class="sidebar-card">
-        <strong>Формат подачи</strong>
-        <a href="/catalog/macadamia/">Вакуумная упаковка</a>
-        <a href="/about/">Премиальная айдентика</a>
-        <a href="/journal/">Editorial-подача</a>
-      </div>
-    `;
+    filters.innerHTML = store.catalogPage.sidebarGroups.map(renderSidebarGroup).join("");
   }
 
   const query = escapeQuery(new URLSearchParams(window.location.search).get("q") || "");
-  const candidates = [
+  const catalogItems = [
     {
-      title: "Очищенная макадамия",
-      keywords: "макадамия macadamia premium орех",
-      html: renderProductCard({ type: "product", productId: "macadamia", label: "Активная SKU" }),
+      title: product.shortName,
+      keywords: `${product.shortName} ${product.category} ${product.origin} ${product.weight}`,
+      html: renderProductCard(),
     },
-    {
-      title: "Для retail",
-      keywords: "retail витрина магазин",
-      html: renderCollectionCard({
-        title: "Для retail",
-        description: "Макадамия как якорная позиция для маркетплейс-витрины и offline-полки.",
-        href: "/catalog/macadamia/",
-      }),
-    },
-    {
-      title: "Грецкий орех",
-      keywords: "грецкий орех скоро",
-      html: renderTeaserCard({
-        title: "Грецкий орех",
-        description: "Следующий очевидный кандидат для расширения ореховой категории.",
-        href: "/catalog/",
-        status: "Скоро",
-      }),
-    },
-    {
-      title: "Сухофрукты",
-      keywords: "сухофрукты финики манго скоро",
-      html: renderTeaserCard({
-        title: "Сухофрукты",
-        description: "Потенциальный смежный раздел для роста среднего чека и подарочных подборок.",
-        href: "/catalog/",
-        status: "Скоро",
-      }),
-    },
-    {
-      title: "Наборы",
-      keywords: "наборы gifting подарки roadmap",
-      html: renderTeaserCard({
-        title: "Наборы",
-        description: "Подарочные решения и editorial-сеты под праздники и корпоративный сегмент.",
-        href: "/catalog/",
-        status: "Roadmap",
-      }),
-    },
+    ...store.home.future.map((item) => ({
+      title: item.title,
+      keywords: `${item.title} скоро`,
+      html: renderSectionCard(item),
+    })),
   ];
 
   const filtered = query
-    ? candidates.filter((item) => escapeQuery(`${item.title} ${item.keywords}`).includes(query))
-    : candidates;
+    ? catalogItems.filter((item) => escapeQuery(`${item.title} ${item.keywords}`).includes(query))
+    : catalogItems;
 
   const grid = $("#catalog-grid");
   if (grid) {
@@ -483,35 +399,11 @@ const renderCatalog = () => {
       ? filtered.map((item) => item.html).join("")
       : `
           <article class="empty-state">
-            <strong>По запросу “${query}” пока нет карточек.</strong>
-            <p>Попробуйте “макадамия”, “орехи”, “retail” или вернитесь к полному каталогу.</p>
-            <a class="button button--small" href="/catalog/">Сбросить поиск</a>
+            <strong>По вашему запросу пока ничего не найдено.</strong>
+            <p>Попробуйте поискать «макадамия», «орехи» или вернитесь ко всему каталогу.</p>
+            <a class="button button--small" href="/catalog/">В каталог</a>
           </article>
         `;
-  }
-
-  const quickBand = $("#catalog-quick-band");
-  if (quickBand) {
-    quickBand.innerHTML = `
-      <article class="store-promo-card">
-        <p class="eyebrow">Retail</p>
-        <h3>Готово для витрины и полки</h3>
-        <p>Карточка товара, категория и сервисная логика уже собраны как магазинный сценарий.</p>
-        <a class="text-link" href="/catalog/macadamia/">Открыть SKU</a>
-      </article>
-      <article class="store-promo-card">
-        <p class="eyebrow">Чистый состав</p>
-        <h3>Без соли и сахара</h3>
-        <p>Фокус на натуральном продукте и понятной продуктовой аргументации внутри каталога.</p>
-        <a class="text-link" href="/about/">Узнать о бренде</a>
-      </article>
-      <article class="store-promo-card">
-        <p class="eyebrow">Опт</p>
-        <h3>Коммерческий запрос без лишних шагов</h3>
-        <p>Доставка, упаковка и рабочие условия вынесены в отдельный сервисный маршрут.</p>
-        <a class="text-link" href="/delivery/">Сервисные условия</a>
-      </article>
-    `;
   }
 
   const collections = $("#catalog-collections");
@@ -519,35 +411,18 @@ const renderCatalog = () => {
     collections.innerHTML = `
       <div class="section-head section-head--store">
         <div>
-          <p class="eyebrow">Промо и подборки</p>
-          <h2>Вместо пустоты показываем направления роста и сценарии покупки.</h2>
+          <p class="eyebrow">Покупателям</p>
+          <h2>В каталоге собраны товары, а условия заказа и история бренда вынесены в отдельные разделы.</h2>
         </div>
-        <a class="text-link section-head__link" href="/delivery/">Сервис для бизнеса</a>
       </div>
       <div class="article-grid">
-        <article class="panel">
-          <img src="/assets/basket.png" alt="Категорийный баннер Global Basket" />
-          <strong>Премиальная подача категории</strong>
-          <p>Категорийная страница живет не только сеткой товаров, но и баннерами, подсекциями и story-блоками.</p>
-        </article>
-        <article class="panel">
-          <img src="/assets/benefits-card.png" alt="Карточка пользы макадамии" />
-          <strong>Editorial-слой</strong>
-          <p>Польза, упаковка, происхождение и lifestyle делают каталог объемным без выдуманного ассортимента.</p>
-        </article>
-        <article class="panel">
-          <img src="/assets/nuts-pile.png" alt="Фактура макадамии" />
-          <strong>Фактура продукта</strong>
-          <p>Крупные продуктовые фактуры работают как полноценные merchandising-блоки между полками.</p>
-        </article>
+        ${store.catalogPage.support.map(renderSectionCard).join("")}
       </div>
     `;
   }
 };
 
 const renderProductPage = () => {
-  const product = productMap.macadamia;
-
   const gallery = $("#product-gallery");
   if (gallery) {
     gallery.innerHTML = `
@@ -572,11 +447,11 @@ const renderProductPage = () => {
   const summary = $("#product-summary");
   if (summary) {
     summary.innerHTML = `
-      <span class="product-page__badge">${product.badge}</span>
+      ${renderBadge("В наличии", "active")}
       <h1>${product.shortName}</h1>
       <p class="product-page__lead">${product.excerpt}</p>
       <div class="spec-grid">
-        ${product.specs
+        ${product.facts
           .map(
             (item) => `
               <div class="spec-card">
@@ -590,11 +465,12 @@ const renderProductPage = () => {
       <div class="purchase-panel">
         <div>
           <span class="purchase-panel__label">Стоимость</span>
-          <strong>${product.price}</strong>
+          <strong>${product.priceShort}</strong>
+          <p>${product.priceNote}</p>
         </div>
         <div class="purchase-panel__actions">
-          <a class="button" href="/contacts/">Добавить в запрос</a>
-          <a class="button button--ghost" href="/delivery/">Оптовые условия</a>
+          <a class="button" href="/contacts/">Уточнить условия</a>
+          <a class="button button--ghost" href="/catalog/">В каталог</a>
         </div>
       </div>
       <ul class="checklist">
@@ -635,13 +511,26 @@ const renderProductPage = () => {
       .join("");
   }
 
-  renderShelf("#product-related", store.shelves.related);
+  const related = $("#product-related");
+  if (related) {
+    related.innerHTML = `
+      <div class="section-head section-head--store">
+        <div>
+          <p class="eyebrow">Полезные разделы</p>
+          <h2>Если нужно узнать больше о бренде или об условиях заказа, начните с этих страниц.</h2>
+        </div>
+      </div>
+      <div class="article-grid">
+        ${store.catalogPage.support.map(renderSectionCard).join("")}
+      </div>
+    `;
+  }
 };
 
 const renderCategoryPage = () => {
-  const cards = $("#category-intro-cards");
-  if (cards) {
-    cards.innerHTML = store.categoryPage.introCards
+  const intro = $("#category-intro-cards");
+  if (intro) {
+    intro.innerHTML = store.categoryPage.introCards
       .map(
         (item) => `
           <article class="info-card">
@@ -653,12 +542,37 @@ const renderCategoryPage = () => {
       .join("");
   }
 
-  renderShelf("#category-shelf", store.shelves.featured);
-  renderShelf("#category-related", store.shelves.related);
-};
+  const shelf = $("#category-shelf");
+  if (shelf) {
+    shelf.innerHTML = `
+      <div class="section-head section-head--store">
+        <div>
+          <p class="eyebrow">Текущий ассортимент</p>
+          <h2>В категории уже доступен основной товар и честно обозначены следующие направления.</h2>
+        </div>
+        <a class="text-link section-head__link" href="/catalog/">В каталог</a>
+      </div>
+      <div class="shelf-grid shelf-grid--catalog">
+        ${renderProductCard()}
+        ${store.home.future.slice(0, 2).map(renderSectionCard).join("")}
+      </div>
+    `;
+  }
 
-const renderJournalPage = () => {
-  renderJournalList("#journal-list", "Открыть материал");
+  const related = $("#category-related");
+  if (related) {
+    related.innerHTML = `
+      <div class="section-head section-head--store">
+        <div>
+          <p class="eyebrow">Дальше по сайту</p>
+          <h2>Смежные разделы помогают быстро перейти к условиям заказа и к истории бренда.</h2>
+        </div>
+      </div>
+      <div class="article-grid">
+        ${store.categoryPage.support.map(renderSectionCard).join("")}
+      </div>
+    `;
+  }
 };
 
 const renderAboutPage = () => {
@@ -698,7 +612,7 @@ const renderDeliveryPage = () => {
       .map(
         (item, index) => `
           <article class="step-card">
-            <span>0${index + 1}</span>
+            <span>${index + 1}</span>
             <p>${item}</p>
           </article>
         `,
@@ -721,22 +635,112 @@ const renderContactsPage = () => {
       )
       .join("");
   }
+
+  const panel = $("#contact-panel");
+  if (!panel) return;
+
+  panel.innerHTML = `
+    <article class="panel contact-panel">
+      <div class="section-head section-head--compact">
+        <p class="eyebrow">Связаться</p>
+        <h2>Выберите удобный способ связи, и мы ответим в рабочее время.</h2>
+      </div>
+      <div class="contact-panel__list">
+        ${store.contactsPage.panel
+          .map(
+            (item) => `
+              <div>
+                <strong>${item.title}</strong>
+                ${
+                  item.href
+                    ? `<a href="${item.href}">${item.value}</a>`
+                    : `<span>${item.value}</span>`
+                }
+              </div>
+            `,
+          )
+          .join("")}
+      </div>
+      <div class="contact-panel__actions">
+        <a class="button" href="${store.contact.phoneHref}">Позвонить</a>
+        <a class="button button--ghost" href="${store.contact.emailHref}">Написать</a>
+      </div>
+    </article>
+  `;
 };
 
-const bindMegaMenu = () => {
-  const toggle = $("[data-catalog-toggle]");
-  const panel = $("[data-mega-panel]");
-  if (!toggle || !panel) return;
+const renderJournalPage = () => {
+  const mount = $("#journal-list");
+  if (!mount) return;
 
-  toggle.addEventListener("click", () => {
-    panel.classList.toggle("is-open");
-  });
+  mount.innerHTML = store.journal.posts.map(renderArticleCard).join("");
+};
 
-  document.addEventListener("click", (event) => {
-    if (!panel.contains(event.target) && !toggle.contains(event.target)) {
-      panel.classList.remove("is-open");
-    }
-  });
+const renderArticlePage = () => {
+  const slug = document.body.dataset.article;
+  if (!slug) return;
+
+  const post = store.journal.posts.find((entry) => entry.slug === slug);
+  if (!post) return;
+
+  const hero = $("#article-hero");
+  if (hero) {
+    hero.innerHTML = `
+      <div class="breadcrumb">
+        <a href="/">Главная</a>
+        <span>/</span>
+        <a href="/journal/">Журнал</a>
+        <span>/</span>
+        <span>${post.title}</span>
+      </div>
+      <div class="hero-copy">
+        <p class="eyebrow">Материал</p>
+        <h1>${post.title}</h1>
+        <p>${post.lead}</p>
+      </div>
+    `;
+  }
+
+  const sections = $("#article-sections");
+  if (sections) {
+    sections.innerHTML = `
+      <div class="article-layout">
+        <article class="panel article-prose">
+          ${post.sections
+            .map(
+              (section) => `
+                <section>
+                  <h2>${section.title}</h2>
+                  <p>${section.text}</p>
+                </section>
+              `,
+            )
+            .join("")}
+        </article>
+        <aside class="article-aside">
+          <article class="panel">
+            ${renderBadge("Покупателям", "service")}
+            <h3>Что делать дальше</h3>
+            <p>Если хотите узнать больше о товаре или об условиях заказа, начните с карточки макадамии или страницы контактов.</p>
+            <div class="aside-actions">
+              <a class="button button--small" href="${product.href}">Подробнее</a>
+              <a class="button button--ghost button--small" href="/contacts/">Связаться</a>
+            </div>
+          </article>
+          <article class="panel">
+            ${renderBadge("Журнал", "editorial")}
+            <h3>Другие материалы</h3>
+            <div class="article-mini-list">
+              ${store.journal.posts
+                .filter((entry) => entry.slug !== slug)
+                .map((entry) => `<a href="${entry.href}">${entry.title}</a>`)
+                .join("")}
+            </div>
+          </article>
+        </aside>
+      </div>
+    `;
+  }
 };
 
 const bindMobileNav = () => {
@@ -745,18 +749,25 @@ const bindMobileNav = () => {
   if (!toggle || !nav) return;
 
   toggle.addEventListener("click", () => {
-    nav.classList.toggle("is-open");
+    const isOpen = nav.classList.toggle("is-open");
+    toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  });
+
+  $$("a", nav).forEach((link) => {
+    link.addEventListener("click", () => {
+      nav.classList.remove("is-open");
+      toggle.setAttribute("aria-expanded", "false");
+    });
   });
 };
 
-const bindSearchForm = () => {
-  const form = $("[data-search-form]");
-  if (!form) return;
-
-  form.addEventListener("submit", (event) => {
-    const query = escapeQuery(new FormData(form).get("q") || "");
-    event.preventDefault();
-    window.location.href = query ? `/catalog/?q=${encodeURIComponent(query)}` : "/catalog/";
+const bindSearchForms = () => {
+  $$("[data-search-form]").forEach((form) => {
+    form.addEventListener("submit", (event) => {
+      const query = escapeQuery(new FormData(form).get("q") || "");
+      event.preventDefault();
+      window.location.href = query ? `/catalog/?q=${encodeURIComponent(query)}` : "/catalog/";
+    });
   });
 };
 
@@ -764,15 +775,16 @@ const bindFaq = () => {
   $$(".faq-item").forEach((item) => {
     const button = $("button", item);
     if (!button) return;
+
     button.addEventListener("click", () => {
       const isOpen = item.classList.contains("is-open");
+
       $$(".faq-item").forEach((entry) => {
         entry.classList.remove("is-open");
         const innerButton = $("button", entry);
-        if (innerButton) {
-          innerButton.setAttribute("aria-expanded", "false");
-          $("span:last-child", innerButton).textContent = "+";
-        }
+        if (!innerButton) return;
+        innerButton.setAttribute("aria-expanded", "false");
+        $("span:last-child", innerButton).textContent = "+";
       });
 
       if (!isOpen) {
@@ -780,20 +792,6 @@ const bindFaq = () => {
         button.setAttribute("aria-expanded", "true");
         $("span:last-child", button).textContent = "−";
       }
-    });
-  });
-};
-
-const bindDemoForms = () => {
-  $$("form[data-demo-form]").forEach((form) => {
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-      const note = $("[data-form-note]", form) || form.nextElementSibling;
-      if (note) {
-        note.textContent =
-          "Интерфейс формы готов. На следующем этапе можно подключить CRM, email или мессенджер без смены структуры сайта.";
-      }
-      form.reset();
     });
   });
 };
@@ -815,9 +813,6 @@ document.addEventListener("DOMContentLoaded", () => {
     case "category":
       renderCategoryPage();
       break;
-    case "journal":
-      renderJournalPage();
-      break;
     case "about":
       renderAboutPage();
       break;
@@ -827,13 +822,17 @@ document.addEventListener("DOMContentLoaded", () => {
     case "contacts":
       renderContactsPage();
       break;
+    case "journal":
+      renderJournalPage();
+      break;
+    case "article":
+      renderArticlePage();
+      break;
     default:
       break;
   }
 
-  bindMegaMenu();
   bindMobileNav();
-  bindSearchForm();
+  bindSearchForms();
   bindFaq();
-  bindDemoForms();
 });

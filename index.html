@@ -21,48 +21,38 @@
 
     <main>
       <section class="page-hero page-hero--home">
-        <div class="shell">
-          <div id="home-service-note"></div>
-          <div class="banner-grid" id="home-banners"></div>
-        </div>
+        <div class="shell" id="home-hero"></div>
       </section>
 
       <section class="page-section page-section--compact">
         <div class="shell">
-          <div class="mini-category-row" id="home-categories"></div>
+          <div class="section-head section-head--compact">
+            <p class="eyebrow">Категории</p>
+            <h2>Ключевые направления собраны в одной чистой витрине.</h2>
+          </div>
+          <div class="category-grid" id="home-categories"></div>
         </div>
       </section>
 
       <section class="page-section page-section--tinted">
-        <div class="shell" id="home-featured-shelf"></div>
+        <div class="shell" id="home-featured"></div>
+      </section>
+
+      <section class="page-section">
+        <div class="shell" id="home-benefits"></div>
       </section>
 
       <section class="page-section page-section--compact">
         <div class="shell">
-          <div class="store-promo-grid" id="home-merch-band"></div>
-        </div>
-      </section>
-
-      <section class="page-section">
-        <div class="shell">
-          <div class="newsletter-panel">
+          <div class="section-head section-head--store">
             <div>
-              <p class="eyebrow">Подпишитесь на обновления витрины</p>
-              <h2>Следите за запуском новых разделов, категорий и SKU в каталоге Global Basket.</h2>
+              <p class="eyebrow">Ближайшие разделы</p>
+              <h2>Новые направления будут появляться постепенно и без перегруза главной страницы.</h2>
             </div>
-            <form class="newsletter-form" data-demo-form>
-              <input type="email" placeholder="Ваш email" aria-label="Email" required />
-              <button class="button button--small" type="submit">Подписаться</button>
-              <p class="form-note" data-form-note>
-                Подписка пока работает как MVP-интерфейс для будущей email-системы.
-              </p>
-            </form>
+            <a class="text-link section-head__link" href="/catalog/">В каталог</a>
           </div>
+          <div class="store-promo-grid" id="home-future"></div>
         </div>
-      </section>
-
-      <section class="page-section">
-        <div class="shell" id="home-new-shelf"></div>
       </section>
 
       <section class="page-section page-section--compact">
@@ -70,9 +60,9 @@
           <div class="section-head section-head--store">
             <div>
               <p class="eyebrow">Журнал</p>
-              <h2>Истории о продукте и развитии витрины.</h2>
+              <h2>Материалы о продукте, упаковке и развитии магазина.</h2>
             </div>
-            <a class="text-link section-head__link" href="/journal/">Все материалы</a>
+            <a class="text-link section-head__link" href="/journal/">Читать</a>
           </div>
           <div class="article-grid" id="home-journal-cards"></div>
         </div>
