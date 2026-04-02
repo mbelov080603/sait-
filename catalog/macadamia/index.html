@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Карточка товара Global Basket: очищенная макадамия, галерея, свойства, вопросы и способы связи."
+      content="Карточка товара Global Basket: очищенная макадамия, свойства, упаковка, маркетплейсы и запрос."
     />
     <title>Global Basket | Очищенная макадамия</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -30,48 +30,43 @@
             <span>Очищенная макадамия</span>
           </div>
           <div class="product-layout">
-            <div class="product-gallery panel" id="product-gallery"></div>
-            <div class="product-summary panel" id="product-summary"></div>
+            <div class="product-gallery" id="product-gallery"></div>
+            <div class="product-summary" id="product-summary"></div>
           </div>
         </div>
       </section>
 
       <section class="page-section">
-        <div class="shell content-grid">
-          <div class="panel">
-            <div class="section-head section-head--compact">
-              <p class="eyebrow">Состав и свойства</p>
-              <h2>Что важно знать о продукте перед заказом.</h2>
-            </div>
-            <div class="nutrient-grid" id="product-nutrients"></div>
+        <div class="shell">
+          <div class="section-head">
+            <p class="eyebrow">Польза макадамии</p>
+            <h2>Четыре микроэлемента, которые помогают воспринимать продукт как сильную премиальную позицию.</h2>
           </div>
-          <div class="panel panel--image">
-            <img src="/assets/benefits-card.png" alt="Польза макадамии" />
-          </div>
+          <div class="benefit-grid" id="product-benefits"></div>
         </div>
       </section>
 
       <section class="page-section page-section--compact">
-        <div class="shell content-grid">
-          <article class="panel">
-            <div class="section-head section-head--compact">
-              <p class="eyebrow">Перед заказом</p>
-              <h2>Коротко о том, как уточнить цену и детали поставки.</h2>
-            </div>
-            <ul class="checklist">
-              <li>Стоимость уточняем после короткого обсуждения объёма и формата заказа.</li>
-              <li>На странице контактов можно быстро отправить запрос или позвонить напрямую.</li>
-              <li>В разделе доставки собрана информация о том, как проходит согласование заказа.</li>
-              <li>Если нужен корпоративный или подарочный формат, это тоже можно обсудить при обращении.</li>
-            </ul>
-          </article>
-          <article class="panel panel--image">
-            <img src="/assets/basket.png" alt="Подача продукта Global Basket" />
-          </article>
+        <div class="shell">
+          <div class="section-head">
+            <p class="eyebrow">Состав и упаковка</p>
+            <h2>Состав, происхождение и формат подачи собраны в одном компактном блоке.</h2>
+          </div>
+          <div class="fact-grid" id="product-facts"></div>
         </div>
       </section>
 
-      <section class="page-section">
+      <section class="page-section" id="marketplaces-pdp">
+        <div class="shell">
+          <div class="section-head">
+            <p class="eyebrow">Где купить</p>
+            <h2>Маркетплейсы дают дополнительный канал доверия и покупки.</h2>
+          </div>
+          <div class="marketplace-grid" id="product-marketplaces"></div>
+        </div>
+      </section>
+
+      <section class="page-section page-section--compact">
         <div class="shell">
           <div class="section-head">
             <p class="eyebrow">Частые вопросы</p>
@@ -79,10 +74,6 @@
           </div>
           <div class="faq-list" id="product-faq"></div>
         </div>
-      </section>
-
-      <section class="page-section page-section--tinted">
-        <div class="shell" id="product-related"></div>
       </section>
     </main>
 
