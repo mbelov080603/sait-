@@ -79,7 +79,7 @@ const renderHeader = () => {
           <img src="/assets/logo.jpg" alt="Логотип Global Basket" />
           <div>
             <strong>Global Basket</strong>
-            <span>Интернет-магазин премиальных орехов</span>
+            <span>Теплая витрина премиальных орехов</span>
           </div>
         </a>
 
@@ -339,6 +339,13 @@ const renderHome = () => {
       <div class="home-stage">
         <article class="hero-banner hero-banner--primary">
           <div class="hero-banner__copy">
+            <div class="hero-banner__brandplate">
+              <img src="/assets/logo.jpg" alt="Фирменный знак Global Basket" />
+              <div>
+                <strong>Global Basket</strong>
+                <span>Теплая натуральная подача premium nuts</span>
+              </div>
+            </div>
             <p class="eyebrow">Global Basket</p>
             <h1>${primaryBanner.title}</h1>
             <p>${primaryBanner.text}</p>

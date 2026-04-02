@@ -1,15 +1,16 @@
 :root {
-  --bg: #f6eee1;
-  --bg-soft: #fbf5ec;
-  --bg-warm: #f0dfc5;
-  --surface: rgba(255, 252, 247, 0.94);
-  --surface-strong: #fffdf9;
-  --text: #3b2417;
-  --text-soft: #745845;
-  --accent: #b77733;
-  --accent-strong: #8b531f;
-  --line: rgba(111, 68, 37, 0.14);
-  --shadow: 0 18px 36px rgba(94, 55, 26, 0.08);
+  --bg: #e3c3a0;
+  --bg-soft: #f4e6d2;
+  --bg-warm: #dbb48a;
+  --surface: rgba(247, 234, 217, 0.92);
+  --surface-strong: rgba(250, 240, 226, 0.98);
+  --text: #5e160f;
+  --text-soft: #83593e;
+  --accent: #cf7b25;
+  --accent-strong: #9b3d19;
+  --accent-olive: #a08c3d;
+  --line: rgba(121, 69, 40, 0.18);
+  --shadow: 0 18px 34px rgba(104, 50, 23, 0.1);
   --radius-xl: 34px;
   --radius-lg: 26px;
   --radius-md: 20px;
@@ -30,18 +31,21 @@ body {
   color: var(--text);
   font-family: "Manrope", sans-serif;
   background:
-    radial-gradient(circle at 0% 0%, rgba(255, 231, 187, 0.8), transparent 28%),
-    radial-gradient(circle at 100% 12%, rgba(236, 197, 145, 0.2), transparent 22%),
-    linear-gradient(180deg, #f8f1e7 0%, #f4ece0 40%, #f7f1e9 100%);
+    radial-gradient(circle at 0% 0%, rgba(255, 214, 153, 0.62), transparent 26%),
+    radial-gradient(circle at 100% 14%, rgba(160, 140, 61, 0.12), transparent 18%),
+    linear-gradient(180deg, #ebcfad 0%, #f4e4ce 24%, #f6e9d8 55%, #f0dcc1 100%);
 }
 
 .page-noise {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  opacity: 0.14;
-  background-image: radial-gradient(rgba(108, 72, 46, 0.16) 0.7px, transparent 0.7px);
-  background-size: 5px 5px;
+  opacity: 0.2;
+  background-image:
+    radial-gradient(rgba(130, 81, 42, 0.12) 0.7px, transparent 0.8px),
+    radial-gradient(rgba(92, 22, 15, 0.06) 0.8px, transparent 0.9px);
+  background-position: 0 0, 2px 2px;
+  background-size: 7px 7px, 11px 11px;
   mix-blend-mode: multiply;
 }
 
@@ -67,8 +71,15 @@ textarea {
 }
 
 .eyebrow {
+  display: inline-flex;
+  align-items: center;
   margin: 0 0 14px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(155, 61, 25, 0.12);
+  background: rgba(207, 123, 37, 0.12);
   color: var(--accent-strong);
+  font-family: "Rubik", sans-serif;
   font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -128,7 +139,7 @@ textarea {
   top: 0;
   z-index: 30;
   backdrop-filter: blur(18px);
-  background: rgba(248, 241, 231, 0.88);
+  background: rgba(244, 229, 208, 0.9);
   border-bottom: 1px solid var(--line);
 }
 
@@ -150,19 +161,23 @@ textarea {
 .brand-mark img {
   width: 56px;
   height: 56px;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 18px;
-  box-shadow: 0 16px 28px rgba(94, 55, 26, 0.14);
+  background: rgba(246, 232, 211, 0.95);
+  box-shadow: 0 14px 24px rgba(94, 55, 26, 0.12);
 }
 
 .brand-mark strong {
   display: block;
-  font-size: 1rem;
+  color: var(--accent-strong);
+  font-family: "Rubik", sans-serif;
+  font-size: 1.02rem;
+  font-weight: 700;
 }
 
 .brand-mark span {
   display: block;
-  color: var(--text-soft);
+  color: #8e6c50;
   font-size: 0.88rem;
 }
 
@@ -173,8 +188,9 @@ textarea {
   border-radius: 14px;
   padding: 0 18px;
   min-height: 44px;
-  background: rgba(255, 250, 244, 1);
+  background: rgba(248, 238, 224, 0.98);
   color: var(--text);
+  font-family: "Rubik", sans-serif;
   font-weight: 700;
   cursor: pointer;
 }
@@ -226,6 +242,7 @@ textarea {
 
 .main-nav a {
   color: var(--text-soft);
+  font-family: "Rubik", sans-serif;
   font-size: 0.88rem;
   padding: 10px 0;
 }
@@ -260,7 +277,7 @@ textarea {
   min-height: 48px;
   border-radius: 999px;
   border: 1px solid rgba(111, 68, 37, 0.12);
-  background: rgba(255, 250, 244, 1);
+  background: rgba(248, 238, 224, 0.98);
   overflow: hidden;
 }
 
@@ -335,7 +352,7 @@ textarea {
   align-items: center;
   justify-content: center;
   color: var(--text-soft);
-  background: rgba(255, 250, 244, 1);
+  background: rgba(248, 238, 224, 0.98);
   border-radius: 50%;
   border: 1px solid rgba(111, 68, 37, 0.08);
 }
@@ -343,7 +360,7 @@ textarea {
 .mega-panel {
   display: none;
   border-top: 1px solid var(--line);
-  background: rgba(255, 249, 241, 0.96);
+  background: rgba(246, 234, 216, 0.97);
 }
 
 .mega-panel.is-open {
@@ -359,10 +376,10 @@ textarea {
 
 .mega-panel__intro h3 {
   margin: 0 0 14px;
-  font-family: "Prata", serif;
+  font-family: "Rubik", sans-serif;
   font-size: clamp(1.6rem, 3vw, 2.2rem);
-  line-height: 1.1;
-  font-weight: 400;
+  line-height: 1.02;
+  font-weight: 700;
 }
 
 .mega-panel__intro p {
@@ -420,8 +437,9 @@ textarea {
   min-height: 28px;
   padding: 0 10px;
   border-radius: 999px;
-  background: rgba(199, 131, 60, 0.12);
+  background: rgba(207, 123, 37, 0.14);
   color: var(--accent-strong);
+  font-family: "Rubik", sans-serif;
   font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -470,13 +488,56 @@ textarea {
 .mobile-nav__inner a {
   padding: 12px 14px;
   border-radius: 14px;
-  background: rgba(255, 250, 244, 0.8);
+  background: rgba(248, 238, 224, 0.86);
   border: 1px solid rgba(111, 68, 37, 0.08);
 }
 
 .page-hero,
 .page-section {
   padding: 68px 0;
+}
+
+.page-hero,
+.site-footer {
+  position: relative;
+}
+
+.page-hero::before,
+.page-hero::after,
+.site-footer::before,
+.site-footer::after {
+  content: "";
+  position: absolute;
+  width: 92px;
+  height: 92px;
+  pointer-events: none;
+  opacity: 0.18;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cg fill='%235e160f'%3E%3Cellipse cx='22' cy='34' rx='12' ry='28' transform='rotate(-28 22 34)'/%3E%3Cellipse cx='50' cy='28' rx='12' ry='30' transform='rotate(-4 50 28)'/%3E%3Cellipse cx='78' cy='36' rx='12' ry='28' transform='rotate(24 78 36)'/%3E%3C/g%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+.page-hero::before {
+  top: 18px;
+  left: 10px;
+}
+
+.page-hero::after {
+  top: 18px;
+  right: 10px;
+  transform: scaleX(-1);
+}
+
+.site-footer::before {
+  bottom: 12px;
+  left: 10px;
+  transform: rotate(180deg);
+}
+
+.site-footer::after {
+  right: 10px;
+  bottom: 12px;
+  transform: scale(-1, -1);
 }
 
 .page-hero--home {
@@ -509,19 +570,21 @@ textarea {
 .panel h2,
 .product-summary h1 {
   margin: 0 0 18px;
-  font-family: "Prata", serif;
-  font-size: clamp(2.2rem, 4vw, 3.9rem);
-  line-height: 1.02;
-  font-weight: 400;
+  font-family: "Rubik", sans-serif;
+  font-size: clamp(2.15rem, 4vw, 3.8rem);
+  line-height: 0.96;
+  letter-spacing: -0.04em;
+  font-weight: 700;
   text-wrap: balance;
 }
 
 .section-head h2 {
   margin: 0 0 18px;
-  font-family: "Prata", serif;
+  font-family: "Rubik", sans-serif;
   font-size: clamp(1.9rem, 3vw, 3rem);
-  line-height: 1.08;
-  font-weight: 400;
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  font-weight: 700;
   text-wrap: balance;
 }
 
@@ -597,7 +660,9 @@ textarea {
   gap: 18px;
   border-radius: var(--radius-xl);
   border: 1px solid rgba(111, 68, 37, 0.12);
-  background: linear-gradient(180deg, rgba(255, 251, 245, 0.98), rgba(248, 240, 226, 0.92));
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255, 218, 162, 0.28), transparent 26%),
+    linear-gradient(180deg, rgba(246, 232, 214, 0.98), rgba(241, 225, 203, 0.92));
   box-shadow: var(--shadow);
   overflow: hidden;
 }
@@ -619,10 +684,11 @@ textarea {
 .hero-banner__copy h3,
 .home-side-card__copy h3 {
   margin: 0 0 14px;
-  font-family: "Prata", serif;
+  font-family: "Rubik", sans-serif;
   font-size: clamp(2.35rem, 4vw, 3.7rem);
-  line-height: 0.98;
-  font-weight: 400;
+  line-height: 0.94;
+  letter-spacing: -0.05em;
+  font-weight: 700;
   text-wrap: balance;
 }
 
@@ -631,6 +697,39 @@ textarea {
   flex-direction: column;
   justify-content: center;
   padding-bottom: 24px;
+}
+
+.hero-banner__brandplate {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.hero-banner__brandplate img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  border-radius: 16px;
+  background: rgba(247, 234, 217, 0.96);
+  box-shadow: 0 12px 22px rgba(94, 55, 26, 0.1);
+}
+
+.hero-banner__brandplate strong,
+.hero-banner__brandplate span {
+  display: block;
+}
+
+.hero-banner__brandplate strong {
+  color: var(--accent-strong);
+  font-family: "Rubik", sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.hero-banner__brandplate span {
+  color: var(--text-soft);
+  font-size: 0.86rem;
 }
 
 .home-side-card {
@@ -667,9 +766,11 @@ textarea {
 .hero-banner__ribbon {
   margin-top: 18px;
   padding: 14px 18px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, rgba(197, 133, 61, 0.16), rgba(255, 239, 211, 0.9));
+  border-radius: 22px;
+  border: 1px solid rgba(155, 61, 25, 0.1);
+  background: linear-gradient(135deg, rgba(207, 123, 37, 0.14), rgba(248, 232, 208, 0.92));
   color: var(--accent-strong);
+  font-family: "Rubik", sans-serif;
   font-weight: 700;
   font-size: 0.92rem;
   max-width: 420px;
@@ -746,7 +847,7 @@ textarea {
   padding: 16px 18px;
   border-radius: 999px;
   border: 1px solid rgba(111, 68, 37, 0.1);
-  background: rgba(255, 252, 247, 0.96);
+  background: rgba(247, 235, 219, 0.96);
   box-shadow: 0 10px 22px rgba(94, 55, 26, 0.05);
 }
 
@@ -756,8 +857,9 @@ textarea {
   display: inline-grid;
   place-items: center;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(205, 160, 104, 0.24), rgba(255, 239, 211, 0.92));
+  background: linear-gradient(135deg, rgba(207, 123, 37, 0.24), rgba(255, 232, 188, 0.94));
   color: var(--accent-strong);
+  font-family: "Rubik", sans-serif;
   font-size: 0.86rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -797,7 +899,7 @@ textarea {
   min-width: 0;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 20px 34px rgba(94, 55, 26, 0.08);
+  box-shadow: 0 18px 30px rgba(94, 55, 26, 0.08);
 }
 
 .product-tile__media {
@@ -806,8 +908,8 @@ textarea {
   min-height: 232px;
   padding: 18px;
   background:
-    radial-gradient(circle at 12% 14%, rgba(255, 226, 171, 0.66), transparent 24%),
-    linear-gradient(180deg, rgba(246, 232, 208, 0.82), rgba(255, 249, 241, 0.94));
+    radial-gradient(circle at 12% 14%, rgba(255, 213, 140, 0.62), transparent 24%),
+    linear-gradient(180deg, rgba(240, 219, 193, 0.88), rgba(248, 238, 223, 0.96));
 }
 
 .product-tile__media img {
@@ -857,7 +959,9 @@ textarea {
 .article-card h3,
 .panel strong {
   margin: 10px 0 10px;
+  font-family: "Rubik", sans-serif;
   font-size: 1.02rem;
+  line-height: 1.15;
   text-wrap: balance;
 }
 
@@ -877,7 +981,7 @@ textarea {
   justify-content: space-between;
   padding: 12px;
   border-radius: 14px;
-  background: rgba(255, 251, 246, 0.82);
+  background: rgba(249, 239, 226, 0.9);
   border: 1px solid rgba(111, 68, 37, 0.08);
 }
 
@@ -958,8 +1062,8 @@ textarea {
   border-radius: var(--radius-lg);
   border: 1px solid rgba(111, 68, 37, 0.1);
   background:
-    radial-gradient(circle at 100% 0%, rgba(255, 222, 164, 0.28), transparent 26%),
-    rgba(255, 252, 247, 0.98);
+    radial-gradient(circle at 100% 0%, rgba(255, 213, 140, 0.3), transparent 26%),
+    rgba(247, 236, 220, 0.98);
   box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
@@ -968,6 +1072,7 @@ textarea {
 
 .store-promo-card h3 {
   margin: 0;
+  font-family: "Rubik", sans-serif;
   font-size: 1.2rem;
   line-height: 1.2;
 }
@@ -994,14 +1099,15 @@ textarea {
   align-items: center;
   justify-content: center;
   white-space: nowrap;
-  background: linear-gradient(135deg, #c6853d 0%, #a85f24 100%);
+  background: linear-gradient(135deg, #d98a2a 0%, #bf621e 100%);
   color: #fffdf8;
+  font-family: "Rubik", sans-serif;
   font-weight: 700;
-  box-shadow: 0 18px 34px rgba(168, 95, 36, 0.24);
+  box-shadow: 0 16px 30px rgba(168, 95, 36, 0.24);
 }
 
 .button--ghost {
-  background: rgba(255, 250, 244, 0.92);
+  background: rgba(248, 238, 224, 0.96);
   color: var(--text);
   border: 1px solid rgba(111, 68, 37, 0.1);
   box-shadow: none;
@@ -1020,8 +1126,8 @@ textarea {
   grid-template-columns: minmax(0, 1fr) 360px;
   gap: 24px;
   background:
-    radial-gradient(circle at 0% 0%, rgba(255, 223, 167, 0.26), transparent 30%),
-    rgba(255, 252, 247, 0.98);
+    radial-gradient(circle at 0% 0%, rgba(255, 206, 127, 0.3), transparent 30%),
+    rgba(246, 234, 216, 0.98);
 }
 
 .newsletter-form {
@@ -1208,7 +1314,7 @@ textarea {
   padding: 12px;
   border-radius: 18px;
   border: 1px solid rgba(111, 68, 37, 0.08);
-  background: rgba(255, 250, 244, 0.82);
+  background: rgba(248, 238, 224, 0.88);
 }
 
 .product-gallery__thumbs img {
@@ -1372,6 +1478,7 @@ textarea {
 
 .site-footer {
   padding: 34px 0 58px;
+  background: linear-gradient(180deg, rgba(231, 195, 160, 0), rgba(229, 195, 159, 0.32));
 }
 
 .site-footer__inner {
@@ -1384,6 +1491,7 @@ textarea {
 
 .footer-brand strong {
   display: block;
+  font-family: "Rubik", sans-serif;
   font-size: 1.08rem;
 }
 
@@ -1406,6 +1514,7 @@ textarea {
 
 .footer-column strong {
   display: block;
+  font-family: "Rubik", sans-serif;
   margin-bottom: 12px;
 }
 
