@@ -301,7 +301,7 @@ const renderHome = () => {
     benefits.innerHTML = store.product.benefitCards.map(renderBenefitCard).join("");
   }
 
-  const marketplaces = $("#home-marketplaces");
+  const marketplaces = $("#marketplaces");
   if (marketplaces) {
     marketplaces.innerHTML = store.marketplaces.map(renderMarketplaceCard).join("");
   }
