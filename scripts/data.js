@@ -92,6 +92,16 @@ window.GlobalBasketData = {
       { src: "/assets/product-front-warm.jpg", alt: "Фронтальный вид упаковки на фирменном фоне" },
       { src: "/assets/lifestyle.jpg", alt: "Макадамия Global Basket в спокойной домашней подаче" },
     ],
+    viewer: {
+      label: "Интерактивный просмотр упаковки очищенной макадамии Global Basket",
+      hint: "Потяните, чтобы повернуть",
+      frames: [
+        { src: "/assets/hero-viewer-front.webp", title: "Вид спереди" },
+        { src: "/assets/hero-viewer-side.webp", title: "Боковой ракурс" },
+        { src: "/assets/hero-viewer-rear.webp", title: "Ракурс сзади под углом" },
+        { src: "/assets/hero-viewer-back.webp", title: "Вид сзади" },
+      ],
+    },
     pills: ["Кения", "250 г", "Вакуумная упаковка", "Только очищенные ядра"],
     factCards: [
       {
