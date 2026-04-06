@@ -84,13 +84,13 @@ window.GlobalBasketData = {
       hero: "/assets/catalog-front-warm.jpg",
       packshot: "/assets/product-front-warm.jpg",
       main: "/assets/catalog-front-warm.jpg",
-      lifestyle: "/assets/lifestyle.png",
-      poster: "/assets/brand-poster.png",
+      lifestyle: "/assets/lifestyle.jpg",
+      poster: "/assets/brand-poster.jpg",
     },
     gallery: [
       { src: "/assets/catalog-front-warm.jpg", alt: "Очищенная макадамия на теплом фирменном фоне" },
       { src: "/assets/product-front-warm.jpg", alt: "Фронтальный вид упаковки на фирменном фоне" },
-      { src: "/assets/lifestyle.png", alt: "Макадамия Global Basket в спокойной домашней подаче" },
+      { src: "/assets/lifestyle.jpg", alt: "Макадамия Global Basket в спокойной домашней подаче" },
     ],
     pills: ["Кения", "250 г", "Вакуумная упаковка", "Только очищенные ядра"],
     factCards: [
@@ -372,7 +372,7 @@ window.GlobalBasketData = {
         title: "Как аккуратная упаковка усиливает впечатление от продукта",
         excerpt: "Почему визуально собранная подача работает на доверие ещё до первого обращения.",
         href: "/journal/packaging/",
-        image: "/assets/brand-poster.png",
+        image: "/assets/brand-poster.jpg",
         lead:
           "Когда продукт подан спокойно и аккуратно, пользователь быстрее считывает его уровень и легче переходит к следующему действию.",
         sections: [
@@ -410,7 +410,7 @@ window.GlobalBasketData = {
         title: "Как расширять ассортимент и сохранять аккуратную витрину",
         excerpt: "Как добавлять новые категории постепенно и при этом сохранять цельный, спокойный интерфейс магазина.",
         href: "/journal/catalog-growth/",
-        image: "/assets/lifestyle.png",
+        image: "/assets/lifestyle.jpg",
         lead:
           "Рост ассортимента не должен превращать магазин в шумный набор блоков. Важно расширять каталог так, чтобы пользователь по-прежнему быстро понимал, где он находится и что делать дальше.",
         sections: [
