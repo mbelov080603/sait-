@@ -21,26 +21,31 @@
 
     <main>
       <section class="page-hero">
-        <div class="shell">
-          <div class="breadcrumb">
-            <a href="/">Главная</a>
-            <span>/</span>
-            <span>О бренде</span>
+        <div class="shell content-grid content-grid--hero about-hero">
+          <div>
+            <div class="breadcrumb">
+              <a href="/">Главная</a>
+              <span>/</span>
+              <span>О бренде</span>
+            </div>
+            <div class="hero-copy">
+              <p class="eyebrow">О бренде</p>
+              <h1>Global Basket</h1>
+              <p>Премиальный магазин орехов с тёплой натуральной подачей, чистым составом и аккуратной фирменной упаковкой.</p>
+            </div>
           </div>
-          <div class="hero-copy">
-            <p class="eyebrow">О бренде</p>
-            <h1>Global Basket</h1>
-            <p>Премиальный магазин орехов с тёплой натуральной подачей, чистым составом и аккуратной фирменной упаковкой.</p>
-          </div>
+          <article class="media-stage media-stage--poster">
+            <img src="/assets/brand-poster.png" alt="Фирменный постер Global Basket" />
+          </article>
         </div>
       </section>
 
       <section class="page-section">
         <div class="shell">
           <div class="section-head">
-            <p class="eyebrow">Принципы бренда</p>
-            <h2>Теплая фирменная палитра, понятная навигация и честная продуктовая подача.</h2>
-            <p>Раздел объясняет, как пергаментный фон, янтарная графика и бордовый текст переводятся в реальный интерфейс магазина.</p>
+            <p class="eyebrow">Что важно покупателю</p>
+            <h2>Бренд строится на доверии к продукту, аккуратной подаче и понятном пути к заказу.</h2>
+            <p>Эта страница не про палитру и интерфейс как таковые, а про то, почему Global Basket ощущается спокойным, цельным и надёжным брендом.</p>
           </div>
           <div class="info-grid" id="about-pillars"></div>
         </div>
@@ -48,19 +53,20 @@
 
       <section class="page-section page-section--tinted">
         <div class="shell content-grid">
-          <article class="panel panel--image">
-            <img src="/assets/brand-poster.png" alt="Фирменный постер Global Basket" />
+          <article class="media-stage media-stage--lifestyle">
+            <img src="/assets/lifestyle.png" alt="Подача Global Basket в повседневной жизни" />
           </article>
           <article class="panel">
             <div class="section-head section-head--compact">
-              <p class="eyebrow">Зачем это покупателю</p>
-              <h2>Фирменная подача помогает быстрее понять продукт и почувствовать уровень бренда.</h2>
+              <p class="eyebrow">Как это ощущается</p>
+              <h2 id="about-story-title"></h2>
+              <p id="about-story-text"></p>
             </div>
-            <ul class="checklist">
-              <li>Главная страница и карточка товара читаются как единая витрина.</li>
-              <li>Упаковка, цвет и тексты работают на доверие к продукту.</li>
-              <li>Сайт остаётся спокойным и чистым даже при дальнейшем росте каталога.</li>
-            </ul>
+            <ul class="checklist" id="about-story-list"></ul>
+            <div class="panel-actions">
+              <a class="button button--small" href="/catalog/macadamia/">Смотреть товар</a>
+              <a class="text-link text-link--inline" href="/contacts/?source=about">Связаться</a>
+            </div>
           </article>
         </div>
       </section>

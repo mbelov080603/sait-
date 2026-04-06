@@ -78,16 +78,16 @@ const renderHeader = () => {
 
   mount.innerHTML = `
     <div class="page-noise" aria-hidden="true"></div>
-    <div class="top-notice-bar">
-      <div class="shell top-notice-bar__inner">
-        <div class="top-notice-bar__items">${noticeItems}</div>
-        <div class="top-notice-bar__meta">
-          <span>${store.contact.hours}</span>
-          <a href="${store.contact.phoneHref}">${store.contact.phone}</a>
+    <header class="site-header">
+      <div class="top-notice-bar">
+        <div class="shell top-notice-bar__inner">
+          <div class="top-notice-bar__items">${noticeItems}</div>
+          <div class="top-notice-bar__meta">
+            <span>${store.contact.hours}</span>
+            <a href="${store.contact.phoneHref}">${store.contact.phone}</a>
+          </div>
         </div>
       </div>
-    </div>
-    <header class="site-header">
       <div class="shell header-main">
         <a class="brand-mark" href="/" aria-label="На главную Global Basket">
           <img src="/assets/logo.jpg" alt="Логотип Global Basket" />
@@ -96,6 +96,8 @@ const renderHeader = () => {
             <span>Премиальные орехи</span>
           </div>
         </a>
+
+        <nav class="main-nav main-nav--desktop" aria-label="Основная навигация">${links}</nav>
 
         <form class="search-form" data-search-form action="/catalog/" method="get">
           <label class="search-scope">
@@ -110,6 +112,7 @@ const renderHeader = () => {
 
         <div class="header-actions">
           ${iconLinks}
+          <a class="button button--small button--header" href="/contacts/?source=header">Связаться</a>
         </div>
 
         <button
@@ -121,13 +124,6 @@ const renderHeader = () => {
         >
           Меню
         </button>
-      </div>
-
-      <div class="header-nav-row">
-        <div class="shell header-nav-row__inner">
-          <nav class="main-nav" aria-label="Основная навигация">${links}</nav>
-          <a class="button button--small" href="/contacts/?source=header">Добавить в запрос</a>
-        </div>
       </div>
 
       <div class="mobile-nav" id="mobile-nav" data-mobile-nav>
@@ -143,8 +139,12 @@ const renderHeader = () => {
             <input type="search" name="q" placeholder="Поиск по каталогу" aria-label="Поиск по каталогу" />
           </form>
           <div class="mobile-nav__links">${links}</div>
+          <div class="mobile-nav__meta">
+            <a href="${store.contact.phoneHref}">${store.contact.phone}</a>
+            <a href="${store.contact.emailHref}">${store.contact.email}</a>
+          </div>
           <div class="mobile-nav__icons">${iconLinks}</div>
-          <a class="button" href="/contacts/?source=mobile-header">Добавить в запрос</a>
+          <a class="button" href="/contacts/?source=mobile-header">Связаться</a>
         </div>
       </div>
     </header>
@@ -228,6 +228,26 @@ const renderTrustCard = (item) => `
   </article>
 `;
 
+const renderCategoryCard = (item) => `
+  <article class="category-card ${item.status === "coming" ? "category-card--coming" : ""}">
+    ${renderBadge(item.statusLabel, item.status)}
+    <h3>${item.href ? `<a href="${item.href}">${item.name}</a>` : item.name}</h3>
+    <p>${item.description}</p>
+    ${
+      item.href
+        ? `<a class="text-link text-link--inline" href="${item.href}">Смотреть раздел</a>`
+        : `<span class="card-note">Скоро откроем.</span>`
+    }
+  </article>
+`;
+
+const renderAdvantageCard = (item) => `
+  <article class="advantage-card">
+    <strong>${item.title}</strong>
+    <p>${item.text}</p>
+  </article>
+`;
+
 const renderSectionCard = (item) => `
   <article class="section-card ${item.status === "coming" ? "section-card--muted" : ""}">
     ${renderBadge(item.badge || item.statusLabel, item.tone || item.status || "service")}
@@ -236,8 +256,27 @@ const renderSectionCard = (item) => `
     ${
       item.href
         ? `<a class="text-link" href="${item.href}">Смотреть раздел</a>`
-        : `<span class="card-note">Скоро в каталоге.</span>`
+        : `<span class="card-note">Скоро откроем.</span>`
     }
+  </article>
+`;
+
+const renderJournalCard = (post, featured = false) => `
+  <article class="journal-card ${featured ? "journal-card--featured" : ""}">
+    ${post.image ? `<a class="journal-card__media" href="${post.href}"><img src="${post.image}" alt="${post.title}" loading="lazy" decoding="async" /></a>` : ""}
+    <div class="journal-card__body">
+      ${renderBadge("Материал", "editorial")}
+      <h3><a href="${post.href}">${post.title}</a></h3>
+      <p>${featured ? post.lead : post.excerpt}</p>
+      <a class="text-link text-link--inline" href="${post.href}">Читать</a>
+    </div>
+  </article>
+`;
+
+const renderDeliveryStep = (item) => `
+  <article class="step-card">
+    <strong>${item.title}</strong>
+    <p>${item.text}</p>
   </article>
 `;
 
@@ -249,8 +288,8 @@ const formatCatalogCount = (count) => {
   return `${count} позиций`;
 };
 
-const renderEnterpriseProductCard = () => `
-  <article class="product-card">
+const renderEnterpriseProductCard = (featured = false) => `
+  <article class="product-card ${featured ? "product-card--featured" : ""}">
     <a class="product-card__media" href="${product.href}">
       <img src="${product.images.packshot}" alt="${product.fullName}" loading="lazy" decoding="async" />
       ${renderBadge(product.badge, product.badgeTone)}
@@ -260,8 +299,8 @@ const renderEnterpriseProductCard = () => `
       <p class="product-card__subtitle">${product.subtitle}</p>
       <p class="product-card__lead">${product.lead}</p>
       <div class="product-card__actions">
-        <a class="button button--small" href="/contacts/?source=catalog-card">В запрос</a>
-        <a class="button button--ghost button--small" href="${product.href}">Смотреть</a>
+        <a class="button button--small" href="${product.href}">Подробнее</a>
+        <a class="text-link text-link--inline" href="/contacts/?source=catalog-card">Уточнить условия</a>
       </div>
     </div>
   </article>
@@ -271,44 +310,76 @@ const renderHome = () => {
   const hero = $("#home-hero");
   if (hero) {
     hero.innerHTML = `
-      <article class="hero-product">
-        <div class="hero-product__copy">
+      <article class="hero-stage">
+        <div class="hero-stage__copy">
           ${renderBadge(product.badge, product.badgeTone)}
           <h1>${store.home.hero.title}</h1>
           <p>${store.home.hero.text}</p>
-          <ul class="hero-product__pills">
-            ${product.pills.map((item) => `<li>${item}</li>`).join("")}
+          <ul class="hero-stage__meta">
+            ${store.home.hero.meta.map((item) => `<li>${item}</li>`).join("")}
           </ul>
-          <div class="hero-product__actions">
+          <div class="hero-stage__actions">
             <a class="button" href="${store.home.hero.primaryCta.href}">${store.home.hero.primaryCta.label}</a>
-            <a class="button button--ghost" href="${store.home.hero.secondaryCta.href}">${store.home.hero.secondaryCta.label}</a>
+            <a class="text-link text-link--inline" href="${store.home.hero.secondaryCta.href}">${store.home.hero.secondaryCta.label}</a>
           </div>
         </div>
-        <div class="hero-product__media">
-          <img src="${product.images.hero}" alt="${product.fullName}" />
+        <div class="hero-stage__media">
+          <article class="media-stage media-stage--hero">
+            <img src="${product.images.hero}" alt="${product.fullName}" loading="eager" decoding="async" />
+          </article>
         </div>
       </article>
     `;
   }
 
-  const facts = $("#home-facts");
-  if (facts) {
-    facts.innerHTML = store.product.factCards.map(renderFactCard).join("");
+  const categories = $("#home-categories");
+  if (categories) {
+    categories.innerHTML = store.categories.map(renderCategoryCard).join("");
   }
 
-  const benefits = $("#home-benefits");
-  if (benefits) {
-    benefits.innerHTML = store.product.benefitCards.map(renderBenefitCard).join("");
+  const featured = $("#home-featured");
+  if (featured) {
+    featured.innerHTML = `
+      <article class="feature-split">
+        <div class="feature-split__copy">
+          <p class="eyebrow">${store.home.featured.title}</p>
+          <h2>${store.home.featured.heading}</h2>
+          <p>${store.home.featured.text}</p>
+          <ul class="feature-points">
+            ${store.home.featured.points.map((item) => `<li>${item}</li>`).join("")}
+          </ul>
+          <div class="hero-stage__actions">
+            <a class="button" href="${store.home.featured.primaryCta.href}">${store.home.featured.primaryCta.label}</a>
+            <a class="button button--ghost" href="${store.home.featured.secondaryCta.href}">${store.home.featured.secondaryCta.label}</a>
+          </div>
+          <div class="market-links">
+            <span>Где ещё посмотреть:</span>
+            ${store.marketplaces
+              .map((item) => `<a href="${item.href}"${externalAttrs(item.href)}>${item.name}</a>`)
+              .join("")}
+          </div>
+        </div>
+        <article class="media-stage media-stage--lifestyle">
+          <img src="${product.images.lifestyle}" alt="Очищенная макадамия Global Basket в домашней подаче" loading="lazy" decoding="async" />
+        </article>
+      </article>
+    `;
   }
 
-  const marketplaces = $("#marketplaces");
-  if (marketplaces) {
-    marketplaces.innerHTML = store.marketplaces.map(renderMarketplaceCard).join("");
+  const advantages = $("#home-advantages");
+  if (advantages) {
+    advantages.innerHTML = store.home.advantages.map(renderAdvantageCard).join("");
   }
 
-  const trust = $("#home-trust");
-  if (trust) {
-    trust.innerHTML = store.trustCards.map(renderTrustCard).join("");
+  const [featuredPost, ...otherPosts] = store.journal.posts;
+  const journalFeatured = $("#home-journal-featured");
+  if (journalFeatured && featuredPost) {
+    journalFeatured.innerHTML = renderJournalCard(featuredPost, true);
+  }
+
+  const journalList = $("#home-journal-list");
+  if (journalList) {
+    journalList.innerHTML = otherPosts.map((item) => renderJournalCard(item)).join("");
   }
 };
 
@@ -319,7 +390,7 @@ const buildCatalogItems = () => {
       type: "product",
       title: product.shortName,
       keywords: `${product.shortName} ${product.subtitle} ${product.origin}`,
-      html: renderEnterpriseProductCard(),
+      html: renderEnterpriseProductCard(true),
       status: "active",
     },
     ...upcoming.map((item) => ({
@@ -348,7 +419,7 @@ const renderCatalog = () => {
       </article>
       <article class="sidebar-card">
         <strong>Покупателям</strong>
-        <a href="/contacts/?source=catalog-sidebar"><span>Добавить в запрос</span></a>
+        <a href="/contacts/?source=catalog-sidebar"><span>Связаться</span></a>
         <a href="/delivery/"><span>Доставка и оплата</span></a>
         <a href="/about/"><span>О бренде</span></a>
       </article>
@@ -443,16 +514,34 @@ const renderProductPage = () => {
       <ul class="hero-product__pills hero-product__pills--summary">
         ${product.pills.map((item) => `<li>${item}</li>`).join("")}
       </ul>
+      <dl class="summary-facts">
+        ${product.factCards
+          .map(
+            (item) => `
+              <div>
+                <dt>${item.title}</dt>
+                <dd>${item.text}</dd>
+              </div>
+            `,
+          )
+          .join("")}
+      </dl>
       <div class="purchase-panel">
         <div>
-          <span class="purchase-panel__label">${product.price}</span>
-          <strong>${product.requestText}</strong>
+          <span class="purchase-panel__label">Стоимость</span>
+          <strong>${product.price}</strong>
           <p>${product.priceNote}</p>
         </div>
         <div class="purchase-panel__actions">
-          <a class="button" href="/contacts/?source=pdp">${product.requestText}</a>
-          <a class="button button--ghost" href="#marketplaces-pdp">Смотреть где купить</a>
+          <a class="button" href="/contacts/?source=pdp">Уточнить условия</a>
+          <a class="text-link text-link--inline" href="/catalog/">Вернуться в каталог</a>
         </div>
+      </div>
+      <div class="market-links market-links--summary">
+        <span>Где купить:</span>
+        ${store.marketplaces
+          .map((item) => `<a href="${item.href}"${externalAttrs(item.href)}>${item.name}</a>`)
+          .join("")}
       </div>
     `;
   }
@@ -460,11 +549,6 @@ const renderProductPage = () => {
   const benefits = $("#product-benefits");
   if (benefits) {
     benefits.innerHTML = product.benefitCards.map(renderBenefitCard).join("");
-  }
-
-  const facts = $("#product-facts");
-  if (facts) {
-    facts.innerHTML = product.factCards.map(renderFactCard).join("");
   }
 
   const marketplaces = $("#product-marketplaces");
@@ -496,7 +580,7 @@ const renderContactsPage = () => {
     intro.innerHTML = `
       <div class="hero-copy">
         <p class="eyebrow">Контакты</p>
-        <h1>Добавить в запрос</h1>
+        <h1>Связаться с Global Basket</h1>
         <p>${store.contactsPage.intro}</p>
       </div>
       <div class="contacts-info-grid">
@@ -513,6 +597,12 @@ const renderContactsPage = () => {
           )
           .join("")}
       </div>
+      <article class="contact-direct">
+        <strong>Прямой контакт</strong>
+        <p><a href="${store.contact.phoneHref}">${store.contact.phone}</a></p>
+        <p><a href="${store.contact.emailHref}">${store.contact.email}</a></p>
+        <p>${store.contact.hours}</p>
+      </article>
       <article class="contact-marketplaces">
         <strong>Где купить</strong>
         <div class="contact-marketplaces__links">
@@ -584,9 +674,25 @@ const renderAboutPage = () => {
       `,
     )
     .join("");
+
+  const title = $("#about-story-title");
+  if (title) title.textContent = store.aboutPage.storyTitle;
+
+  const text = $("#about-story-text");
+  if (text) text.textContent = store.aboutPage.storyText;
+
+  const list = $("#about-story-list");
+  if (list) {
+    list.innerHTML = store.aboutPage.checklist.map((item) => `<li>${item}</li>`).join("");
+  }
 };
 
 const renderDeliveryPage = () => {
+  const steps = $("#delivery-steps");
+  if (steps) {
+    steps.innerHTML = store.deliveryPage.steps.map(renderDeliveryStep).join("");
+  }
+
   const cards = $("#delivery-cards");
   if (cards) {
     cards.innerHTML = store.deliveryPage.cards.map(renderFactCard).join("");
@@ -626,20 +732,15 @@ const renderCategoryPage = () => {
 };
 
 const renderJournalPage = () => {
+  const [featuredPost, ...otherPosts] = store.journal.posts;
+  const featured = $("#journal-featured");
+  if (featured && featuredPost) {
+    featured.innerHTML = renderJournalCard(featuredPost, true);
+  }
+
   const list = $("#journal-list");
   if (!list) return;
-  list.innerHTML = store.journal.posts
-    .map(
-      (post) => `
-        <article class="section-card">
-          ${renderBadge("Материал", "editorial")}
-          <h3><a href="${post.href}">${post.title}</a></h3>
-          <p>${post.excerpt}</p>
-          <a class="text-link" href="${post.href}">Читать</a>
-        </article>
-      `,
-    )
-    .join("");
+  list.innerHTML = otherPosts.map((post) => renderJournalCard(post)).join("");
 };
 
 const renderArticlePage = () => {
@@ -690,8 +791,8 @@ const renderArticlePage = () => {
               <p>${product.lead}</p>
             </div>
             <div class="aside-actions">
-              <a class="button button--small" href="${product.href}">Смотреть</a>
-              <a class="button button--ghost button--small" href="/contacts/?source=journal">Добавить в запрос</a>
+              <a class="button button--small" href="${product.href}">Подробнее</a>
+              <a class="text-link text-link--inline" href="/contacts/?source=journal">Уточнить условия</a>
             </div>
           </article>
         </aside>

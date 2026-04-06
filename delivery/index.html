@@ -21,30 +21,43 @@
 
     <main>
       <section class="page-hero">
-        <div class="shell">
-          <div class="breadcrumb">
-            <a href="/">Главная</a>
-            <span>/</span>
-            <span>Доставка и оплата</span>
+        <div class="shell content-grid content-grid--hero">
+          <div>
+            <div class="breadcrumb">
+              <a href="/">Главная</a>
+              <span>/</span>
+              <span>Доставка и оплата</span>
+            </div>
+            <div class="hero-copy">
+              <p class="eyebrow">Доставка и оплата</p>
+              <h1>Доставка и оплата</h1>
+              <p>
+                Здесь собрана базовая информация о том, как уточнить стоимость, доставку,
+                упаковку и детали заказа.
+              </p>
+            </div>
           </div>
-          <div class="hero-copy">
-            <p class="eyebrow">Доставка и оплата</p>
-            <h1>Доставка и оплата</h1>
-            <p>
-              Здесь собрана базовая информация о том, как уточнить стоимость, доставку,
-              упаковку и детали заказа.
-            </p>
-          </div>
+          <article class="panel panel--compact">
+            <p class="eyebrow">Следующий шаг</p>
+            <h2>Сначала запрос, затем понятные условия.</h2>
+            <p>Мы не прячем сценарий покупки: сначала обсуждаем товар и объём, затем уточняем стоимость, доставку и дальнейший шаг.</p>
+            <div class="panel-actions">
+              <a class="button button--small" href="/contacts/?source=delivery-hero">Связаться</a>
+            </div>
+          </article>
         </div>
       </section>
 
       <section class="page-section">
         <div class="shell">
           <div class="section-head">
-            <p class="eyebrow">Доставка и оплата</p>
-            <h2>Стоимость, упаковка и доставка собраны в одной сервисной секции.</h2>
+            <p class="eyebrow">Как это работает</p>
+            <h2>Сервисная информация собрана в плотную и предсказуемую структуру, без пустых заглушек.</h2>
           </div>
-          <div class="fact-grid" id="delivery-cards"></div>
+          <div class="delivery-layout">
+            <div class="steps-list" id="delivery-steps"></div>
+            <div class="fact-grid fact-grid--stacked" id="delivery-cards"></div>
+          </div>
         </div>
       </section>
 
