@@ -58,14 +58,27 @@ const sendComplaintPrompt = (token, chatId) =>
     },
   });
 
-const updateWebhookRouting = async (req, token, ownerUserId, complaintsChatId) => {
+const parseSubscriberIds = (raw = "") =>
+  Array.from(
+    new Set(
+      String(raw)
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean),
+    ),
+  );
+
+const serializeSubscriberIds = (subscriberIds = []) => parseSubscriberIds(subscriberIds.join(",")).join(",");
+
+const updateWebhookRouting = async (req, token, ownerUserId, complaintsChatId, subscriberIds = []) => {
   const webhookUrl = buildWebhookUrl(req, token, {
     ownerUserId,
     complaintsChatId,
+    subscriberIds: serializeSubscriberIds(subscriberIds),
   });
   await callTelegram(token, "setWebhook", {
     url: webhookUrl,
-    allowed_updates: ["message"],
+    allowed_updates: ["message", "channel_post"],
   });
   return webhookUrl;
 };
@@ -157,12 +170,64 @@ const sendChannelCard = async (token, chatId) =>
     },
   );
 
+const ensureSubscriber = async (req, token, ownerUserId, complaintsChatId, subscriberIds, message) => {
+  if (message.chat.type !== "private") return subscriberIds;
+
+  const chatId = String(message.chat.id);
+  if (subscriberIds.includes(chatId)) return subscriberIds;
+
+  const nextSubscriberIds = [...subscriberIds, chatId];
+  await updateWebhookRouting(req, token, ownerUserId, complaintsChatId, nextSubscriberIds);
+  return nextSubscriberIds;
+};
+
+const forwardChannelPostToSubscribers = async (req, token, channelPost, ownerUserId, complaintsChatId, subscriberIds) => {
+  if (!subscriberIds.length) return { delivered: 0, removed: 0 };
+
+  const activeSubscribers = [];
+  let delivered = 0;
+  let removed = 0;
+
+  for (const subscriberId of subscriberIds) {
+    try {
+      await callTelegram(token, "copyMessage", {
+        chat_id: subscriberId,
+        from_chat_id: channelPost.chat.id,
+        message_id: channelPost.message_id,
+        protect_content: false,
+      });
+      activeSubscribers.push(subscriberId);
+      delivered += 1;
+    } catch (error) {
+      const description = String(error.message || "");
+      const shouldRemove =
+        description.includes("bot was blocked by the user") ||
+        description.includes("chat not found") ||
+        description.includes("user is deactivated") ||
+        description.includes("need administrator rights in the channel chat");
+
+      if (!shouldRemove) {
+        activeSubscribers.push(subscriberId);
+      } else {
+        removed += 1;
+      }
+    }
+  }
+
+  if (removed > 0) {
+    await updateWebhookRouting(req, token, ownerUserId, complaintsChatId, activeSubscribers);
+  }
+
+  return { delivered, removed };
+};
+
 module.exports = async (req, res) => {
   const url = new URL(req.url, `https://${req.headers.host}`);
   const token = url.searchParams.get("token");
   const legacyAdminChatId = url.searchParams.get("adminChatId") || "";
   const ownerUserId = url.searchParams.get("ownerUserId") || legacyAdminChatId;
   const complaintsChatId = url.searchParams.get("complaintsChatId") || legacyAdminChatId;
+  let subscriberIds = parseSubscriberIds(url.searchParams.get("subscriberIds") || "");
 
   if (!token) {
     return json(res, 400, { ok: false, error: "Missing token" });
@@ -175,6 +240,7 @@ module.exports = async (req, res) => {
       adminConfigured: Boolean(complaintsChatId),
       ownerConfigured: Boolean(ownerUserId),
       channel: CHANNEL_URL,
+      subscriberCount: subscriberIds.length,
     });
   }
 
@@ -184,6 +250,24 @@ module.exports = async (req, res) => {
 
   const update = parseUpdate(req);
   const message = update.message;
+  const channelPost = update.channel_post;
+
+  if (channelPost && channelPost.chat) {
+    try {
+      const result = await forwardChannelPostToSubscribers(
+        req,
+        token,
+        channelPost,
+        ownerUserId,
+        complaintsChatId,
+        subscriberIds,
+      );
+      return json(res, 200, { ok: true, mirrored: result.delivered, removed: result.removed });
+    } catch (error) {
+      console.error("telegram channel mirror error", error);
+      return json(res, 200, { ok: false, error: error.message });
+    }
+  }
 
   if (!message || !message.chat) {
     return json(res, 200, { ok: true, skipped: true });
@@ -193,6 +277,8 @@ module.exports = async (req, res) => {
   const text = normalizeMessageText(message);
 
   try {
+    subscriberIds = await ensureSubscriber(req, token, ownerUserId, complaintsChatId, subscriberIds, message);
+
     if (text === ADMIN_CLAIM_COMMAND || text === COMPLAINT_GROUP_BIND_COMMAND) {
       const senderId = String(message.from?.id || "");
       const unauthorizedOwner = ownerUserId && senderId !== ownerUserId;
@@ -216,7 +302,7 @@ module.exports = async (req, res) => {
           ? complaintsChatId || String(chatId)
           : String(chatId);
 
-      await updateWebhookRouting(req, token, nextOwnerUserId, nextComplaintsChatId);
+      await updateWebhookRouting(req, token, nextOwnerUserId, nextComplaintsChatId, subscriberIds);
       await sendMenu(
         token,
         chatId,
@@ -278,7 +364,7 @@ module.exports = async (req, res) => {
         }
 
         const senderId = String(message.from?.id || chatId);
-        await updateWebhookRouting(req, token, senderId, String(chatId));
+        await updateWebhookRouting(req, token, senderId, String(chatId), subscriberIds);
         await sendMenu(
           token,
           chatId,

@@ -14,9 +14,10 @@ const siteUrl = (process.env.SITE_URL || readArg("--site-url")).replace(/\/$/, "
 let adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID || readArg("--admin-chat-id");
 let ownerUserId = process.env.TELEGRAM_OWNER_USER_ID || readArg("--owner-user-id");
 let complaintsChatId = process.env.TELEGRAM_COMPLAINT_CHAT_ID || readArg("--complaints-chat-id");
+let subscriberIds = process.env.TELEGRAM_SUBSCRIBER_IDS || readArg("--subscriber-ids");
 
 if (!botToken || !siteUrl) {
-  console.error("Usage: node scripts/setup-telegram-bot.mjs --token <BOT_TOKEN> --site-url <SITE_URL> [--owner-user-id <USER_ID>] [--complaints-chat-id <CHAT_ID>] [--admin-chat-id <CHAT_ID>]");
+  console.error("Usage: node scripts/setup-telegram-bot.mjs --token <BOT_TOKEN> --site-url <SITE_URL> [--owner-user-id <USER_ID>] [--complaints-chat-id <CHAT_ID>] [--subscriber-ids <ID1,ID2>] [--admin-chat-id <CHAT_ID>]");
   process.exit(1);
 }
 
@@ -52,6 +53,7 @@ const getPersistedWebhookConfig = async () => {
         url.searchParams.get("complaintsChatId") ||
         url.searchParams.get("adminChatId") ||
         "",
+      subscriberIds: url.searchParams.get("subscriberIds") || "",
     };
   } catch {
     return {};
@@ -68,6 +70,10 @@ if (!complaintsChatId) {
   complaintsChatId = persistedConfig.complaintsChatId || "";
 }
 
+if (!subscriberIds) {
+  subscriberIds = persistedConfig.subscriberIds || "";
+}
+
 if (!complaintsChatId && adminChatId) {
   complaintsChatId = adminChatId;
 }
@@ -80,6 +86,7 @@ const webhookUrl = new URL(`${siteUrl}/api/telegram-webhook`);
 webhookUrl.searchParams.set("token", botToken);
 if (ownerUserId) webhookUrl.searchParams.set("ownerUserId", ownerUserId);
 if (complaintsChatId) webhookUrl.searchParams.set("complaintsChatId", complaintsChatId);
+if (subscriberIds) webhookUrl.searchParams.set("subscriberIds", subscriberIds);
 
 await callTelegram("setMyCommands", {
   commands: [
@@ -99,7 +106,7 @@ await callTelegram("setMyShortDescription", {
 
 await callTelegram("setWebhook", {
   url: webhookUrl.toString(),
-  allowed_updates: ["message"],
+  allowed_updates: ["message", "channel_post"],
 });
 
 console.log(
@@ -109,6 +116,7 @@ console.log(
       webhookUrl: webhookUrl.toString(),
       ownerUserId: ownerUserId || null,
       complaintsChatId: complaintsChatId || null,
+      subscriberIds: subscriberIds ? subscriberIds.split(",").filter(Boolean) : [],
     },
     null,
     2,

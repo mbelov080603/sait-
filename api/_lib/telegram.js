@@ -33,6 +33,7 @@ const buildWebhookUrl = (req, token, config = {}) => {
   if (config.adminChatId) url.searchParams.set("adminChatId", config.adminChatId);
   if (config.ownerUserId) url.searchParams.set("ownerUserId", config.ownerUserId);
   if (config.complaintsChatId) url.searchParams.set("complaintsChatId", config.complaintsChatId);
+  if (config.subscriberIds) url.searchParams.set("subscriberIds", config.subscriberIds);
   return url.toString();
 };
 
