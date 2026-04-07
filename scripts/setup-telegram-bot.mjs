@@ -93,6 +93,7 @@ await callTelegram("setMyCommands", {
     { command: "start", description: "Открыть меню Global Basket" },
     { command: "menu", description: "Показать главное меню" },
     { command: "channel", description: "Открыть канал Global Basket" },
+    { command: "site", description: "Открыть сайт Global Basket" },
   ],
 });
 

@@ -36,6 +36,12 @@ const inlineUrl = (text, url) => ({
   inline_keyboard: [[{ text, url }]],
 });
 
+const getSiteUrl = (req) => {
+  const protocol = req.headers["x-forwarded-proto"] || "https";
+  const host = req.headers["x-forwarded-host"] || req.headers.host;
+  return `${protocol}://${host}`;
+};
+
 const sendMessage = (token, chatId, text, extra = {}) =>
   callTelegram(token, "sendMessage", {
     chat_id: chatId,
@@ -167,6 +173,16 @@ const sendChannelCard = async (token, chatId) =>
     `Канал Global Basket\nПодписывайтесь на @${CHANNEL_USERNAME} — там можно публиковать новости, полезные материалы и карточки продукта.`,
     {
       reply_markup: inlineUrl("Открыть канал", CHANNEL_URL),
+    },
+  );
+
+const sendSiteCard = async (req, token, chatId) =>
+  sendMessage(
+    token,
+    chatId,
+    "Сайт Global Basket\nОткройте витрину бренда, каталог и контакты в браузере.",
+    {
+      reply_markup: inlineUrl("Открыть сайт", getSiteUrl(req)),
     },
   );
 
@@ -331,6 +347,11 @@ module.exports = async (req, res) => {
 
     if (text === "/channel" || text === "Канал") {
       await sendChannelCard(token, chatId);
+      return json(res, 200, { ok: true });
+    }
+
+    if (text === "/site" || text === "Сайт") {
+      await sendSiteCard(req, token, chatId);
       return json(res, 200, { ok: true });
     }
 
