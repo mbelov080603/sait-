@@ -290,17 +290,21 @@ const formatCatalogCount = (count) => {
 
 const renderEnterpriseProductCard = (featured = false) => `
   <article class="product-card ${featured ? "product-card--featured" : ""}">
-    <a class="product-card__media" href="${product.href}">
-      <img src="${product.images.packshot}" alt="${product.fullName}" loading="lazy" decoding="async" />
+    <div class="product-card__top">
       ${renderBadge(product.badge, product.badgeTone)}
-    </a>
-    <div class="product-card__body">
-      <h3><a href="${product.href}">${product.shortName}</a></h3>
-      <p class="product-card__subtitle">${product.subtitle}</p>
-      <p class="product-card__lead">${product.lead}</p>
-      <div class="product-card__actions">
-        <a class="button button--small" href="${product.href}">Подробнее</a>
-        <a class="text-link text-link--inline" href="/contacts/?source=catalog-card">Уточнить условия</a>
+    </div>
+    <div class="product-card__content">
+      <a class="product-card__media" href="${product.href}">
+        <img src="${product.images.packshot}" alt="${product.fullName}" loading="lazy" decoding="async" />
+      </a>
+      <div class="product-card__body">
+        <h3><a href="${product.href}">${product.shortName}</a></h3>
+        <p class="product-card__subtitle">${product.subtitle}</p>
+        <p class="product-card__lead">${product.lead}</p>
+        <div class="product-card__actions">
+          <a class="button button--small" href="${product.href}">Подробнее</a>
+          <a class="text-link text-link--inline" href="/contacts/?source=catalog-card">Уточнить условия</a>
+        </div>
       </div>
     </div>
   </article>
@@ -309,21 +313,6 @@ const renderEnterpriseProductCard = (featured = false) => `
 const renderHome = () => {
   const hero = $("#home-hero");
   if (hero) {
-    const viewerFrames = product.viewer.frames
-      .map(
-        (item, index) => `
-          <figure class="hero-viewer__frame" data-hero-frame="${index}" aria-hidden="true">
-            <img
-              src="${item.src}"
-              alt=""
-              loading="${index === 0 ? "eager" : "lazy"}"
-              decoding="async"
-            />
-          </figure>
-        `,
-      )
-      .join("");
-
     hero.innerHTML = `
       <article class="hero-stage">
         <div class="hero-stage__copy">
@@ -339,20 +328,8 @@ const renderHome = () => {
           </div>
         </div>
         <div class="hero-stage__media">
-          <article class="media-stage media-stage--hero media-stage--viewer">
-            <div
-              class="hero-viewer"
-              data-hero-viewer
-              role="img"
-              aria-label="${product.viewer.label}"
-            >
-              <div class="hero-viewer__glow" aria-hidden="true"></div>
-              <div class="hero-viewer__shadow" aria-hidden="true"></div>
-              <div class="hero-viewer__orbit" data-hero-orbit>
-                ${viewerFrames}
-              </div>
-            </div>
-            <p class="hero-viewer__hint">${product.viewer.hint}</p>
+          <article class="media-stage media-stage--hero">
+            <img src="${product.images.hero}" alt="${product.fullName}" />
           </article>
         </div>
       </article>
@@ -995,115 +972,6 @@ const bindRequestForms = () => {
   });
 };
 
-const bindHeroViewer = () => {
-  const viewers = $$("[data-hero-viewer]");
-  if (!viewers.length) return;
-
-  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  viewers.forEach((viewer) => {
-    const orbit = $("[data-hero-orbit]", viewer);
-    const frames = $$("[data-hero-frame]", viewer);
-    if (!orbit || !frames.length) return;
-
-    const maxIndex = frames.length - 1;
-    let progress = 0.06;
-    let targetProgress = 0.06;
-    let rotateX = -6;
-    let rotateY = 18;
-    let targetRotateX = -6;
-    let targetRotateY = 18;
-    let activePointerId = null;
-    let lastX = 0;
-    let lastY = 0;
-    let isDragging = false;
-
-    const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
-
-    const releasePointer = () => {
-      isDragging = false;
-      viewer.classList.remove("is-dragging");
-      targetProgress = clamp(Math.round(targetProgress), 0, maxIndex);
-      if (activePointerId !== null) {
-        try {
-          viewer.releasePointerCapture(activePointerId);
-        } catch {
-          // Ignore release failures for unsupported pointer states.
-        }
-      }
-      activePointerId = null;
-    };
-
-    viewer.addEventListener("pointerdown", (event) => {
-      isDragging = true;
-      activePointerId = event.pointerId;
-      lastX = event.clientX;
-      lastY = event.clientY;
-      viewer.classList.add("is-dragging");
-      viewer.setPointerCapture(event.pointerId);
-    });
-
-    viewer.addEventListener("pointermove", (event) => {
-      if (!isDragging || event.pointerId !== activePointerId) return;
-      const dx = event.clientX - lastX;
-      const dy = event.clientY - lastY;
-      lastX = event.clientX;
-      lastY = event.clientY;
-
-      targetProgress = clamp(targetProgress + dx / 110, 0, maxIndex);
-      const progressBias = maxIndex ? targetProgress / maxIndex - 0.5 : 0;
-      targetRotateY = clamp(14 + progressBias * 30, -24, 24);
-      targetRotateX = clamp(targetRotateX - dy / 18, -18, 10);
-    });
-
-    viewer.addEventListener("pointerup", releasePointer);
-    viewer.addEventListener("pointercancel", releasePointer);
-    viewer.addEventListener("pointerleave", () => {
-      if (!isDragging) {
-        const bias = maxIndex ? targetProgress / maxIndex - 0.5 : 0;
-        targetRotateY = 14 + bias * 18;
-        targetRotateX = -6;
-      }
-    });
-
-    const tick = (time) => {
-      if (!isDragging) {
-        const idleWave = prefersReducedMotion ? 0 : Math.sin(time / 1200);
-        const bias = maxIndex ? targetProgress / maxIndex - 0.5 : 0;
-        targetRotateY = 14 + bias * 18 + idleWave * 1.4;
-        targetRotateX = -6 + (prefersReducedMotion ? 0 : Math.cos(time / 1400) * 1.1);
-      }
-
-      progress += (targetProgress - progress) * 0.12;
-      rotateX += (targetRotateX - rotateX) * 0.14;
-      rotateY += (targetRotateY - rotateY) * 0.14;
-
-      orbit.style.setProperty("--viewer-rx", `${rotateX.toFixed(2)}deg`);
-      orbit.style.setProperty("--viewer-ry", `${rotateY.toFixed(2)}deg`);
-
-      frames.forEach((frame, index) => {
-        const diff = Math.abs(progress - index);
-        const opacity = Math.pow(Math.max(0, 1 - diff), 2.4);
-        const translateX = (index - progress) * 16;
-        const translateY = diff * 4;
-        const scale = 0.94 + opacity * 0.08;
-        const blur = diff > 0.8 ? 2.2 : diff * 0.55;
-        const saturate = 0.9 + opacity * 0.15;
-
-        frame.style.opacity = opacity.toFixed(3);
-        frame.style.transform = `translate3d(${translateX.toFixed(1)}px, ${translateY.toFixed(1)}px, ${(
-          opacity * 28
-        ).toFixed(1)}px) scale(${scale.toFixed(3)})`;
-        frame.style.filter = `blur(${blur.toFixed(2)}px) saturate(${saturate.toFixed(2)})`;
-      });
-
-      window.requestAnimationFrame(tick);
-    };
-
-    window.requestAnimationFrame(tick);
-  });
-};
-
 document.addEventListener("DOMContentLoaded", () => {
   renderHeader();
   renderFooter();
@@ -1144,7 +1012,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   bindMobileNav();
-  bindHeroViewer();
   bindSearchForms();
   bindFaq();
   bindRequestForms();
