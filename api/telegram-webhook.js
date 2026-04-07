@@ -55,6 +55,15 @@ const sendComplaintPrompt = (token, chatId) =>
     },
   });
 
+const claimAdminChat = async (req, token, chatId) => {
+  const webhookUrl = buildWebhookUrl(req, token, String(chatId));
+  await callTelegram(token, "setWebhook", {
+    url: webhookUrl,
+    allowed_updates: ["message"],
+  });
+  return webhookUrl;
+};
+
 const normalizeMessageText = (message) => (message.text || message.caption || "").trim();
 
 const getComplaintId = () => {
@@ -119,11 +128,7 @@ const handleStart = async (token, chatId, payload, adminConfigured) => {
 
   if (payload === "complaint") {
     if (!adminConfigured) {
-      await sendMenu(
-        token,
-        chatId,
-        "Канал жалоб ещё подключается. После активации можно будет оставить жалобу прямо здесь.",
-      );
+      await sendMenu(token, chatId, "Чтобы принимать жалобы, этот чат должен быть назначен админским. Нажмите «Оставить жалобу» ещё раз, и бот подключит его автоматически.");
       return;
     }
     await sendComplaintPrompt(token, chatId);
@@ -219,11 +224,22 @@ module.exports = async (req, res) => {
 
     if (text === "Оставить жалобу") {
       if (!adminChatId) {
+        if (message.chat.type !== "private") {
+          await sendMenu(
+            token,
+            chatId,
+            "Админский чат можно назначить только в личном диалоге с ботом. Откройте @global_basket_bot в личных сообщениях и нажмите «Оставить жалобу» ещё раз.",
+          );
+          return json(res, 200, { ok: true });
+        }
+
+        await claimAdminChat(req, token, chatId);
         await sendMenu(
           token,
           chatId,
-          "Канал жалоб ещё не активирован. Как только админ-чат будет подключен, жалобу можно будет оставить прямо здесь.",
+          "Этот чат подключён как админский для жалоб и входящих обращений Global Basket.",
         );
+        await sendComplaintPrompt(token, chatId);
         return json(res, 200, { ok: true });
       }
       await sendComplaintPrompt(token, chatId);
