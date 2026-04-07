@@ -112,7 +112,7 @@ const renderHeader = () => {
 
         <div class="header-actions">
           ${iconLinks}
-          <a class="button button--small button--header" href="/contacts/?source=header">Связаться</a>
+          <a class="button button--small button--header" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>Написать в Telegram</a>
         </div>
 
         <button
@@ -144,7 +144,7 @@ const renderHeader = () => {
             <a href="${store.contact.emailHref}">${store.contact.email}</a>
           </div>
           <div class="mobile-nav__icons">${iconLinks}</div>
-          <a class="button" href="/contacts/?source=mobile-header">Связаться</a>
+          <a class="button" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>Написать в Telegram</a>
         </div>
       </div>
     </header>
@@ -323,8 +323,8 @@ const renderHome = () => {
             ${store.home.hero.meta.map((item) => `<li>${item}</li>`).join("")}
           </ul>
           <div class="hero-stage__actions">
-            <a class="button" href="${store.home.hero.primaryCta.href}">${store.home.hero.primaryCta.label}</a>
-            <a class="text-link text-link--inline" href="${store.home.hero.secondaryCta.href}">${store.home.hero.secondaryCta.label}</a>
+            <a class="button" href="${store.home.hero.primaryCta.href}"${externalAttrs(store.home.hero.primaryCta.href)}>${store.home.hero.primaryCta.label}</a>
+            <a class="text-link text-link--inline" href="${store.home.hero.secondaryCta.href}"${externalAttrs(store.home.hero.secondaryCta.href)}>${store.home.hero.secondaryCta.label}</a>
           </div>
         </div>
         <div class="hero-stage__media">
@@ -353,8 +353,8 @@ const renderHome = () => {
             ${store.home.featured.points.map((item) => `<li>${item}</li>`).join("")}
           </ul>
           <div class="hero-stage__actions">
-            <a class="button" href="${store.home.featured.primaryCta.href}">${store.home.featured.primaryCta.label}</a>
-            <a class="button button--ghost" href="${store.home.featured.secondaryCta.href}">${store.home.featured.secondaryCta.label}</a>
+            <a class="button" href="${store.home.featured.primaryCta.href}"${externalAttrs(store.home.featured.primaryCta.href)}>${store.home.featured.primaryCta.label}</a>
+            <a class="button button--ghost" href="${store.home.featured.secondaryCta.href}"${externalAttrs(store.home.featured.secondaryCta.href)}>${store.home.featured.secondaryCta.label}</a>
           </div>
           <div class="market-links">
             <span>Где ещё посмотреть:</span>
@@ -605,6 +605,7 @@ const renderContactsPage = () => {
         <strong>Прямой контакт</strong>
         <p><a href="${store.contact.phoneHref}">${store.contact.phone}</a></p>
         <p><a href="${store.contact.emailHref}">${store.contact.email}</a></p>
+        <p><a href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>${store.contact.telegram}</a></p>
         <p>${store.contact.hours}</p>
       </article>
       <article class="contact-marketplaces">
@@ -623,41 +624,18 @@ const renderContactsPage = () => {
 
   const panel = $("#contact-panel");
   if (panel) {
-    const source = new URLSearchParams(window.location.search).get("source") || "site";
-
     panel.innerHTML = `
       <article class="request-panel">
         <div class="section-head section-head--compact">
-          <p class="eyebrow">Следующий шаг</p>
-          <h2>${store.contactsPage.form.title}</h2>
-          <p>${store.contactsPage.form.text}</p>
+          <p class="eyebrow">Telegram-бот</p>
+          <h2>${store.contactsPage.telegramPanel.title}</h2>
+          <p>${store.contactsPage.telegramPanel.text}</p>
         </div>
-        <form class="request-form" data-request-form>
-          <input type="hidden" name="source" value="${source}" />
-          <label>
-            <span>Как к вам обращаться</span>
-            <input type="text" name="name" placeholder="Имя" required />
-          </label>
-          <label>
-            <span>Телефон или эл. почта</span>
-            <input type="text" name="contact" placeholder="+7 / email" required />
-          </label>
-          <label>
-            <span>Тема обращения</span>
-            <select name="topic">
-              <option value="Розничный заказ">Розничный заказ</option>
-              <option value="Оптовый запрос">Оптовый запрос</option>
-              <option value="Маркетплейсы">Маркетплейсы</option>
-              <option value="Доставка и возвраты">Доставка и возвраты</option>
-            </select>
-          </label>
-          <label>
-            <span>Комментарий</span>
-            <textarea name="message" rows="5" placeholder="Например: интересует цена, объём или площадка покупки"></textarea>
-          </label>
-          <button class="button" type="submit">${store.contactsPage.form.submit}</button>
-          <p class="request-form__note">Или свяжитесь с нами напрямую: <a href="${store.contact.phoneHref}">${store.contact.phone}</a> / <a href="${store.contact.emailHref}">${store.contact.email}</a></p>
-        </form>
+        <div class="hero-product__actions">
+          <a class="button" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>${store.contactsPage.telegramPanel.primary}</a>
+          <a class="button button--ghost" href="${store.contact.telegramComplaintHref}"${externalAttrs(store.contact.telegramComplaintHref)}>${store.contactsPage.telegramPanel.secondary}</a>
+        </div>
+        <p class="request-form__note">Основной канал связи: <a href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>${store.contact.telegram}</a>. Резервный контакт: <a href="${store.contact.phoneHref}">${store.contact.phone}</a> / <a href="${store.contact.emailHref}">${store.contact.email}</a></p>
       </article>
     `;
   }

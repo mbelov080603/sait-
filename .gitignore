@@ -1,6 +1,8 @@
 .DS_Store
 .npm-cache/
 output/
+.env
+.env.*
 /*.png
 /*.jpg
 /*.jpeg

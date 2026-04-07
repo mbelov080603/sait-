@@ -5,6 +5,9 @@ window.GlobalBasketData = {
     email: "hello@globalbasket.ru",
     emailHref: "mailto:hello@globalbasket.ru",
     hours: "Пн-Пт 09:00-18:00",
+    telegram: "@global_basket_bot",
+    telegramHref: "https://t.me/global_basket_bot?start=site_contact",
+    telegramComplaintHref: "https://t.me/global_basket_bot?start=complaint",
   },
   noticeBar: {
     items: [
@@ -197,8 +200,8 @@ window.GlobalBasketData = {
         href: "/catalog/macadamia/",
       },
       secondaryCta: {
-        label: "Связаться",
-        href: "/contacts/?source=home-hero",
+        label: "Написать в Telegram",
+        href: "https://t.me/global_basket_bot?start=site_home",
       },
       meta: ["Кения", "250 г", "Без соли и сахара"],
     },
@@ -213,7 +216,7 @@ window.GlobalBasketData = {
         "Стоимость и формат заказа уточняем напрямую в одном сообщении.",
       ],
       primaryCta: { label: "Подробнее", href: "/catalog/macadamia/" },
-      secondaryCta: { label: "Уточнить условия", href: "/contacts/?source=home-featured" },
+      secondaryCta: { label: "Написать в Telegram", href: "https://t.me/global_basket_bot?start=site_featured" },
     },
     advantages: [
       {
@@ -273,7 +276,7 @@ window.GlobalBasketData = {
   },
   contactsPage: {
     intro:
-      "Оставьте запрос по товару, объёму и формату покупки. Мы ответим в рабочее время и подскажем следующий шаг без лишней переписки.",
+      "Основной канал связи Global Basket — Telegram-бот. Через него можно сразу написать нам, открыть маркетплейсы, узнать о бренде и оставить жалобу.",
     leftCards: [
       {
         title: "Розница",
@@ -287,11 +290,16 @@ window.GlobalBasketData = {
         title: "Маркетплейсы",
         text: "Товар уже можно посмотреть на Ozon, Wildberries и Яндекс.Маркете как дополнительный аргумент доверия.",
       },
+      {
+        title: "Telegram",
+        text: "Бот @global_basket_bot — основной канал связи: туда удобно написать вопрос или оставить жалобу.",
+      },
     ],
-    form: {
-      title: "Связаться с Global Basket",
-      text: "Оставьте тему обращения и контакт. Мы вернёмся с понятным ответом по товару, стоимости и формату заказа.",
-      submit: "Отправить запрос",
+    telegramPanel: {
+      title: "Написать в Global Basket в Telegram",
+      text: "Откройте бота и напишите нам напрямую. Через него же доступны маркетплейсы и приём жалоб.",
+      primary: "Открыть бота",
+      secondary: "Оставить жалобу",
     },
   },
   utilityPages: {
@@ -442,6 +450,13 @@ window.GlobalBasketData = {
           { label: "Контакты", href: "/contacts/" },
           { label: "Доставка и оплата", href: "/delivery/" },
           { label: "Возвраты", href: "/delivery/#returns" },
+        ],
+      },
+      {
+        title: "Telegram",
+        links: [
+          { label: "Написать в бот", href: "https://t.me/global_basket_bot?start=site_footer" },
+          { label: "Оставить жалобу", href: "https://t.me/global_basket_bot?start=complaint" },
         ],
       },
       {

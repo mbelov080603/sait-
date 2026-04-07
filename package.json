@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "scripts": {
+    "telegram:setup": "node scripts/setup-telegram-bot.mjs"
+  }
+}
