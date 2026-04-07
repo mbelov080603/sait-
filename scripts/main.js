@@ -642,32 +642,519 @@ const renderContactsPage = () => {
   }
 };
 
-const renderAboutPage = () => {
-  const mount = $("#about-pillars");
-  if (!mount) return;
-  mount.innerHTML = store.aboutPage.pillars
-    .map(
-      (item) => `
-        <article class="fact-card fact-card--vertical">
-          <div>
-            <strong>${item.title}</strong>
-            <p>${item.text}</p>
-          </div>
-        </article>
-      `,
-    )
-    .join("");
+const renderAboutFactSlide = (item, index) => `
+  <article class="about-fact-slide" data-about-slide aria-label="${index + 1} из ${store.aboutPage.facts.cards.length}">
+    <span class="about-fact-slide__index">${String(index + 1).padStart(2, "0")}</span>
+    <strong>${item.title}</strong>
+    <p>${item.text}</p>
+  </article>
+`;
 
-  const title = $("#about-story-title");
-  if (title) title.textContent = store.aboutPage.storyTitle;
+const renderAboutValueCard = (item) => `
+  <article class="about-brand-card about-brand-card--value" data-reveal>
+    <strong>${item.title}</strong>
+    <p>${item.text}</p>
+  </article>
+`;
 
-  const text = $("#about-story-text");
-  if (text) text.textContent = store.aboutPage.storyText;
+const renderAboutMissionCard = (item) => `
+  <article class="about-brand-card about-brand-card--mission" data-reveal>
+    <strong>${item.title}</strong>
+    <p>${item.text}</p>
+  </article>
+`;
 
-  const list = $("#about-story-list");
-  if (list) {
-    list.innerHTML = store.aboutPage.checklist.map((item) => `<li>${item}</li>`).join("");
+const renderAboutListItems = (items) =>
+  items.map((item) => `<li>${item}</li>`).join("");
+
+const setAboutLayoutOffsets = () => {
+  const header = $(".site-header");
+  const subnav = $("[data-about-subnav]");
+  const headerHeight = header ? Math.ceil(header.getBoundingClientRect().height) : 0;
+  const subnavHeight = subnav ? Math.ceil(subnav.getBoundingClientRect().height) : 0;
+  document.documentElement.style.setProperty("--about-header-offset", `${headerHeight + 10}px`);
+  document.documentElement.style.setProperty(
+    "--about-anchor-offset",
+    `${headerHeight + subnavHeight + 28}px`,
+  );
+  return { headerHeight, subnavHeight };
+};
+
+const scrollToAboutSection = (target, behavior = "smooth") => {
+  if (!target) return;
+
+  const { headerHeight, subnavHeight } = setAboutLayoutOffsets();
+  const top =
+    target.getBoundingClientRect().top +
+    window.scrollY -
+    headerHeight -
+    subnavHeight -
+    28;
+
+  window.scrollTo({
+    top: Math.max(0, top),
+    behavior,
+  });
+};
+
+const initAboutScrollSpy = () => {
+  const nav = $("[data-about-subnav]");
+  if (!nav) return;
+
+  const links = $$("a[href^='#']", nav);
+  const sections = links
+    .map((link) => $(link.getAttribute("href")))
+    .filter(Boolean);
+
+  if (!links.length || !sections.length) return;
+
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const setActive = (id, keepVisible = true) => {
+    links.forEach((link) => {
+      const isActive = link.getAttribute("href") === `#${id}`;
+      link.classList.toggle("is-active", isActive);
+      link.setAttribute("aria-current", isActive ? "true" : "false");
+      if (isActive && keepVisible) {
+        link.scrollIntoView({
+          block: "nearest",
+          inline: "center",
+          behavior: "smooth",
+        });
+      }
+    });
+  };
+
+  let observer;
+  const bindObserver = () => {
+    const { headerHeight, subnavHeight } = setAboutLayoutOffsets();
+    if (observer) observer.disconnect();
+    observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible) setActive(visible.target.id, false);
+      },
+      {
+        rootMargin: `-${headerHeight + subnavHeight + 24}px 0px -55% 0px`,
+        threshold: [0.18, 0.35, 0.6],
+      },
+    );
+    sections.forEach((section) => observer.observe(section));
+  };
+
+  links.forEach((link) => {
+    link.addEventListener("click", (event) => {
+      const target = $(link.getAttribute("href"));
+      if (!target) return;
+      event.preventDefault();
+      const targetId = link.getAttribute("href").replace("#", "");
+      setActive(targetId, false);
+      window.history.replaceState(null, "", `#${targetId}`);
+      scrollToAboutSection(target, prefersReducedMotion ? "auto" : "smooth");
+    });
+  });
+
+  const syncHash = () => {
+    if (!window.location.hash) return;
+    const target = $(window.location.hash);
+    if (!target) return;
+    setActive(target.id, false);
+    requestAnimationFrame(() => scrollToAboutSection(target, "auto"));
+  };
+
+  let resizeFrame = 0;
+  window.addEventListener(
+    "resize",
+    () => {
+      cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(bindObserver);
+    },
+    { passive: true },
+  );
+
+  window.addEventListener("hashchange", syncHash);
+  window.addEventListener("load", syncHash, { once: true });
+  window.setTimeout(syncHash, 220);
+  setActive(sections[0].id, false);
+  bindObserver();
+  syncHash();
+};
+
+const initAboutFactsCarousel = () => {
+  const root = $("[data-about-carousel]");
+  if (!root) return;
+
+  const track = $("[data-about-track]", root);
+  const slides = $$("[data-about-slide]", root);
+  const prevButton = $("[data-about-prev]", root);
+  const nextButton = $("[data-about-next]", root);
+  const dots = $$("[data-about-dot]", root);
+
+  if (!track || slides.length < 2) return;
+
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const getIndex = () => {
+    const leftEdge = track.scrollLeft + track.clientWidth * 0.18;
+    let activeIndex = 0;
+    let bestDistance = Number.POSITIVE_INFINITY;
+
+    slides.forEach((slide, index) => {
+      const distance = Math.abs(slide.offsetLeft - leftEdge);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        activeIndex = index;
+      }
+    });
+
+    return activeIndex;
+  };
+
+  const updateControls = () => {
+    const index = getIndex();
+    dots.forEach((dot, dotIndex) => {
+      const isActive = dotIndex === index;
+      dot.classList.toggle("is-active", isActive);
+      dot.setAttribute("aria-current", isActive ? "true" : "false");
+    });
+    if (prevButton) prevButton.disabled = index === 0;
+    if (nextButton) nextButton.disabled = index === slides.length - 1;
+  };
+
+  const scrollToIndex = (index) => {
+    const boundedIndex = Math.max(0, Math.min(slides.length - 1, index));
+    const target = slides[boundedIndex];
+    if (!target) return;
+    track.scrollTo({
+      left: target.offsetLeft,
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+    });
+  };
+
+  prevButton?.addEventListener("click", () => scrollToIndex(getIndex() - 1));
+  nextButton?.addEventListener("click", () => scrollToIndex(getIndex() + 1));
+
+  dots.forEach((dot, index) => {
+    dot.addEventListener("click", () => scrollToIndex(index));
+  });
+
+  let frame = 0;
+  track.addEventListener(
+    "scroll",
+    () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(updateControls);
+    },
+    { passive: true },
+  );
+
+  updateControls();
+};
+
+const initRevealAnimations = () => {
+  const nodes = $$("[data-reveal]");
+  if (!nodes.length) return;
+
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (prefersReducedMotion) {
+    nodes.forEach((node) => node.classList.add("is-visible"));
+    return;
   }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      });
+    },
+    {
+      threshold: 0.14,
+      rootMargin: "0px 0px -10% 0px",
+    },
+  );
+
+  nodes.forEach((node) => observer.observe(node));
+};
+
+const initAboutPage = () => {
+  initAboutScrollSpy();
+  initAboutFactsCarousel();
+  initRevealAnimations();
+};
+
+const renderAboutPage = () => {
+  const about = store.aboutPage;
+  const hero = $("#about-hero");
+  if (!hero) return;
+
+  hero.innerHTML = `
+    <div class="shell about-brand-hero__layout">
+      <div class="about-brand-hero__copy">
+        <div class="breadcrumb">
+          <a href="/">Главная</a>
+          <span>/</span>
+          <span>О бренде</span>
+        </div>
+        <p class="eyebrow">${about.hero.eyebrow}</p>
+        <h1>${about.hero.title}</h1>
+        <p class="about-brand-hero__lead">${about.hero.text}</p>
+        <ul class="about-brand-hero__chips">
+          ${about.hero.chips.map((item) => `<li>${item}</li>`).join("")}
+        </ul>
+        <div class="hero-stage__actions">
+          <a class="button" href="${about.hero.primaryCta.href}">${about.hero.primaryCta.label}</a>
+          <a class="button button--ghost" href="${about.hero.secondaryCta.href}">${about.hero.secondaryCta.label}</a>
+        </div>
+      </div>
+      <article class="about-brand-hero__visual" data-reveal>
+        <img
+          src="${about.hero.image.src}"
+          alt="${about.hero.image.alt}"
+          decoding="async"
+          fetchpriority="high"
+        />
+      </article>
+    </div>
+  `;
+
+  const subnav = $("[data-about-subnav]");
+  if (subnav) {
+    subnav.innerHTML = about.nav
+      .map(
+        (item) => `
+          <a href="#${item.id}" aria-current="false">
+            ${item.label}
+          </a>
+        `,
+      )
+      .join("");
+  }
+
+  const who = $("#about-who");
+  if (who) {
+    who.innerHTML = `
+      <div class="about-split">
+        <div class="about-section-copy" data-reveal>
+          <p class="eyebrow">Кто мы</p>
+          <h2>${about.who.title}</h2>
+          ${about.who.paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join("")}
+        </div>
+        <article class="about-image-card" data-reveal>
+          <img src="${about.who.image.src}" alt="${about.who.image.alt}" loading="lazy" decoding="async" />
+        </article>
+      </div>
+    `;
+  }
+
+  const mission = $("#about-mission");
+  if (mission) {
+    mission.innerHTML = `
+      <div class="section-head about-section-head" data-reveal>
+        <p class="eyebrow">Платформа бренда</p>
+        <h2>${about.mission.title}</h2>
+        <p>${about.mission.text}</p>
+      </div>
+      <div class="about-mission-grid">
+        ${about.mission.cards.map(renderAboutMissionCard).join("")}
+      </div>
+    `;
+  }
+
+  const facts = $("#about-facts");
+  if (facts) {
+    facts.innerHTML = `
+      <div class="section-head about-section-head" data-reveal>
+        <p class="eyebrow">Факты о бренде</p>
+        <h2>${about.facts.title}</h2>
+        <p>${about.facts.text}</p>
+      </div>
+      <section class="about-carousel" data-about-carousel aria-roledescription="carousel" aria-label="${about.facts.title}">
+        <div class="about-carousel__controls" data-reveal>
+          <button class="about-carousel__arrow about-carousel__arrow--prev" type="button" data-about-prev aria-label="Предыдущий факт">
+            <span aria-hidden="true">←</span>
+          </button>
+          <button class="about-carousel__arrow" type="button" data-about-next aria-label="Следующий факт">
+            <span aria-hidden="true">→</span>
+          </button>
+        </div>
+        <div class="about-carousel__viewport">
+          <div class="about-carousel__track" data-about-track>
+            ${about.facts.cards.map(renderAboutFactSlide).join("")}
+          </div>
+        </div>
+        <div class="about-carousel__dots" data-reveal>
+          ${about.facts.cards
+            .map(
+              (_, index) => `
+                <button
+                  type="button"
+                  class="about-carousel__dot"
+                  data-about-dot
+                  aria-label="Перейти к факту ${index + 1}"
+                  aria-current="false"
+                ></button>
+              `,
+            )
+            .join("")}
+        </div>
+      </section>
+    `;
+  }
+
+  const values = $("#about-values");
+  if (values) {
+    values.innerHTML = `
+      <div class="section-head about-section-head" data-reveal>
+        <p class="eyebrow">Ценности бренда</p>
+        <h2>${about.values.title}</h2>
+      </div>
+      <div class="about-values-grid">
+        ${about.values.cards.map(renderAboutValueCard).join("")}
+      </div>
+    `;
+  }
+
+  const why = $("#about-why");
+  if (why) {
+    why.innerHTML = `
+      <div class="section-head about-section-head" data-reveal>
+        <p class="eyebrow">Почему нас выбирают</p>
+        <h2>${about.whyChoose.title}</h2>
+      </div>
+      <div class="about-why-grid">
+        <div class="about-why-copy">
+          <article class="about-list-card" data-reveal>
+            <strong>${about.whyChoose.rationalTitle}</strong>
+            <ul class="about-bullet-list">
+              ${renderAboutListItems(about.whyChoose.rational)}
+            </ul>
+          </article>
+          <article class="about-list-card" data-reveal>
+            <strong>${about.whyChoose.emotionalTitle}</strong>
+            <ul class="about-bullet-list">
+              ${renderAboutListItems(about.whyChoose.emotional)}
+            </ul>
+          </article>
+        </div>
+        <article class="about-image-card about-image-card--portrait" data-reveal>
+          <img src="${about.whyChoose.image.src}" alt="${about.whyChoose.image.alt}" loading="lazy" decoding="async" />
+        </article>
+      </div>
+    `;
+  }
+
+  const selection = $("#about-selection");
+  if (selection) {
+    selection.innerHTML = `
+      <div class="about-section-top">
+        <div class="section-head about-section-head" data-reveal>
+          <p class="eyebrow">Отбор продуктов</p>
+          <h2>${about.selection.title}</h2>
+          <p>${about.selection.text}</p>
+        </div>
+        <article class="about-image-card about-image-card--compact" data-reveal>
+          <img src="${about.selection.image.src}" alt="${about.selection.image.alt}" loading="lazy" decoding="async" />
+        </article>
+      </div>
+      <div class="about-steps-grid">
+        ${about.selection.steps
+          .map(
+            (item, index) => `
+              <article class="about-step-card" data-reveal>
+                <span class="about-step-card__index">${String(index + 1).padStart(2, "0")}</span>
+                <strong>${item.title}</strong>
+                <p>${item.text}</p>
+              </article>
+            `,
+          )
+          .join("")}
+      </div>
+    `;
+  }
+
+  const differences = $("#about-differences");
+  if (differences) {
+    differences.innerHTML = `
+      <div class="about-section-top">
+        <div class="section-head about-section-head" data-reveal>
+          <p class="eyebrow">Отличия</p>
+          <h2>${about.differences.title}</h2>
+        </div>
+        <article class="about-image-card about-image-card--compact" data-reveal>
+          <img src="${about.differences.image.src}" alt="${about.differences.image.alt}" loading="lazy" decoding="async" />
+        </article>
+      </div>
+      <div class="about-comparison" data-reveal>
+        <div class="about-comparison__header">
+          <strong>${about.differences.leftLabel}</strong>
+          <strong>${about.differences.rightLabel}</strong>
+        </div>
+        ${about.differences.rows
+          .map(
+            (row) => `
+              <div class="about-comparison__row">
+                <p>${row.left}</p>
+                <p>${row.right}</p>
+              </div>
+            `,
+          )
+          .join("")}
+      </div>
+      <article class="about-comparison__summary" data-reveal>
+        <p>${about.differences.summary}</p>
+      </article>
+    `;
+  }
+
+  const character = $("#about-character");
+  if (character) {
+    character.innerHTML = `
+      <div class="section-head about-section-head" data-reveal>
+        <p class="eyebrow">Характер бренда</p>
+        <h2>${about.character.title}</h2>
+      </div>
+      <div class="about-character" data-reveal>
+        <div class="about-character__tags">
+          ${about.character.tags.map((item) => `<span class="about-character__tag">${item}</span>`).join("")}
+        </div>
+        <p>${about.character.text}</p>
+      </div>
+    `;
+  }
+
+  const legend = $("#about-legend");
+  if (legend) {
+    legend.innerHTML = `
+      <article class="about-legend" data-reveal>
+        <p class="eyebrow">Легенда бренда</p>
+        <h2>${about.legend.title}</h2>
+        <p>${about.legend.text}</p>
+      </article>
+    `;
+  }
+
+  const cta = $("#about-cta");
+  if (cta) {
+    cta.innerHTML = `
+      <article class="about-final-cta" data-reveal>
+        <div class="section-head section-head--compact">
+          <p class="eyebrow">Global Basket</p>
+          <h2>${about.cta.title}</h2>
+          <p>${about.cta.text}</p>
+        </div>
+        <div class="hero-stage__actions about-final-cta__actions">
+          <a class="button" href="${about.cta.primary.href}">${about.cta.primary.label}</a>
+          <a class="button button--ghost" href="${about.cta.secondary.href}">${about.cta.secondary.label}</a>
+        </div>
+      </article>
+    `;
+  }
+
+  initAboutPage();
 };
 
 const renderDeliveryPage = () => {
