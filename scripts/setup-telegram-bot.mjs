@@ -1,7 +1,7 @@
 const BOT_DESCRIPTION =
   "Global Basket — теплый и надежный бренд натуральных продуктов. В боте можно открыть маркетплейсы, узнать о бренде и написать нам напрямую.";
 const BOT_SHORT_DESCRIPTION =
-  "Маркетплейсы, информация о бренде и быстрый контакт с Global Basket.";
+  "Маркетплейсы, канал бренда и быстрый контакт с Global Basket.";
 
 const readArg = (name) => {
   const index = process.argv.indexOf(name);
@@ -12,9 +12,11 @@ const readArg = (name) => {
 const botToken = process.env.TELEGRAM_BOT_TOKEN || readArg("--token");
 const siteUrl = (process.env.SITE_URL || readArg("--site-url")).replace(/\/$/, "");
 let adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID || readArg("--admin-chat-id");
+let ownerUserId = process.env.TELEGRAM_OWNER_USER_ID || readArg("--owner-user-id");
+let complaintsChatId = process.env.TELEGRAM_COMPLAINT_CHAT_ID || readArg("--complaints-chat-id");
 
 if (!botToken || !siteUrl) {
-  console.error("Usage: node scripts/setup-telegram-bot.mjs --token <BOT_TOKEN> --site-url <SITE_URL> [--admin-chat-id <CHAT_ID>]");
+  console.error("Usage: node scripts/setup-telegram-bot.mjs --token <BOT_TOKEN> --site-url <SITE_URL> [--owner-user-id <USER_ID>] [--complaints-chat-id <CHAT_ID>] [--admin-chat-id <CHAT_ID>]");
   process.exit(1);
 }
 
@@ -35,30 +37,55 @@ const callTelegram = async (method, payload = {}) => {
   return data.result;
 };
 
-const getPersistedAdminChatId = async () => {
+const getPersistedWebhookConfig = async () => {
   const info = await callTelegram("getWebhookInfo");
-  if (!info.url) return "";
+  if (!info.url) return {};
 
   try {
     const url = new URL(info.url);
-    return url.searchParams.get("adminChatId") || "";
+    return {
+      ownerUserId:
+        url.searchParams.get("ownerUserId") ||
+        url.searchParams.get("adminChatId") ||
+        "",
+      complaintsChatId:
+        url.searchParams.get("complaintsChatId") ||
+        url.searchParams.get("adminChatId") ||
+        "",
+    };
   } catch {
-    return "";
+    return {};
   }
 };
 
-if (!adminChatId) {
-  adminChatId = await getPersistedAdminChatId();
+const persistedConfig = await getPersistedWebhookConfig();
+
+if (!ownerUserId) {
+  ownerUserId = persistedConfig.ownerUserId || "";
+}
+
+if (!complaintsChatId) {
+  complaintsChatId = persistedConfig.complaintsChatId || "";
+}
+
+if (!complaintsChatId && adminChatId) {
+  complaintsChatId = adminChatId;
+}
+
+if (!ownerUserId && adminChatId) {
+  ownerUserId = adminChatId;
 }
 
 const webhookUrl = new URL(`${siteUrl}/api/telegram-webhook`);
 webhookUrl.searchParams.set("token", botToken);
-if (adminChatId) webhookUrl.searchParams.set("adminChatId", adminChatId);
+if (ownerUserId) webhookUrl.searchParams.set("ownerUserId", ownerUserId);
+if (complaintsChatId) webhookUrl.searchParams.set("complaintsChatId", complaintsChatId);
 
 await callTelegram("setMyCommands", {
   commands: [
     { command: "start", description: "Открыть меню Global Basket" },
     { command: "menu", description: "Показать главное меню" },
+    { command: "channel", description: "Открыть канал Global Basket" },
   ],
 });
 
@@ -80,7 +107,8 @@ console.log(
     {
       ok: true,
       webhookUrl: webhookUrl.toString(),
-      adminChatId: adminChatId || null,
+      ownerUserId: ownerUserId || null,
+      complaintsChatId: complaintsChatId || null,
     },
     null,
     2,

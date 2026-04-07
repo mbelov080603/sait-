@@ -8,6 +8,8 @@ window.GlobalBasketData = {
     telegram: "@global_basket_bot",
     telegramHref: "https://t.me/global_basket_bot?start=site_contact",
     telegramComplaintHref: "https://t.me/global_basket_bot?start=complaint",
+    channel: "@Global_Basket",
+    channelHref: "https://t.me/Global_Basket",
   },
   noticeBar: {
     items: [
@@ -276,7 +278,7 @@ window.GlobalBasketData = {
   },
   contactsPage: {
     intro:
-      "Основной канал связи Global Basket — Telegram-бот. Через него можно сразу написать нам, открыть маркетплейсы, узнать о бренде и оставить жалобу.",
+      "Основной канал связи Global Basket — Telegram-бот. Через него можно сразу написать нам, открыть маркетплейсы, узнать о бренде и оставить жалобу. Новости и публикации бренда выходят в отдельном канале.",
     leftCards: [
       {
         title: "Розница",
@@ -292,12 +294,12 @@ window.GlobalBasketData = {
       },
       {
         title: "Telegram",
-        text: "Бот @global_basket_bot — основной канал связи: туда удобно написать вопрос или оставить жалобу.",
+        text: "Бот @global_basket_bot — основной канал связи: туда удобно написать вопрос или оставить жалобу. Канал @Global_Basket — для новостей и публикаций бренда.",
       },
     ],
     telegramPanel: {
       title: "Написать в Global Basket в Telegram",
-      text: "Откройте бота и напишите нам напрямую. Через него же доступны маркетплейсы и приём жалоб.",
+      text: "Откройте бота и напишите нам напрямую. Через него же доступны маркетплейсы и приём жалоб, а публикации бренда собраны в канале Global Basket.",
       primary: "Открыть бота",
       secondary: "Оставить жалобу",
     },
@@ -457,6 +459,7 @@ window.GlobalBasketData = {
         links: [
           { label: "Написать в бот", href: "https://t.me/global_basket_bot?start=site_footer" },
           { label: "Оставить жалобу", href: "https://t.me/global_basket_bot?start=complaint" },
+          { label: "Канал Global Basket", href: "https://t.me/Global_Basket" },
         ],
       },
       {

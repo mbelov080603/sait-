@@ -24,13 +24,15 @@ const callTelegram = async (token, method, payload = {}) => {
   return data.result;
 };
 
-const buildWebhookUrl = (req, token, adminChatId = "") => {
+const buildWebhookUrl = (req, token, config = {}) => {
   const protocol = req.headers["x-forwarded-proto"] || "https";
   const host = req.headers["x-forwarded-host"] || req.headers.host;
   const pathname = req.url.split("?")[0];
   const url = new URL(`${protocol}://${host}${pathname}`);
   url.searchParams.set("token", token);
-  if (adminChatId) url.searchParams.set("adminChatId", adminChatId);
+  if (config.adminChatId) url.searchParams.set("adminChatId", config.adminChatId);
+  if (config.ownerUserId) url.searchParams.set("ownerUserId", config.ownerUserId);
+  if (config.complaintsChatId) url.searchParams.set("complaintsChatId", config.complaintsChatId);
   return url.toString();
 };
 

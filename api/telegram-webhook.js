@@ -2,6 +2,9 @@ const {
   ADMIN_CLAIM_COMMAND,
   BOT_URL,
   BOT_USERNAME,
+  CHANNEL_URL,
+  CHANNEL_USERNAME,
+  COMPLAINT_GROUP_BIND_COMMAND,
   COMPANY_DESCRIPTION,
   COMPLAINT_PROMPT,
   GENERAL_CONTACT_PROMPT,
@@ -55,8 +58,11 @@ const sendComplaintPrompt = (token, chatId) =>
     },
   });
 
-const claimAdminChat = async (req, token, chatId) => {
-  const webhookUrl = buildWebhookUrl(req, token, String(chatId));
+const updateWebhookRouting = async (req, token, ownerUserId, complaintsChatId) => {
+  const webhookUrl = buildWebhookUrl(req, token, {
+    ownerUserId,
+    complaintsChatId,
+  });
   await callTelegram(token, "setWebhook", {
     url: webhookUrl,
     allowed_updates: ["message"],
@@ -141,10 +147,22 @@ const handleStart = async (token, chatId, payload, adminConfigured) => {
   }
 };
 
+const sendChannelCard = async (token, chatId) =>
+  sendMessage(
+    token,
+    chatId,
+    `Канал Global Basket\nПодписывайтесь на @${CHANNEL_USERNAME} — там можно публиковать новости, полезные материалы и карточки продукта.`,
+    {
+      reply_markup: inlineUrl("Открыть канал", CHANNEL_URL),
+    },
+  );
+
 module.exports = async (req, res) => {
   const url = new URL(req.url, `https://${req.headers.host}`);
   const token = url.searchParams.get("token");
-  const adminChatId = url.searchParams.get("adminChatId") || "";
+  const legacyAdminChatId = url.searchParams.get("adminChatId") || "";
+  const ownerUserId = url.searchParams.get("ownerUserId") || legacyAdminChatId;
+  const complaintsChatId = url.searchParams.get("complaintsChatId") || legacyAdminChatId;
 
   if (!token) {
     return json(res, 400, { ok: false, error: "Missing token" });
@@ -154,7 +172,9 @@ module.exports = async (req, res) => {
     return json(res, 200, {
       ok: true,
       bot: BOT_USERNAME,
-      adminConfigured: Boolean(adminChatId),
+      adminConfigured: Boolean(complaintsChatId),
+      ownerConfigured: Boolean(ownerUserId),
+      channel: CHANNEL_URL,
     });
   }
 
@@ -173,34 +193,58 @@ module.exports = async (req, res) => {
   const text = normalizeMessageText(message);
 
   try {
-    if (text === ADMIN_CLAIM_COMMAND) {
-      const alreadyClaimedByAnotherChat = adminChatId && adminChatId !== String(chatId);
-      if (alreadyClaimedByAnotherChat) {
-        await sendMessage(token, chatId, "Этот бот уже привязан к другому админ-чату.");
+    if (text === ADMIN_CLAIM_COMMAND || text === COMPLAINT_GROUP_BIND_COMMAND) {
+      const senderId = String(message.from?.id || "");
+      const unauthorizedOwner = ownerUserId && senderId !== ownerUserId;
+      if (unauthorizedOwner) {
+        await sendMessage(token, chatId, "Этот бот уже привязан к другому владельцу. Подключить новый чат может только текущий владелец.");
         return json(res, 200, { ok: true });
       }
 
-      const webhookUrl = buildWebhookUrl(req, token, String(chatId));
-      await callTelegram(token, "setWebhook", {
-        url: webhookUrl,
-        allowed_updates: ["message"],
-      });
+      const nextOwnerUserId = ownerUserId || senderId;
+      if (text === COMPLAINT_GROUP_BIND_COMMAND && message.chat.type === "private") {
+        await sendMenu(
+          token,
+          chatId,
+          "Эту команду нужно отправить в группе, куда должны приходить жалобы и новые сообщения из бота.",
+        );
+        return json(res, 200, { ok: true });
+      }
+
+      const nextComplaintsChatId =
+        text === ADMIN_CLAIM_COMMAND && message.chat.type === "private"
+          ? complaintsChatId || String(chatId)
+          : String(chatId);
+
+      await updateWebhookRouting(req, token, nextOwnerUserId, nextComplaintsChatId);
       await sendMenu(
         token,
         chatId,
-        "Этот чат назначен получателем жалоб и входящих сообщений для Global Basket.",
+        message.chat.type === "private"
+          ? "Этот личный чат назначен владельцем Global Basket. Жалобы и входящие сообщения можно направить сюда или отдельно привязать группу командой /link_complaints_here."
+          : "Эта группа назначена получателем жалоб и входящих сообщений из бота Global Basket.",
       );
-      return json(res, 200, { ok: true, adminConfigured: true });
+      return json(res, 200, {
+        ok: true,
+        adminConfigured: true,
+        ownerUserId: nextOwnerUserId,
+        complaintsChatId: nextComplaintsChatId,
+      });
     }
 
     if (text.startsWith("/start")) {
       const payload = text.split(" ").slice(1).join(" ").trim();
-      await handleStart(token, chatId, payload, Boolean(adminChatId));
+      await handleStart(token, chatId, payload, Boolean(complaintsChatId));
       return json(res, 200, { ok: true });
     }
 
     if (text === "/menu" || text === "/help") {
       await sendMenu(token, chatId, WELCOME_TEXT);
+      return json(res, 200, { ok: true });
+    }
+
+    if (text === "/channel" || text === "Канал") {
+      await sendChannelCard(token, chatId);
       return json(res, 200, { ok: true });
     }
 
@@ -223,7 +267,7 @@ module.exports = async (req, res) => {
     }
 
     if (text === "Оставить жалобу") {
-      if (!adminChatId) {
+      if (!complaintsChatId) {
         if (message.chat.type !== "private") {
           await sendMenu(
             token,
@@ -233,7 +277,8 @@ module.exports = async (req, res) => {
           return json(res, 200, { ok: true });
         }
 
-        await claimAdminChat(req, token, chatId);
+        const senderId = String(message.from?.id || chatId);
+        await updateWebhookRouting(req, token, senderId, String(chatId));
         await sendMenu(
           token,
           chatId,
@@ -247,7 +292,7 @@ module.exports = async (req, res) => {
     }
 
     if (isReplyToPrompt(message, COMPLAINT_PROMPT)) {
-      if (!adminChatId) {
+      if (!complaintsChatId) {
         await sendMenu(
           token,
           chatId,
@@ -257,7 +302,7 @@ module.exports = async (req, res) => {
       }
 
       const complaintId = getComplaintId();
-      await forwardToAdmin(token, adminChatId, "Новая жалоба Global Basket", message, complaintId);
+      await forwardToAdmin(token, complaintsChatId, "Новая жалоба Global Basket", message, complaintId);
       await sendMenu(
         token,
         chatId,
@@ -267,13 +312,13 @@ module.exports = async (req, res) => {
     }
 
     if (text || (Array.isArray(message.photo) && message.photo.length)) {
-      if (!adminChatId) {
+      if (!complaintsChatId) {
         await sendMenu(token, chatId, `${WELCOME_TEXT}\n\n${GENERAL_CONTACT_PROMPT}`);
         return json(res, 200, { ok: true });
       }
 
       const inquiryId = getComplaintId();
-      await forwardToAdmin(token, adminChatId, "Новое сообщение с бота Global Basket", message, inquiryId);
+      await forwardToAdmin(token, complaintsChatId, "Новое сообщение с бота Global Basket", message, inquiryId);
       await sendMenu(
         token,
         chatId,

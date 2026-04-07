@@ -1,6 +1,9 @@
 const BOT_USERNAME = "global_basket_bot";
 const BOT_URL = `https://t.me/${BOT_USERNAME}`;
 const ADMIN_CLAIM_COMMAND = "/claim_global_basket_admin";
+const COMPLAINT_GROUP_BIND_COMMAND = "/link_complaints_here";
+const CHANNEL_USERNAME = "Global_Basket";
+const CHANNEL_URL = `https://t.me/${CHANNEL_USERNAME}`;
 
 const COMPANY_DESCRIPTION =
   "Global Basket - это теплый, честный и надежный бренд натуральных продуктов со всего мира, который делает ставку на реальное качество, долгосрочную пользу для человека и доступность здорового выбора. Наша корпоративная идентичность строится на сочетании глобального ассортимента, домашнего образа, высокого стандарта качества, честного отношения к покупателю и убежденности в том, что хорошая еда должна быть не исключением, а нормой.";
@@ -44,8 +47,8 @@ const MARKETPLACES = [
 const MAIN_KEYBOARD = {
   keyboard: [
     [{ text: "Ozon" }, { text: "Wildberries" }],
-    [{ text: "Яндекс.Маркет" }, { text: "Кто мы" }],
-    [{ text: "Оставить жалобу" }],
+    [{ text: "Яндекс.Маркет" }, { text: "Канал" }],
+    [{ text: "Кто мы" }, { text: "Оставить жалобу" }],
   ],
   resize_keyboard: true,
   is_persistent: true,
@@ -56,15 +59,18 @@ const COMPLAINT_PROMPT =
   "Опишите, пожалуйста, жалобу одним сообщением. Если нужно, можно ответить на это сообщение текстом или текстом с фото.";
 
 const GENERAL_CONTACT_PROMPT =
-  "Напишите ваш вопрос одним сообщением. Мы получим его в Telegram и вернемся с ответом в рабочее время.";
+  "Напишите ваш вопрос одним сообщением. Мы получим его в Telegram, а новости и информационные публикации можно читать в канале Global Basket.";
 
 const WELCOME_TEXT =
-  "Здравствуйте! Это бот Global Basket. Здесь можно быстро перейти к маркетплейсам, узнать о бренде и написать нам напрямую.";
+  "Здравствуйте! Это бот Global Basket. Здесь можно быстро перейти к маркетплейсам, открыть канал бренда, узнать о компании и написать нам напрямую.";
 
 module.exports = {
   ADMIN_CLAIM_COMMAND,
   BOT_URL,
   BOT_USERNAME,
+  CHANNEL_URL,
+  CHANNEL_USERNAME,
+  COMPLAINT_GROUP_BIND_COMMAND,
   COMPANY_DESCRIPTION,
   COMPLAINT_PROMPT,
   GENERAL_CONTACT_PROMPT,
