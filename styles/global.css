@@ -253,9 +253,9 @@ textarea {
 .header-main {
   min-height: 78px;
   display: grid;
-  grid-template-columns: auto auto minmax(260px, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .brand-mark {
@@ -294,7 +294,7 @@ textarea {
 
 .search-form {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   min-height: 50px;
   padding: 0 var(--space-2);
@@ -303,41 +303,27 @@ textarea {
   background: rgba(255, 252, 247, 0.98);
 }
 
-.search-scope {
-  position: relative;
-}
-
-.search-scope select {
-  appearance: none;
-  min-height: 42px;
-  padding: 0 32px 0 12px;
+.search-form__submit {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
   border-radius: 999px;
-  background: rgba(248, 241, 229, 0.96);
-  color: var(--text);
-}
-
-.search-scope::after {
-  content: "▾";
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
+  background: transparent;
   color: var(--muted);
-  pointer-events: none;
 }
 
-.search-form__icon {
+.search-form__submit svg {
   width: 18px;
   height: 18px;
-  margin: 0 var(--space-3);
-  color: var(--muted);
+  fill: currentColor;
 }
 
-.search-form__icon svg {
-  width: 100%;
-  height: 100%;
-  fill: currentColor;
+.search-form__submit:hover,
+.search-form__submit:focus-visible {
+  color: var(--text);
 }
 
 .search-form input {
@@ -357,6 +343,44 @@ textarea {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  justify-self: end;
+  min-width: 0;
+}
+
+.header-search {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.header-search__toggle {
+  position: relative;
+  z-index: 2;
+}
+
+.header-search.is-open .header-search__toggle {
+  background: #fff;
+  border-color: var(--border-strong);
+}
+
+.search-form--desktop-popover {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: clamp(280px, 28vw, 380px);
+  padding: 4px var(--space-2);
+  box-shadow: 0 18px 34px rgba(70, 42, 26, 0.14);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px);
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.header-search.is-open .search-form--desktop-popover {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 .mobile-menu-toggle {
@@ -375,7 +399,8 @@ textarea {
 .main-nav {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  justify-content: center;
+  gap: clamp(18px, 1.7vw, 28px);
   min-width: 0;
 }
 
@@ -384,6 +409,8 @@ textarea {
   color: var(--muted);
   font-family: "Rubik", sans-serif;
   font-size: 0.82rem;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
   white-space: nowrap;
 }
 
@@ -426,6 +453,7 @@ textarea {
 
 .search-form--mobile {
   display: none;
+  width: 100%;
 }
 
 .mobile-nav__links {

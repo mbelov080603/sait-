@@ -5,6 +5,7 @@ const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
 const escapeQuery = (value = "") => value.trim().toLowerCase();
+const queryTokens = (value = "") => escapeQuery(value).split(/\s+/).filter(Boolean);
 
 const iconPaths = {
   search:
@@ -47,6 +48,7 @@ const renderHeader = () => {
   if (!mount) return;
 
   const currentPath = window.location.pathname;
+  const currentQuery = new URLSearchParams(window.location.search).get("q") || "";
   const links = store.primaryNav
     .map(
       (item) =>
@@ -62,10 +64,6 @@ const renderHeader = () => {
         </a>
       `,
     )
-    .join("");
-
-  const scopeOptions = store.searchScopes
-    .map((item) => `<option value="${item.value}">${item.label}</option>`)
     .join("");
 
   const noticeItems = store.noticeBar.items
@@ -99,18 +97,42 @@ const renderHeader = () => {
 
         <nav class="main-nav main-nav--desktop" aria-label="Основная навигация">${links}</nav>
 
-        <form class="search-form" data-search-form action="/catalog/" method="get">
-          <label class="search-scope">
-            <span class="sr-only">Раздел поиска</span>
-            <select name="scope" aria-label="Раздел поиска">
-              ${scopeOptions}
-            </select>
-          </label>
-          <span class="search-form__icon" aria-hidden="true">${renderIcon("search")}</span>
-          <input type="search" name="q" placeholder="Поиск по каталогу" aria-label="Поиск по каталогу" />
-        </form>
-
         <div class="header-actions">
+          <div class="header-search" data-header-search>
+            <button
+              class="icon-button header-search__toggle"
+              type="button"
+              data-search-toggle
+              aria-expanded="false"
+              aria-controls="desktop-search-form"
+              aria-label="Открыть поиск"
+            >
+              ${renderIcon("search")}
+            </button>
+            <form
+              class="search-form search-form--desktop-popover"
+              id="desktop-search-form"
+              data-search-form
+              data-search-desktop
+              action="/catalog/"
+              method="get"
+              role="search"
+              aria-label="Поиск по каталогу"
+              aria-hidden="true"
+            >
+              <input type="hidden" name="scope" value="catalog" />
+              <button class="search-form__submit" type="submit" aria-label="Найти">
+                ${renderIcon("search")}
+              </button>
+              <input
+                type="search"
+                name="q"
+                value="${currentQuery}"
+                placeholder="Поиск по каталогу"
+                aria-label="Поиск по каталогу"
+              />
+            </form>
+          </div>
           ${iconLinks}
           <a class="button button--small button--header" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>Написать в Telegram</a>
         </div>
@@ -129,14 +151,11 @@ const renderHeader = () => {
       <div class="mobile-nav" id="mobile-nav" data-mobile-nav>
         <div class="shell mobile-nav__inner">
           <form class="search-form search-form--mobile" data-search-form action="/catalog/" method="get">
-            <label class="search-scope">
-              <span class="sr-only">Раздел поиска</span>
-              <select name="scope" aria-label="Раздел поиска">
-                ${scopeOptions}
-              </select>
-            </label>
-            <span class="search-form__icon" aria-hidden="true">${renderIcon("search")}</span>
-            <input type="search" name="q" placeholder="Поиск по каталогу" aria-label="Поиск по каталогу" />
+            <input type="hidden" name="scope" value="catalog" />
+            <button class="search-form__submit" type="submit" aria-label="Найти">
+              ${renderIcon("search")}
+            </button>
+            <input type="search" name="q" value="${currentQuery}" placeholder="Поиск по каталогу" aria-label="Поиск по каталогу" />
           </form>
           <div class="mobile-nav__links">${links}</div>
           <div class="mobile-nav__meta">
@@ -393,18 +412,29 @@ const buildCatalogItems = () => {
     {
       type: "product",
       title: product.shortName,
-      keywords: `${product.shortName} ${product.subtitle} ${product.origin}`,
+      keywords: `${product.shortName} ${product.fullName} ${product.subtitle} ${product.origin} ${product.weight} ${product.packaging} ${product.category} ${product.lead} ${product.availability} очищенная макадамия орехи`,
       html: renderEnterpriseProductCard(true),
       status: "active",
     },
     ...upcoming.map((item) => ({
       type: "section",
       title: item.name,
-      keywords: `${item.name} ${item.description}`,
+      keywords: `${item.name} ${item.description} ${item.statusLabel}`,
       html: renderSectionCard(item),
       status: "coming",
     })),
   ];
+};
+
+const matchesCatalogSearch = (entry, query, scope = "catalog") => {
+  const tokens = queryTokens(query);
+  if (!tokens.length) return true;
+
+  if (scope === "nuts" && entry.type !== "product") return false;
+  if (scope === "sections" && entry.type !== "section") return false;
+
+  const haystack = escapeQuery(entry.keywords || "");
+  return tokens.every((token) => haystack.includes(token));
 };
 
 const renderCatalog = () => {
@@ -465,9 +495,7 @@ const renderCatalog = () => {
     const scope = params.get("scope") || "catalog";
     const items = buildCatalogItems().filter((entry) => {
       if (!query) return true;
-      if (scope === "nuts") return entry.type === "product" && escapeQuery(entry.keywords).includes(query);
-      if (scope === "sections") return entry.type === "section" && escapeQuery(entry.keywords).includes(query);
-      return escapeQuery(entry.keywords).includes(query);
+      return matchesCatalogSearch(entry, query, scope);
     });
 
     grid.innerHTML = items.length
@@ -1325,9 +1353,7 @@ const applyCatalogToolbarState = () => {
     const scope = params.get("scope") || "catalog";
     let items = buildCatalogItems().filter((entry) => {
       if (!query) return true;
-      if (scope === "nuts") return entry.type === "product" && escapeQuery(entry.keywords).includes(query);
-      if (scope === "sections") return entry.type === "section" && escapeQuery(entry.keywords).includes(query);
-      return escapeQuery(entry.keywords).includes(query);
+      return matchesCatalogSearch(entry, query, scope);
     });
     if (filter === "active") items = items.filter((item) => item.status === "active");
     if (filter === "sections") items = items.filter((item) => item.type === "section");
@@ -1380,6 +1406,10 @@ const applyCatalogToolbarState = () => {
 
 const bindSearchForms = () => {
   $$("[data-search-form]").forEach((form) => {
+    const input = $("input[name='q']", form);
+    const params = new URLSearchParams(window.location.search);
+    if (input && !input.value) input.value = params.get("q") || "";
+
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       const data = new FormData(form);
@@ -1387,10 +1417,73 @@ const bindSearchForms = () => {
       const scope = data.get("scope") || "catalog";
       const params = new URLSearchParams();
       if (query) params.set("q", query);
-      if (scope) params.set("scope", scope);
+      if (scope && scope !== "catalog") params.set("scope", scope);
       window.location.href = params.toString() ? `/catalog/?${params.toString()}` : "/catalog/";
     });
   });
+};
+
+const bindHeaderSearch = () => {
+  const root = $("[data-header-search]");
+  if (!root) return;
+
+  const toggle = $("[data-search-toggle]", root);
+  const form = $("[data-search-desktop]", root);
+  const input = $("input[name='q']", form);
+  if (!toggle || !form || !input) return;
+
+  const prefersDesktop = () => window.matchMedia("(min-width: 1181px)").matches;
+
+  const open = (focusInput = true) => {
+    if (!prefersDesktop()) return;
+    root.classList.add("is-open");
+    toggle.setAttribute("aria-expanded", "true");
+    form.setAttribute("aria-hidden", "false");
+    if (focusInput) {
+      requestAnimationFrame(() => input.focus());
+    }
+  };
+
+  const close = () => {
+    root.classList.remove("is-open");
+    toggle.setAttribute("aria-expanded", "false");
+    form.setAttribute("aria-hidden", "true");
+  };
+
+  toggle.addEventListener("click", () => {
+    if (root.classList.contains("is-open")) {
+      close();
+      return;
+    }
+    open();
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!root.classList.contains("is-open")) return;
+    if (root.contains(event.target)) return;
+    close();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    if (!root.classList.contains("is-open")) return;
+    close();
+    toggle.focus();
+  });
+
+  window.addEventListener(
+    "resize",
+    () => {
+      if (!prefersDesktop()) close();
+    },
+    { passive: true },
+  );
+
+  if (input.value.trim()) {
+    open(false);
+  } else {
+    close();
+  }
 };
 
 const bindFaq = () => {
@@ -1478,6 +1571,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   bindMobileNav();
+  bindHeaderSearch();
   bindSearchForms();
   bindFaq();
   bindRequestForms();
