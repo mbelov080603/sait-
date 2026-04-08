@@ -700,24 +700,25 @@ const setAboutLayoutOffsets = () => {
   const subnav = $("[data-about-subnav]");
   const headerHeight = header ? Math.ceil(header.getBoundingClientRect().height) : 0;
   const subnavHeight = subnav ? Math.ceil(subnav.getBoundingClientRect().height) : 0;
-  document.documentElement.style.setProperty("--about-header-offset", `${headerHeight + 10}px`);
+  const stickyTop = Math.max(16, headerHeight - 28);
+  document.documentElement.style.setProperty("--about-header-offset", `${stickyTop}px`);
   document.documentElement.style.setProperty(
     "--about-anchor-offset",
-    `${headerHeight + subnavHeight + 28}px`,
+    `${stickyTop + subnavHeight + 18}px`,
   );
-  return { headerHeight, subnavHeight };
+  return { headerHeight, subnavHeight, stickyTop };
 };
 
 const scrollToAboutSection = (target, behavior = "smooth") => {
   if (!target) return;
 
-  const { headerHeight, subnavHeight } = setAboutLayoutOffsets();
+  const { subnavHeight, stickyTop } = setAboutLayoutOffsets();
   const top =
     target.getBoundingClientRect().top +
     window.scrollY -
-    headerHeight -
+    stickyTop -
     subnavHeight -
-    28;
+    18;
 
   window.scrollTo({
     top: Math.max(0, top),
@@ -755,7 +756,7 @@ const initAboutScrollSpy = () => {
 
   let observer;
   const bindObserver = () => {
-    const { headerHeight, subnavHeight } = setAboutLayoutOffsets();
+    const { subnavHeight, stickyTop } = setAboutLayoutOffsets();
     if (observer) observer.disconnect();
     observer = new IntersectionObserver(
       (entries) => {
@@ -765,7 +766,7 @@ const initAboutScrollSpy = () => {
         if (visible) setActive(visible.target.id, false);
       },
       {
-        rootMargin: `-${headerHeight + subnavHeight + 24}px 0px -55% 0px`,
+        rootMargin: `-${stickyTop + subnavHeight + 18}px 0px -55% 0px`,
         threshold: [0.18, 0.35, 0.6],
       },
     );
