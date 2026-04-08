@@ -811,7 +811,7 @@ textarea {
 
 .about-subnav-section {
   position: sticky;
-  top: var(--about-header-offset, 84px);
+  top: var(--about-header-offset, 68px);
   z-index: 22;
   padding: 0 0 var(--space-4);
 }

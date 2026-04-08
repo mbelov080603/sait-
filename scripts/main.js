@@ -700,11 +700,11 @@ const setAboutLayoutOffsets = () => {
   const subnav = $("[data-about-subnav]");
   const headerHeight = header ? Math.ceil(header.getBoundingClientRect().height) : 0;
   const subnavHeight = subnav ? Math.ceil(subnav.getBoundingClientRect().height) : 0;
-  const stickyTop = Math.max(16, headerHeight - 28);
+  const stickyTop = Math.max(8, headerHeight - 44);
   document.documentElement.style.setProperty("--about-header-offset", `${stickyTop}px`);
   document.documentElement.style.setProperty(
     "--about-anchor-offset",
-    `${stickyTop + subnavHeight + 18}px`,
+    `${stickyTop + subnavHeight + 12}px`,
   );
   return { headerHeight, subnavHeight, stickyTop };
 };
@@ -718,7 +718,7 @@ const scrollToAboutSection = (target, behavior = "smooth") => {
     window.scrollY -
     stickyTop -
     subnavHeight -
-    18;
+    12;
 
   window.scrollTo({
     top: Math.max(0, top),
@@ -766,7 +766,7 @@ const initAboutScrollSpy = () => {
         if (visible) setActive(visible.target.id, false);
       },
       {
-        rootMargin: `-${stickyTop + subnavHeight + 18}px 0px -55% 0px`,
+        rootMargin: `-${stickyTop + subnavHeight + 12}px 0px -55% 0px`,
         threshold: [0.18, 0.35, 0.6],
       },
     );
