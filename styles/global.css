@@ -592,8 +592,19 @@ textarea {
   align-items: center;
 }
 
+.hero-stage--lead {
+  grid-template-columns: minmax(0, 1.06fr) minmax(340px, 460px);
+  align-items: start;
+  gap: var(--space-6);
+}
+
 .hero-stage__copy {
   max-width: 560px;
+}
+
+.hero-stage__body {
+  display: grid;
+  gap: var(--space-4);
 }
 
 .hero-stage__copy h1 {
@@ -609,11 +620,27 @@ textarea {
   max-width: 48ch;
 }
 
+.hero-stage--lead .hero-stage__copy {
+  max-width: 640px;
+}
+
+.hero-stage--lead .hero-stage__copy h1 {
+  font-size: clamp(2.8rem, 4vw, 4.2rem);
+}
+
+.hero-stage--lead .hero-stage__copy p {
+  max-width: 58ch;
+}
+
 .hero-stage__media {
   display: flex;
   align-items: center;
   justify-content: center;
   min-width: 0;
+}
+
+.hero-stage--lead .hero-stage__media {
+  display: block;
 }
 
 .hero-stage__meta {
@@ -2054,6 +2081,12 @@ textarea {
   gap: var(--space-4);
 }
 
+.request-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
 .request-form label {
   display: grid;
   gap: var(--space-2);
@@ -2061,7 +2094,7 @@ textarea {
   font-size: 0.92rem;
 }
 
-.request-form input,
+.request-form input:not([type="checkbox"]),
 .request-form textarea,
 .request-form select {
   width: 100%;
@@ -2079,8 +2112,42 @@ textarea {
   resize: vertical;
 }
 
+.request-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.request-form__consent {
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+}
+
+.request-form__consent input {
+  width: 18px;
+  height: 18px;
+  margin: 3px 0 0;
+  accent-color: var(--primary);
+}
+
 .request-form__note {
   font-size: 0.9rem;
+}
+
+.request-form__status {
+  min-height: 1.4em;
+  font-size: 0.88rem;
+  color: var(--primary-strong);
+}
+
+.request-panel--lead {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.request-form--lead textarea {
+  min-height: 108px;
 }
 
 .request-panel--compact {
@@ -2336,6 +2403,10 @@ a:focus-visible {
     max-width: none;
   }
 
+  .hero-stage--lead .hero-stage__media {
+    max-width: 620px;
+  }
+
   .media-stage--hero {
     min-height: 420px;
   }
@@ -2448,6 +2519,10 @@ a:focus-visible {
 
   .about-brand-hero__lead {
     font-size: 1rem;
+  }
+
+  .request-form__grid {
+    grid-template-columns: 1fr;
   }
 
   .about-brand-hero__visual {

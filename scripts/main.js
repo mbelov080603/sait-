@@ -6,6 +6,12 @@ const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selec
 
 const escapeQuery = (value = "") => value.trim().toLowerCase();
 const queryTokens = (value = "") => escapeQuery(value).split(/\s+/).filter(Boolean);
+const escapeAttribute = (value = "") =>
+  String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
 
 const iconPaths = {
   search:
@@ -329,27 +335,115 @@ const renderEnterpriseProductCard = (featured = false) => `
   </article>
 `;
 
+const renderLeadRequestForm = (config, context = {}) => {
+  const hiddenFields = {
+    source: context.source || "home-hero",
+    page: context.page || document.body.dataset.page || "home",
+    product_id: context.productId || product.id,
+    product_name: context.productName || product.fullName,
+    product_category: context.productCategory || product.category,
+    lead_channel_origin: "site",
+    marketplace_interest: context.marketplaceInterest || "",
+    crm_status_seed: "new",
+    crm_pipeline_seed: "site_request",
+    integration_targets: "bitrix24,1c",
+    payload_version: "v1",
+    session_id: "",
+    landing_url: "",
+    page_title: "",
+    referrer: "",
+    submitted_at: "",
+    utm_source: "",
+    utm_medium: "",
+    utm_campaign: "",
+    utm_content: "",
+    utm_term: "",
+  };
+
+  return `
+    <article class="request-panel request-panel--lead">
+      <div class="section-head section-head--compact">
+        <p class="eyebrow">${config.eyebrow}</p>
+        <h2>${config.title}</h2>
+        <p>${config.text}</p>
+      </div>
+      <form class="request-form request-form--lead" data-request-form data-request-adapter="crm-ready" novalidate>
+        ${Object.entries(hiddenFields)
+          .map(
+            ([name, value]) =>
+              `<input type="hidden" name="${name}" value="${escapeAttribute(value)}" />`,
+          )
+          .join("")}
+        <div class="request-form__grid">
+          <label>
+            <span>Ваше имя</span>
+            <input type="text" name="name" autocomplete="name" placeholder="Как к вам обращаться" required />
+          </label>
+          <label>
+            <span>Телефон</span>
+            <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" required />
+          </label>
+        </div>
+        <div class="request-form__grid">
+          <label>
+            <span>Что вас интересует</span>
+            <select name="topic" required>
+              ${config.topics
+                .map((item) => `<option value="${item.value}">${item.label}</option>`)
+                .join("")}
+            </select>
+          </label>
+          <label>
+            <span>Как удобнее связаться</span>
+            <select name="contact_preferred">
+              ${config.preferredContacts
+                .map((item) => `<option value="${item.value}">${item.label}</option>`)
+                .join("")}
+            </select>
+          </label>
+        </div>
+        <label>
+          <span>Комментарий</span>
+          <textarea name="message" placeholder="Например: хочу узнать цену, формат поставки или условия покупки."></textarea>
+        </label>
+        <label class="request-form__consent">
+          <input type="checkbox" name="consent" required />
+          <span>${config.consent}</span>
+        </label>
+        <div class="request-form__actions">
+          <button class="button" type="submit">${config.submitLabel}</button>
+          <a class="text-link text-link--inline" href="${config.secondaryCta.href}"${externalAttrs(config.secondaryCta.href)}>${config.secondaryCta.label}</a>
+        </div>
+        <p class="request-form__note">${config.note}</p>
+        <p class="request-form__status" data-request-status aria-live="polite"></p>
+      </form>
+    </article>
+  `;
+};
+
 const renderHome = () => {
   const hero = $("#home-hero");
   if (hero) {
     hero.innerHTML = `
-      <article class="hero-stage">
+      <article class="hero-stage hero-stage--lead">
         <div class="hero-stage__copy">
-          ${renderBadge(product.badge, product.badgeTone)}
+          <p class="eyebrow">${store.home.hero.eyebrow}</p>
           <h1>${store.home.hero.title}</h1>
-          <p>${store.home.hero.text}</p>
-          <ul class="hero-stage__meta">
-            ${store.home.hero.meta.map((item) => `<li>${item}</li>`).join("")}
+          <div class="hero-stage__body">
+            ${store.home.hero.paragraphs.map((item) => `<p>${item}</p>`).join("")}
+          </div>
+          <ul class="hero-stage__meta hero-stage__meta--brand">
+            ${store.home.hero.chips.map((item) => `<li>${item}</li>`).join("")}
           </ul>
           <div class="hero-stage__actions">
-            <a class="button" href="${store.home.hero.primaryCta.href}"${externalAttrs(store.home.hero.primaryCta.href)}>${store.home.hero.primaryCta.label}</a>
             <a class="text-link text-link--inline" href="${store.home.hero.secondaryCta.href}"${externalAttrs(store.home.hero.secondaryCta.href)}>${store.home.hero.secondaryCta.label}</a>
           </div>
         </div>
         <div class="hero-stage__media">
-          <article class="media-stage media-stage--hero">
-            <img src="${product.images.hero}" alt="${product.fullName}" />
-          </article>
+          ${renderLeadRequestForm(store.home.leadForm, {
+            source: "home-hero",
+            page: "home",
+          })}
         </div>
       </article>
     `;
@@ -1509,25 +1603,147 @@ const bindFaq = () => {
   });
 };
 
+const getLeadSessionId = () => {
+  const key = "gb-lead-session-id";
+  let value = window.sessionStorage.getItem(key);
+  if (!value) {
+    value = `gb-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    window.sessionStorage.setItem(key, value);
+  }
+  return value;
+};
+
+const setFormFieldValue = (form, name, value) => {
+  const field = form.elements.namedItem(name);
+  if (!field) return;
+  field.value = value;
+};
+
+const hydrateLeadMeta = (form) => {
+  const params = new URLSearchParams(window.location.search);
+  const now = new Date().toISOString();
+  const meta = {
+    session_id: getLeadSessionId(),
+    landing_url: window.location.href,
+    page_title: document.title,
+    referrer: document.referrer || "",
+    submitted_at: now,
+    utm_source: params.get("utm_source") || "",
+    utm_medium: params.get("utm_medium") || "",
+    utm_campaign: params.get("utm_campaign") || "",
+    utm_content: params.get("utm_content") || "",
+    utm_term: params.get("utm_term") || "",
+  };
+
+  Object.entries(meta).forEach(([name, value]) => setFormFieldValue(form, name, value));
+};
+
+const buildLeadPayload = (form) => {
+  hydrateLeadMeta(form);
+
+  const data = new FormData(form);
+  return {
+    lead: {
+      name: (data.get("name") || "").toString().trim(),
+      phone: (data.get("phone") || "").toString().trim(),
+      email: (data.get("email") || "").toString().trim(),
+      telegramUsername: (data.get("telegram_username") || "").toString().trim(),
+      preferredContact: (data.get("contact_preferred") || "").toString().trim(),
+      topic: (data.get("topic") || "").toString().trim(),
+      message: (data.get("message") || "").toString().trim(),
+      consent: data.get("consent") === "on",
+    },
+    context: {
+      source: (data.get("source") || "").toString().trim(),
+      page: (data.get("page") || "").toString().trim(),
+      landingUrl: (data.get("landing_url") || "").toString().trim(),
+      pageTitle: (data.get("page_title") || "").toString().trim(),
+      referrer: (data.get("referrer") || "").toString().trim(),
+      submittedAt: (data.get("submitted_at") || "").toString().trim(),
+      sessionId: (data.get("session_id") || "").toString().trim(),
+    },
+    product: {
+      id: (data.get("product_id") || "").toString().trim(),
+      name: (data.get("product_name") || "").toString().trim(),
+      category: (data.get("product_category") || "").toString().trim(),
+      marketplaceInterest: (data.get("marketplace_interest") || "").toString().trim(),
+    },
+    utm: {
+      source: (data.get("utm_source") || "").toString().trim(),
+      medium: (data.get("utm_medium") || "").toString().trim(),
+      campaign: (data.get("utm_campaign") || "").toString().trim(),
+      content: (data.get("utm_content") || "").toString().trim(),
+      term: (data.get("utm_term") || "").toString().trim(),
+    },
+    integration: {
+      channelOrigin: (data.get("lead_channel_origin") || "").toString().trim(),
+      targets: (data.get("integration_targets") || "")
+        .toString()
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+      crmStatusSeed: (data.get("crm_status_seed") || "").toString().trim(),
+      crmPipelineSeed: (data.get("crm_pipeline_seed") || "").toString().trim(),
+      payloadVersion: (data.get("payload_version") || "").toString().trim(),
+    },
+  };
+};
+
+const buildLeadMailto = (payload) => {
+  const subject = encodeURIComponent(
+    `Global Basket: ${payload.lead.topic || "site_request"} (${payload.context.source || "site"})`,
+  );
+
+  const body = encodeURIComponent(
+    [
+      "Новая заявка с сайта Global Basket",
+      "",
+      `Имя: ${payload.lead.name}`,
+      `Телефон: ${payload.lead.phone}`,
+      `Email: ${payload.lead.email}`,
+      `Telegram: ${payload.lead.telegramUsername}`,
+      `Удобный канал связи: ${payload.lead.preferredContact}`,
+      `Тема: ${payload.lead.topic}`,
+      `Источник: ${payload.context.source}`,
+      `Страница: ${payload.context.page}`,
+      `URL: ${payload.context.landingUrl}`,
+      `Продукт: ${payload.product.name}`,
+      `Категория: ${payload.product.category}`,
+      `Session ID: ${payload.context.sessionId}`,
+      `UTM Source: ${payload.utm.source}`,
+      `UTM Medium: ${payload.utm.medium}`,
+      `UTM Campaign: ${payload.utm.campaign}`,
+      `UTM Content: ${payload.utm.content}`,
+      `UTM Term: ${payload.utm.term}`,
+      "",
+      "Комментарий:",
+      payload.lead.message || "—",
+    ].join("\n"),
+  );
+
+  return `${store.contact.emailHref}?subject=${subject}&body=${body}`;
+};
+
+const setRequestStatus = (form, message) => {
+  const status = form.querySelector("[data-request-status]");
+  if (status) status.textContent = message;
+};
+
 const bindRequestForms = () => {
   $$("[data-request-form]").forEach((form) => {
+    hydrateLeadMeta(form);
     form.addEventListener("submit", (event) => {
       event.preventDefault();
-      const data = new FormData(form);
-      const subject = encodeURIComponent(
-        `Global Basket: ${data.get("topic") || "request"} (${data.get("source") || "site"})`,
+
+      if (!form.reportValidity()) return;
+
+      const payload = buildLeadPayload(form);
+      window.sessionStorage.setItem("gb-last-lead-payload", JSON.stringify(payload));
+      setRequestStatus(
+        form,
+        "Подготовили заявку. Если письмо не открылось автоматически, используйте Telegram как резервный канал.",
       );
-      const body = encodeURIComponent(
-        [
-          `Имя: ${data.get("name") || ""}`,
-          `Контакт: ${data.get("contact") || ""}`,
-          `Тема: ${data.get("topic") || ""}`,
-          `Источник: ${data.get("source") || ""}`,
-          "",
-          `${data.get("message") || ""}`,
-        ].join("\n"),
-      );
-      window.location.href = `${store.contact.emailHref}?subject=${subject}&body=${body}`;
+      window.location.href = buildLeadMailto(payload);
     });
   });
 };
