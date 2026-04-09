@@ -1018,6 +1018,10 @@ textarea {
   gap: var(--space-4);
 }
 
+.about-carousel__viewport {
+  overflow: hidden;
+}
+
 .about-carousel__controls {
   display: flex;
   justify-content: flex-end;
@@ -1034,6 +1038,8 @@ textarea {
   border-radius: 999px;
   background: rgba(255, 252, 247, 0.94);
   color: var(--text);
+  cursor: pointer;
+  appearance: none;
   transition:
     transform 160ms ease,
     background 160ms ease,

@@ -920,14 +920,20 @@ const initAboutFactsCarousel = () => {
   if (!track || slides.length < 2) return;
 
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const maxScrollLeft = () => Math.max(0, track.scrollWidth - track.clientWidth);
+  const getSnapLeft = (index) => {
+    const slide = slides[index];
+    if (!slide) return 0;
+    return Math.min(slide.offsetLeft, maxScrollLeft());
+  };
 
   const getIndex = () => {
-    const leftEdge = track.scrollLeft + track.clientWidth * 0.18;
+    const currentLeft = track.scrollLeft;
     let activeIndex = 0;
     let bestDistance = Number.POSITIVE_INFINITY;
 
     slides.forEach((slide, index) => {
-      const distance = Math.abs(slide.offsetLeft - leftEdge);
+      const distance = Math.abs(getSnapLeft(index) - currentLeft);
       if (distance < bestDistance) {
         bestDistance = distance;
         activeIndex = index;
@@ -944,16 +950,15 @@ const initAboutFactsCarousel = () => {
       dot.classList.toggle("is-active", isActive);
       dot.setAttribute("aria-current", isActive ? "true" : "false");
     });
-    if (prevButton) prevButton.disabled = index === 0;
-    if (nextButton) nextButton.disabled = index === slides.length - 1;
+    const maxLeft = maxScrollLeft();
+    if (prevButton) prevButton.disabled = track.scrollLeft <= 2;
+    if (nextButton) nextButton.disabled = track.scrollLeft >= maxLeft - 2;
   };
 
   const scrollToIndex = (index) => {
     const boundedIndex = Math.max(0, Math.min(slides.length - 1, index));
-    const target = slides[boundedIndex];
-    if (!target) return;
     track.scrollTo({
-      left: target.offsetLeft,
+      left: getSnapLeft(boundedIndex),
       behavior: prefersReducedMotion ? "auto" : "smooth",
     });
   };
@@ -971,6 +976,16 @@ const initAboutFactsCarousel = () => {
     () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(updateControls);
+    },
+    { passive: true },
+  );
+
+  let resizeFrame = 0;
+  window.addEventListener(
+    "resize",
+    () => {
+      cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(updateControls);
     },
     { passive: true },
   );
