@@ -440,10 +440,9 @@ const renderHome = () => {
           </div>
         </div>
         <div class="hero-stage__media">
-          ${renderLeadRequestForm(store.home.leadForm, {
-            source: "home-hero",
-            page: "home",
-          })}
+          <article class="media-stage media-stage--lifestyle">
+            <img src="${product.images.lifestyle}" alt="Очищенная макадамия Global Basket в домашней подаче" loading="lazy" decoding="async" />
+          </article>
         </div>
       </article>
     `;
@@ -476,9 +475,12 @@ const renderHome = () => {
               .join("")}
           </div>
         </div>
-        <article class="media-stage media-stage--lifestyle">
-          <img src="${product.images.lifestyle}" alt="Очищенная макадамия Global Basket в домашней подаче" loading="lazy" decoding="async" />
-        </article>
+        <div class="hero-stage__media">
+          ${renderLeadRequestForm(store.home.leadForm, {
+            source: "home-featured",
+            page: "home",
+          })}
+        </div>
       </article>
     `;
   }
