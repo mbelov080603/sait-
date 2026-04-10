@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://skill-deploy-ebslhgouoi-codex-agent-deploys.vercel.app/sitemap.xml

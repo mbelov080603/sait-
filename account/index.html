@@ -1,27 +1,151 @@
 <!DOCTYPE html>
 <html lang="ru">
   <head>
+    
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Аккаунт Global Basket — раздел сопровождения пользователя и заказов." />
-    <title>Global Basket | Аккаунт</title>
+    <title>Аккаунт — сервисная страница | Global Basket</title>
+    <meta name="description" content="Сервисная страница Global Basket. Основные действия сейчас происходят через официальные каналы покупки, контакты и B2B-форму." />
+    <link rel="canonical" href="https://skill-deploy-ebslhgouoi-codex-agent-deploys.vercel.app/account/" />
+    <meta property="og:locale" content="ru_RU" />
+    <meta property="og:site_name" content="Global Basket" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Аккаунт — сервисная страница" />
+    <meta property="og:description" content="Сервисная страница Global Basket. Основные действия сейчас происходят через официальные каналы покупки, контакты и B2B-форму." />
+    <meta property="og:url" content="https://skill-deploy-ebslhgouoi-codex-agent-deploys.vercel.app/account/" />
+    <meta property="og:image" content="https://skill-deploy-ebslhgouoi-codex-agent-deploys.vercel.app/assets/logo.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Аккаунт — сервисная страница" />
+    <meta name="twitter:description" content="Сервисная страница Global Basket. Основные действия сейчас происходят через официальные каналы покупки, контакты и B2B-форму." />
+    <meta name="twitter:image" content="https://skill-deploy-ebslhgouoi-codex-agent-deploys.vercel.app/assets/logo.jpg" />
+    <meta name="robots" content="noindex,follow" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Rubik:wght@500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Rubik:wght@500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles/global.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Главная","item":"https://skill-deploy-ebslhgouoi-codex-agent-deploys.vercel.app/"},{"@type":"ListItem","position":2,"name":"Аккаунт","item":"https://skill-deploy-ebslhgouoi-codex-agent-deploys.vercel.app/account/"}]}</script>
+  
   </head>
-  <body data-page="utility" data-utility="account">
-    <div data-site-header></div>
-    <main>
-      <section class="page-hero">
-        <div class="shell" id="utility-page"></div>
+  <body data-page="utility" data-page-slug="account">
+    <a class="skip-link" href="#main-content">Перейти к содержимому</a>
+    
+  <header class="site-header">
+    
+  <div class="site-topbar">
+    <div class="shell site-topbar__inner">
+      <span>Официальный сайт бренда Global Basket</span>
+      <div class="site-topbar__links">
+        <a href="tel:+79773384640" data-track-event="phone_click" data-track-location="topbar">+7 (977) 338-46-40</a>
+        <a href="https://t.me/global_basket_bot?start=site_support" target="_blank" rel="noreferrer" data-track-event="telegram_click" data-track-location="topbar">@global_basket_bot</a>
+      </div>
+    </div>
+  </div>
+
+    <div class="shell site-header__inner">
+      <a class="brand" href="/">
+        <img src="/assets/logo.jpg" width="360" height="360" alt="Логотип Global Basket" />
+        <div>
+          <strong>Global Basket</strong>
+          <span>Официальный сайт бренда премиальных орехов</span>
+        </div>
+      </a>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-menu" data-menu-toggle>Меню</button>
+      <nav class="main-nav" aria-label="Основная навигация">
+        <a href="/catalog/">Каталог</a><a href="/where-to-buy/">Где купить</a><a href="/about/">О бренде</a><a href="/b2b/">Опт / B2B</a><a href="/journal/">Журнал</a><a href="/delivery/">Доставка и оплата</a><a href="/contacts/">Контакты</a>
+      </nav>
+      <div class="header-cta">
+        <a class="button button--small" href="/where-to-buy/">Где купить</a>
+        <a class="button button--small button--ghost" href="/b2b/" data-track-event="wholesale_cta_click" data-track-location="header">Опт / B2B</a>
+        <a class="header-link" href="https://t.me/global_basket_bot?start=site_support" target="_blank" rel="noreferrer" data-track-event="telegram_click" data-track-location="header">Telegram</a>
+      </div>
+    </div>
+    <div class="mobile-menu" id="mobile-menu" hidden data-mobile-menu>
+      <div class="shell mobile-menu__inner">
+        <nav class="mobile-nav" aria-label="Мобильная навигация">
+          <a href="/catalog/">Каталог</a><a href="/where-to-buy/">Где купить</a><a href="/about/">О бренде</a><a href="/b2b/">Опт / B2B</a><a href="/journal/">Журнал</a><a href="/delivery/">Доставка и оплата</a><a href="/contacts/">Контакты</a>
+        </nav>
+        <div class="mobile-menu__actions">
+          <a class="button" href="/where-to-buy/">Где купить</a>
+          <a class="button button--ghost" href="/b2b/" data-track-event="wholesale_cta_click" data-track-location="mobile_menu">Опт / B2B</a>
+          <a class="text-link" href="https://t.me/global_basket_bot?start=site_support" target="_blank" rel="noreferrer" data-track-event="telegram_click" data-track-location="mobile_menu">Написать в Telegram</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+    <main id="main-content" class="">
+      
+      <section class="hero hero--inner">
+        <div class="shell">
+          
+      <nav class="breadcrumb" aria-label="Хлебные крошки">
+        <ol>
+          <li><a href="/">Главная</a></li><li><span aria-current="page">Аккаунт</span></li>
+        </ol>
+      </nav>
+    
+          <div class="section-heading">
+            <p class="eyebrow">Сервисная страница</p>
+            <h1>Аккаунт</h1>
+            <p>Global Basket сейчас не строит личный кабинет как центральный сценарий. Для покупки используйте официальные маркетплейсы, для B2B — отдельную заявку, для поддержки — контакты.</p>
+          </div>
+          <div class="button-row">
+            <a class="button button--small" href="/catalog/">Перейти в каталог</a>
+            <a class="button button--small button--ghost" href="/where-to-buy/">Где купить</a>
+          </div>
+        </div>
       </section>
+    
     </main>
-    <div data-site-footer></div>
-    <script src="/scripts/data.js"></script>
-    <script src="/scripts/main.js"></script>
+    
+  <footer class="site-footer">
+    <div class="shell site-footer__grid">
+      <section class="footer-brand">
+        <p class="eyebrow">Global Basket</p>
+        <h2>Официальный сайт бренда премиальных орехов</h2>
+        <p>Global Basket — бренд премиальных орехов и натуральных продуктов. Сайт работает как официальный бренд-хаб: помогает изучить продукт глубже, перейти к покупке на маркетплейсах, оставить B2B-заявку и быстро связаться с поддержкой.</p>
+        <ul class="footer-contact-list">
+          <li><a href="tel:+79773384640" data-track-event="phone_click" data-track-location="footer">+7 (977) 338-46-40</a></li>
+          <li><a href="mailto:hello@globalbasket.ru" data-track-event="email_click" data-track-location="footer">hello@globalbasket.ru</a></li>
+          <li><a href="https://t.me/global_basket_bot?start=site_support" target="_blank" rel="noreferrer" data-track-event="telegram_click" data-track-location="footer">@global_basket_bot</a></li>
+          <li>Пн-Пт 09:00-18:00</li>
+        </ul>
+      </section>
+      
+            <section class="footer-column">
+              <h3>Покупка</h3>
+              <ul>
+                <li><a href="/catalog/">Каталог</a></li><li><a href="/where-to-buy/">Где купить</a></li><li><a href="/catalog/macadamia/">Очищенная макадамия</a></li><li><a href="/categories/premium-nuts/">Премиальные орехи</a></li>
+              </ul>
+            </section>
+          
+            <section class="footer-column">
+              <h3>Бренд</h3>
+              <ul>
+                <li><a href="/about/">О бренде</a></li><li><a href="/journal/">Журнал</a></li><li><a href="/documents/">Документы и доверие</a></li>
+              </ul>
+            </section>
+          
+            <section class="footer-column">
+              <h3>B2B</h3>
+              <ul>
+                <li><a href="/b2b/">Опт / корпоративным клиентам</a></li><li><a href="/delivery/">Доставка и оплата</a></li><li><a href="/contacts/?source=wholesale">Контакты для B2B</a></li>
+              </ul>
+            </section>
+          
+            <section class="footer-column">
+              <h3>Поддержка и legal</h3>
+              <ul>
+                <li><a href="/contacts/">Контакты</a></li><li><a href="/legal/privacy/">Политика конфиденциальности</a></li><li><a href="/legal/consent/">Согласие на обработку данных</a></li><li><a href="/legal/terms/">Условия заказа и взаимодействия</a></li>
+              </ul>
+            </section>
+          
+    </div>
+    <div class="shell site-footer__bottom">
+      <p>Реквизиты, юридический адрес и комплект документов будут опубликованы в этом разделе после передачи бренд-командой подтверждённых данных.</p>
+    </div>
+  </footer>
+
+    <script type="module" src="/scripts/app.js"></script>
   </body>
 </html>

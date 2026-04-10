@@ -7,14 +7,14 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const result = await processForm(req, parseJsonBody(req));
+    const result = await processForm(req, parseJsonBody(req), "b2b");
     return json(res, result.statusCode, result.payload);
   } catch (error) {
-    console.error("contact-request error", error);
+    console.error("b2b-request error", error);
     return json(res, error.statusCode || 500, {
       ok: false,
-      error: "contact_request_failed",
-      message: error.message || "Не удалось отправить обращение.",
+      error: "b2b_request_failed",
+      message: error.message || "Не удалось отправить B2B-заявку.",
     });
   }
 };

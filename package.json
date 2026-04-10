@@ -1,6 +1,10 @@
 {
   "private": true,
   "scripts": {
+    "build": "node ./scripts/build.mjs",
+    "lint": "node ./scripts/lint.mjs",
+    "typecheck": "node ./scripts/typecheck.mjs",
+    "test": "node --test ./tests/*.test.mjs",
     "telegram:setup": "node scripts/setup-telegram-bot.mjs",
     "telegram:post": "node scripts/post-channel-update.mjs"
   }
