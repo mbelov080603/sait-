@@ -374,23 +374,25 @@ const renderLeadRequestForm = (config, context = {}) => {
               `<input type="hidden" name="${name}" value="${escapeAttribute(value)}" />`,
           )
           .join("")}
-        <div class="request-form__grid">
+        <div class="request-form__grid request-form__grid--contact">
           <label>
             <span>Ваше имя</span>
             <input type="text" name="name" autocomplete="name" placeholder="Как к вам обращаться" required />
           </label>
-          <label data-contact-field="phone">
-            <span>Телефон</span>
-            <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" required />
-          </label>
-          <label data-contact-field="email" hidden>
-            <span>Email</span>
-            <input type="email" name="email" autocomplete="email" placeholder="name@example.com" />
-          </label>
-          <label data-contact-field="telegram" hidden>
-            <span>Telegram</span>
-            <input type="text" name="telegram_username" autocomplete="off" placeholder="@username" />
-          </label>
+          <div class="request-form__contact-slot" data-contact-slot data-active-contact="phone">
+            <label class="request-form__contact-panel is-active" data-contact-field="phone">
+              <span>Телефон</span>
+              <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" required />
+            </label>
+            <label class="request-form__contact-panel" data-contact-field="email" aria-hidden="true">
+              <span>Email</span>
+              <input type="email" name="email" autocomplete="email" placeholder="name@example.com" disabled />
+            </label>
+            <label class="request-form__contact-panel" data-contact-field="telegram" aria-hidden="true">
+              <span>Telegram</span>
+              <input type="text" name="telegram_username" autocomplete="off" placeholder="@username" disabled />
+            </label>
+          </div>
         </div>
         <div class="request-form__grid">
           <label>
@@ -537,23 +539,25 @@ const renderContactQuoteForm = (config, context = {}) => {
               `<input type="hidden" name="${name}" value="${escapeAttribute(value)}" />`,
           )
           .join("")}
-        <div class="request-form__grid">
+        <div class="request-form__grid request-form__grid--contact">
           <label>
             <span>Контактное лицо</span>
             <input type="text" name="name" autocomplete="name" placeholder="Как к вам обращаться" required />
           </label>
-          <label data-contact-field="phone">
-            <span>Телефон</span>
-            <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" required />
-          </label>
-          <label data-contact-field="email" hidden>
-            <span>Email</span>
-            <input type="email" name="email" autocomplete="email" placeholder="name@example.com" />
-          </label>
-          <label data-contact-field="telegram" hidden>
-            <span>Telegram</span>
-            <input type="text" name="telegram_username" autocomplete="off" placeholder="@username" />
-          </label>
+          <div class="request-form__contact-slot" data-contact-slot data-active-contact="phone">
+            <label class="request-form__contact-panel is-active" data-contact-field="phone">
+              <span>Телефон</span>
+              <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" required />
+            </label>
+            <label class="request-form__contact-panel" data-contact-field="email" aria-hidden="true">
+              <span>Email</span>
+              <input type="email" name="email" autocomplete="email" placeholder="name@example.com" disabled />
+            </label>
+            <label class="request-form__contact-panel" data-contact-field="telegram" aria-hidden="true">
+              <span>Telegram</span>
+              <input type="text" name="telegram_username" autocomplete="off" placeholder="@username" disabled />
+            </label>
+          </div>
         </div>
         <div class="request-form__grid">
           <label>
@@ -2121,23 +2125,30 @@ const syncPreferredContactField = (form) => {
 
   const preferredKey = resolvePreferredContactKey(preferredField.value);
   const helper = form.querySelector("[data-contact-helper]");
+  const slot = form.querySelector("[data-contact-slot]");
 
-  const fields = {
-    phone: form.querySelector('[data-contact-field="phone"]'),
-    email: form.querySelector('[data-contact-field="email"]'),
-    telegram: form.querySelector('[data-contact-field="telegram"]'),
-  };
-
-  Object.entries(fields).forEach(([key, field]) => {
+  $$("[data-contact-field]", form).forEach((field) => {
+    const key = field.dataset.contactField;
+    if (!key) return;
     if (!field) return;
     const active = key === preferredKey;
-    field.hidden = !active;
+    field.classList.toggle("is-active", active);
+    field.setAttribute("aria-hidden", active ? "false" : "true");
     field.querySelectorAll("input").forEach((input) => {
       input.disabled = !active;
       input.required = active;
       input.setAttribute("aria-required", active ? "true" : "false");
+      if (!active) {
+        input.setAttribute("tabindex", "-1");
+      } else {
+        input.removeAttribute("tabindex");
+      }
     });
   });
+
+  if (slot) {
+    slot.dataset.activeContact = preferredKey;
+  }
 
   if (helper) {
     helper.textContent =

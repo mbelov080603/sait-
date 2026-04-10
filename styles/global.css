@@ -2103,11 +2103,39 @@ textarea {
   gap: var(--space-4);
 }
 
+.request-form__grid--contact {
+  align-items: start;
+}
+
 .request-form label {
   display: grid;
   gap: var(--space-2);
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.request-form__contact-slot {
+  position: relative;
+  min-height: 77px;
+}
+
+.request-form__contact-panel {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  gap: var(--space-2);
+  opacity: 0;
+  transform: translateY(8px) scale(0.985);
+  pointer-events: none;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.request-form__contact-panel.is-active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
 }
 
 .request-form input:not([type="checkbox"]),
@@ -2126,6 +2154,12 @@ textarea {
   min-height: 132px;
   padding: 14px;
   resize: vertical;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .request-form__contact-panel {
+    transition: none;
+  }
 }
 
 .request-form--quote textarea {
