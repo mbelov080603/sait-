@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 const files = [
   "./scripts/build.mjs",
   "./scripts/app.js",
+  "./scripts/lead-form-shared.mjs",
   "./scripts/lint.mjs",
   "./api/contact-request.js",
   "./api/b2b-request.js",

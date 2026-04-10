@@ -1,42 +1,41 @@
+const path = require("node:path");
+const { pathToFileURL } = require("node:url");
+
 const MAX_SHORT = 120;
 const MAX_MEDIUM = 240;
 const MAX_LONG = 2000;
 
-const INTENTS = new Set([
-  "support",
-  "complaint",
-  "product_question",
-  "wholesale",
-  "corporate_gifts",
-  "horeca",
-  "distribution",
+const CONTACT_TOPICS = new Set([
+  "Вопрос по товару",
+  "Оптовый запрос",
+  "Где купить",
+  "Поддержка",
+  "Претензия",
+  "Запрос документов",
+  "Другое",
 ]);
 
-const FREQUENCIES = new Set([
-  "",
-  "Разовый запрос",
-  "Ежемесячно",
-  "Регулярный график",
-  "Нужно обсудить",
-]);
+const compact = (value = "", max = MAX_MEDIUM) =>
+  String(value ?? "")
+    .replace(/\u0000/g, "")
+    .trim()
+    .slice(0, max);
 
-const trimTo = (value, max = MAX_MEDIUM) => String(value || "").trim().slice(0, max);
-
-const normalizePhone = (value) => {
-  const raw = trimTo(value, MAX_SHORT);
-  const compact = raw.replace(/[^\d+]/g, "");
-  return compact.startsWith("+") ? compact : raw;
+const normalizePhone = (value = "") => {
+  const raw = compact(value, MAX_SHORT);
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.length === 10) return `+7${digits}`;
+  if (digits.length === 11 && digits.startsWith("8")) return `+7${digits.slice(1)}`;
+  if (digits.length >= 11 && raw.startsWith("+")) return `+${digits}`;
+  return `+${digits}`;
 };
 
-const normalizeEmail = (value) => trimTo(value, MAX_SHORT).toLowerCase();
-
-const normalizeTimestamp = (value) => {
-  const safe = trimTo(value, MAX_SHORT);
-  return safe || new Date().toISOString();
-};
+const normalizeEmail = (value = "") => compact(value, MAX_SHORT).toLowerCase();
+const normalizeTimestamp = (value = "") => compact(value, MAX_SHORT) || new Date().toISOString();
 
 const emailLooksValid = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-const phoneLooksValid = (value) => /\d{10,}/.test(value.replace(/[^\d]/g, ""));
+const phoneLooksValid = (value) => value.replace(/\D/g, "").length >= 11;
 
 const getRequestId = (prefix = "GB") => {
   const stamp = new Date().toISOString().replaceAll(/[-:TZ.]/g, "").slice(2, 14);
@@ -47,101 +46,118 @@ const getRequestId = (prefix = "GB") => {
 const readPath = (root, dottedPath) =>
   dottedPath.split(".").reduce((value, key) => (value && value[key] !== undefined ? value[key] : ""), root);
 
-const pickRoute = ({ formType, intent, request }) => {
-  if (formType === "b2b") return "b2b";
+const leadSharedModuleUrl = pathToFileURL(
+  path.resolve(__dirname, "../../scripts/lead-form-shared.mjs"),
+).href;
 
-  const topic = trimTo(request.topic || "", MAX_SHORT).toLowerCase();
-  const intentValue = trimTo(intent || "", MAX_SHORT).toLowerCase();
-  if (intentValue === "complaint" || topic.includes("претенз")) return "complaint";
-  return "support";
-};
-
-const normalizeContext = (context = {}) => ({
-  source: trimTo(context.source, MAX_SHORT),
-  pageType: trimTo(context.pageType, MAX_SHORT),
-  pageSlug: trimTo(context.pageSlug, MAX_SHORT),
-  pageUrl: trimTo(context.pageUrl, MAX_MEDIUM),
-  referrer: trimTo(context.referrer, MAX_MEDIUM),
-  productId: trimTo(context.productId, MAX_SHORT),
-  productName: trimTo(context.productName, MAX_MEDIUM),
-  categoryId: trimTo(context.categoryId, MAX_SHORT),
-  sessionId: trimTo(context.sessionId, MAX_SHORT),
-  timestamp: normalizeTimestamp(context.timestamp),
-});
-
-const normalizeAttribution = (attribution = {}) => ({
-  utmSource: trimTo(attribution.utmSource, MAX_SHORT),
-  utmMedium: trimTo(attribution.utmMedium, MAX_SHORT),
-  utmCampaign: trimTo(attribution.utmCampaign, MAX_SHORT),
-  utmContent: trimTo(attribution.utmContent, MAX_SHORT),
-  utmTerm: trimTo(attribution.utmTerm, MAX_SHORT),
-  firstUtmSource: trimTo(attribution.firstUtmSource, MAX_SHORT),
-  firstUtmMedium: trimTo(attribution.firstUtmMedium, MAX_SHORT),
-  firstUtmCampaign: trimTo(attribution.firstUtmCampaign, MAX_SHORT),
-});
-
-const normalizeB2BPayload = (payload = {}) => {
-  const normalized = {
-    formType: "b2b",
-    requestId: getRequestId("GB-B2B"),
-    intent: trimTo(payload.intent || "wholesale", MAX_SHORT),
-    contact: {
-      companyName: trimTo(payload.contact?.companyName, MAX_MEDIUM),
-      contactName: trimTo(payload.contact?.contactName, MAX_SHORT),
-      phone: normalizePhone(payload.contact?.phone),
-      email: normalizeEmail(payload.contact?.email),
-      city: trimTo(payload.contact?.city, MAX_SHORT),
-      businessType: trimTo(payload.contact?.businessType, MAX_SHORT),
-      preferredContact: trimTo(payload.contact?.preferredContact, MAX_SHORT),
-    },
-    request: {
-      productInterest: trimTo(payload.request?.productInterest, MAX_MEDIUM),
-      estimatedVolume: trimTo(payload.request?.estimatedVolume, MAX_MEDIUM),
-      frequency: trimTo(payload.request?.frequency, MAX_SHORT),
-      comment: trimTo(payload.request?.comment, MAX_LONG),
-    },
-    consent: {
-      accepted: Boolean(payload.consent?.accepted),
-      acceptedAt: normalizeTimestamp(payload.consent?.acceptedAt),
-    },
-    context: normalizeContext(payload.context),
-    attribution: normalizeAttribution(payload.attribution),
-    honeypot: trimTo(payload.honeypot, MAX_SHORT),
-  };
-
-  normalized.route = pickRoute(normalized);
-  return normalized;
+let leadSharedPromise;
+const loadLeadShared = async () => {
+  leadSharedPromise ||= import(leadSharedModuleUrl);
+  return leadSharedPromise;
 };
 
 const normalizeContactPayload = (payload = {}) => {
-  const normalized = {
+  const contact = payload.contact || {};
+  const request = payload.request || {};
+  const context = payload.context || {};
+  const attribution = payload.attribution || {};
+
+  return {
     formType: "contact",
-    requestId: getRequestId("GB-CON"),
-    intent: trimTo(payload.intent || "support", MAX_SHORT),
+    requestId: compact(payload.requestId, MAX_SHORT) || getRequestId("GB-CON"),
+    intent: compact(payload.intent || "support", MAX_SHORT),
     contact: {
-      contactName: trimTo(payload.contact?.contactName, MAX_SHORT),
-      phone: normalizePhone(payload.contact?.phone),
-      email: normalizeEmail(payload.contact?.email),
-      preferredContact: trimTo(payload.contact?.preferredContact, MAX_SHORT),
+      contactName: compact(payload.contactName || contact.contactName, MAX_SHORT),
+      phone: normalizePhone(payload.phone || contact.phone),
+      email: normalizeEmail(payload.email || contact.email),
+      preferredContact: compact(
+        payload.preferredContact || payload.preferredContactMethod || contact.preferredContact,
+        MAX_SHORT,
+      ),
     },
     request: {
-      topic: trimTo(payload.request?.topic, MAX_SHORT),
-      comment: trimTo(payload.request?.comment, MAX_LONG),
+      topic: compact(payload.topic || request.topic, MAX_SHORT),
+      comment: compact(payload.comment || request.comment, MAX_LONG),
     },
     consent: {
-      accepted: Boolean(payload.consent?.accepted),
-      acceptedAt: normalizeTimestamp(payload.consent?.acceptedAt),
+      accepted: Boolean(payload.consent ?? payload.consentAccepted ?? payload.consent?.accepted),
+      acceptedAt: normalizeTimestamp(
+        payload.consentAcceptedAt || payload.consent?.acceptedAt || context.submittedAt,
+      ),
     },
-    context: normalizeContext(payload.context),
-    attribution: normalizeAttribution(payload.attribution),
-    honeypot: trimTo(payload.honeypot, MAX_SHORT),
+    context: {
+      source: compact(context.source || context.sourceParam, MAX_SHORT),
+      pageType: compact(context.pageType, MAX_SHORT),
+      pageSlug: compact(context.pageSlug, MAX_SHORT),
+      pageUrl: compact(context.pageUrl, MAX_MEDIUM),
+      pageTitle: compact(context.pageTitle, MAX_MEDIUM),
+      referrer: compact(context.referrer, MAX_MEDIUM),
+      sessionId: compact(context.sessionId, MAX_SHORT),
+      submittedAt: normalizeTimestamp(context.submittedAt),
+    },
+    attribution: {
+      utmSource: compact(attribution.utmSource || attribution.utm_source, MAX_SHORT),
+      utmMedium: compact(attribution.utmMedium || attribution.utm_medium, MAX_SHORT),
+      utmCampaign: compact(attribution.utmCampaign || attribution.utm_campaign, MAX_SHORT),
+      utmContent: compact(attribution.utmContent || attribution.utm_content, MAX_SHORT),
+      utmTerm: compact(attribution.utmTerm || attribution.utm_term, MAX_SHORT),
+    },
+    honeypot: compact(payload.honeypot || payload.companyWebsite || payload.company_website, MAX_SHORT),
+    route: "support",
   };
-
-  normalized.route = pickRoute(normalized);
-  return normalized;
 };
 
-const normalizeLegacyPayload = (payload = {}) => {
+const validateContactPayload = (payload) => {
+  const fieldErrors = {};
+  const formErrors = [];
+
+  if (!payload.contact.contactName) fieldErrors.contact_name = "Укажите имя.";
+  if (!payload.request.topic || !CONTACT_TOPICS.has(payload.request.topic)) {
+    fieldErrors.topic = "Выберите тему обращения.";
+  }
+
+  const hasPhone = Boolean(payload.contact.phone);
+  const hasEmail = Boolean(payload.contact.email);
+  if (!hasPhone && !hasEmail) {
+    formErrors.push("Оставьте телефон или email для ответа.");
+  }
+  if (hasPhone && !phoneLooksValid(payload.contact.phone)) {
+    fieldErrors.phone = "Проверьте формат телефона.";
+  }
+  if (hasEmail && !emailLooksValid(payload.contact.email)) {
+    fieldErrors.email = "Проверьте email.";
+  }
+  if (!payload.consent.accepted) {
+    fieldErrors.consent = "Подтвердите согласие на обработку данных.";
+  }
+  if (payload.honeypot) {
+    formErrors.push("Подозрительная активность формы.");
+  }
+
+  return {
+    valid: Object.keys(fieldErrors).length === 0 && formErrors.length === 0,
+    fieldErrors,
+    formErrors,
+    errors: [...formErrors, ...Object.values(fieldErrors)],
+  };
+};
+
+const normalizeB2BPayload = async (payload = {}) => {
+  const shared = await loadLeadShared();
+  const normalized = shared.normalizeLeadRequestInput(payload);
+  return {
+    ...normalized,
+    requestId: compact(payload.requestId, MAX_SHORT) || getRequestId("GB-B2B"),
+    route: "b2b",
+  };
+};
+
+const validateB2BPayload = async (payload) => {
+  const shared = await loadLeadShared();
+  return shared.validateLeadRequest(payload);
+};
+
+const normalizeLegacyPayload = async (payload = {}) => {
   const lead = payload.lead || {};
   const company = payload.company || {};
   const context = payload.context || {};
@@ -153,127 +169,69 @@ const normalizeLegacyPayload = (payload = {}) => {
 
   if (looksB2B) {
     return normalizeB2BPayload({
-      formType: "b2b",
-      intent: context.source === "wholesale" ? "wholesale" : "distribution",
-      contact: {
-        companyName: company.name,
-        contactName: lead.name,
-        phone: lead.phone,
-        email: lead.email,
-        city: delivery.address,
-        businessType: company.purchaseFormat || "legacy_b2b",
-        preferredContact: lead.preferredContact,
-      },
-      request: {
-        productInterest: payload.product?.name || "Global Basket",
-        estimatedVolume: order.quantityKg ? `${order.quantityKg} кг` : "",
-        frequency: company.purchaseFormat,
-        comment: [lead.message, delivery.address].filter(Boolean).join("\n"),
-      },
-      consent: {
-        accepted: Boolean(lead.consent),
-        acceptedAt: context.submittedAt,
-      },
+      requestType: context.source === "wholesale" ? "wholesale_purchase" : "partnership",
+      businessType: company.purchaseFormat || "Другое",
+      productInterest: payload.product?.name ? [payload.product.name] : ["consultation_catalog"],
+      estimatedVolume: order.quantityKg ? "100–500 кг" : "До 20 кг",
+      exactVolumeKg: order.quantityKg || "",
+      city: delivery.address || "",
+      purchaseFrequency: "Пока изучаем",
+      companyName: company.name || "",
+      contactName: lead.name || "",
+      preferredContactMethod: lead.preferredContact || "Телефон",
+      phone: lead.phone || "",
+      email: lead.email || "",
+      comment: [lead.message, delivery.address].filter(Boolean).join("\n"),
+      consent: Boolean(lead.consent),
       context: {
-        source: context.source,
-        pageType: context.page,
-        pageSlug: context.page,
-        pageUrl: context.landingUrl,
-        referrer: context.referrer,
-        productId: payload.product?.id,
-        productName: payload.product?.name,
-        categoryId: payload.product?.category,
-        sessionId: context.sessionId,
-        timestamp: context.submittedAt,
+        sourceParam: context.source || "",
+        pageType: context.page || "",
+        pageSlug: context.page || "",
+        pageUrl: context.landingUrl || "",
+        referrer: context.referrer || "",
+        productId: payload.product?.id || "",
+        productSlug: payload.product?.slug || "",
+        productName: payload.product?.name || "",
+        categoryContext: payload.product?.category || "",
+        submittedAt: context.submittedAt || "",
+        locale: "ru",
+        timezone: "",
       },
       attribution: {
-        utmSource: utm.source,
-        utmMedium: utm.medium,
-        utmCampaign: utm.campaign,
-        utmContent: utm.content,
-        utmTerm: utm.term,
+        utmSource: utm.source || "",
+        utmMedium: utm.medium || "",
+        utmCampaign: utm.campaign || "",
+        utmContent: utm.content || "",
+        utmTerm: utm.term || "",
       },
     });
   }
 
   return normalizeContactPayload({
-    formType: "contact",
     intent: lead.topic === "Претензия" ? "complaint" : "support",
-    contact: {
-      contactName: lead.name,
-      phone: lead.phone,
-      email: lead.email,
-      preferredContact: lead.preferredContact,
-    },
-    request: {
-      topic: lead.topic || "Поддержка",
-      comment: lead.message,
-    },
-    consent: {
-      accepted: Boolean(lead.consent),
-      acceptedAt: context.submittedAt,
-    },
+    contactName: lead.name || "",
+    phone: lead.phone || "",
+    email: lead.email || "",
+    preferredContact: lead.preferredContact || "",
+    topic: lead.topic || "Поддержка",
+    comment: lead.message || "",
+    consent: Boolean(lead.consent),
     context: {
-      source: context.source,
-      pageType: context.page,
-      pageSlug: context.page,
-      pageUrl: context.landingUrl,
-      referrer: context.referrer,
-      productId: payload.product?.id,
-      productName: payload.product?.name,
-      categoryId: payload.product?.category,
-      sessionId: context.sessionId,
-      timestamp: context.submittedAt,
+      source: context.source || "",
+      pageType: context.page || "",
+      pageSlug: context.page || "",
+      pageUrl: context.landingUrl || "",
+      referrer: context.referrer || "",
+      submittedAt: context.submittedAt || "",
     },
     attribution: {
-      utmSource: utm.source,
-      utmMedium: utm.medium,
-      utmCampaign: utm.campaign,
-      utmContent: utm.content,
-      utmTerm: utm.term,
+      utmSource: utm.source || "",
+      utmMedium: utm.medium || "",
+      utmCampaign: utm.campaign || "",
+      utmContent: utm.content || "",
+      utmTerm: utm.term || "",
     },
   });
-};
-
-const validateB2BPayload = (payload) => {
-  const errors = [];
-
-  if (!INTENTS.has(payload.intent)) errors.push("Укажите корректный тип корпоративного запроса.");
-  if (!payload.contact.companyName) errors.push("Укажите компанию.");
-  if (!payload.contact.contactName) errors.push("Укажите контактное лицо.");
-  if (!payload.contact.phone || !phoneLooksValid(payload.contact.phone)) {
-    errors.push("Укажите корректный телефон.");
-  }
-  if (!payload.contact.email || !emailLooksValid(payload.contact.email)) {
-    errors.push("Укажите корректный email.");
-  }
-  if (!payload.contact.city) errors.push("Укажите город.");
-  if (!payload.contact.businessType) errors.push("Укажите тип бизнеса.");
-  if (!payload.request.productInterest) errors.push("Укажите интерес к продукту.");
-  if (payload.request.frequency && !FREQUENCIES.has(payload.request.frequency)) {
-    errors.push("Укажите корректную частоту закупки.");
-  }
-  if (!payload.consent.accepted) errors.push("Нужно согласие на обработку данных.");
-  if (payload.honeypot) errors.push("Подозрительная активность формы.");
-
-  return errors;
-};
-
-const validateContactPayload = (payload) => {
-  const errors = [];
-
-  if (!payload.contact.contactName) errors.push("Укажите имя.");
-  if (!payload.contact.phone || !phoneLooksValid(payload.contact.phone)) {
-    errors.push("Укажите корректный телефон.");
-  }
-  if (!payload.contact.email || !emailLooksValid(payload.contact.email)) {
-    errors.push("Укажите корректный email.");
-  }
-  if (!payload.request.topic) errors.push("Укажите тему обращения.");
-  if (!payload.consent.accepted) errors.push("Нужно согласие на обработку данных.");
-  if (payload.honeypot) errors.push("Подозрительная активность формы.");
-
-  return errors;
 };
 
 const applyFieldMap = (payload, fieldMap = {}) =>

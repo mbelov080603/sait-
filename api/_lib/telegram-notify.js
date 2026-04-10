@@ -33,25 +33,54 @@ const buildMessage = (payload, route, note = "") => {
         ? "Новая претензия / complaint"
         : "Новое обращение с сайта";
 
+  const productInterest = Array.isArray(payload.productInterest)
+    ? payload.productInterest
+        .map((item) => {
+          if (item === "consultation_catalog") return "Нужна консультация по ассортименту";
+          return item.startsWith("product:") ? item.slice("product:".length) : item;
+        })
+        .join(", ")
+    : payload.request?.productInterest || "";
+
   const lines = [
     `<b>${escapeHtml(heading)}</b>`,
     `<b>Request ID:</b> ${escapeHtml(payload.requestId)}`,
-    `<b>Intent:</b> ${escapeHtml(payload.intent)}`,
-    payload.contact.companyName ? `<b>Компания:</b> ${escapeHtml(payload.contact.companyName)}` : "",
-    payload.contact.contactName ? `<b>Контакт:</b> ${escapeHtml(payload.contact.contactName)}` : "",
-    payload.contact.phone ? `<b>Телефон:</b> ${escapeHtml(payload.contact.phone)}` : "",
-    payload.contact.email ? `<b>Email:</b> ${escapeHtml(payload.contact.email)}` : "",
-    payload.contact.city ? `<b>Город:</b> ${escapeHtml(payload.contact.city)}` : "",
-    payload.contact.businessType ? `<b>Тип бизнеса:</b> ${escapeHtml(payload.contact.businessType)}` : "",
+    `<b>Intent:</b> ${escapeHtml(payload.intent || payload.requestType || "")}`,
+    payload.companyName || payload.contact?.companyName
+      ? `<b>Компания:</b> ${escapeHtml(payload.companyName || payload.contact?.companyName)}`
+      : "",
+    payload.contactName || payload.contact?.contactName
+      ? `<b>Контакт:</b> ${escapeHtml(payload.contactName || payload.contact?.contactName)}`
+      : "",
+    payload.phone || payload.contact?.phone
+      ? `<b>Телефон:</b> ${escapeHtml(payload.phone || payload.contact?.phone)}`
+      : "",
+    payload.email || payload.contact?.email
+      ? `<b>Email:</b> ${escapeHtml(payload.email || payload.contact?.email)}`
+      : "",
+    payload.city || payload.contact?.city
+      ? `<b>Город:</b> ${escapeHtml(payload.city || payload.contact?.city)}`
+      : "",
+    payload.businessType || payload.contact?.businessType
+      ? `<b>Тип бизнеса:</b> ${escapeHtml(payload.businessType || payload.contact?.businessType)}`
+      : "",
     payload.request.topic ? `<b>Тема:</b> ${escapeHtml(payload.request.topic)}` : "",
-    payload.request.productInterest ? `<b>Интерес:</b> ${escapeHtml(payload.request.productInterest)}` : "",
-    payload.request.estimatedVolume ? `<b>Объём:</b> ${escapeHtml(payload.request.estimatedVolume)}` : "",
-    payload.request.frequency ? `<b>Частота:</b> ${escapeHtml(payload.request.frequency)}` : "",
-    payload.context.source ? `<b>Source:</b> ${escapeHtml(payload.context.source)}` : "",
-    payload.context.pageType ? `<b>Страница:</b> ${escapeHtml(payload.context.pageType)}` : "",
-    payload.context.pageUrl ? `<b>URL:</b> ${escapeHtml(payload.context.pageUrl)}` : "",
+    productInterest ? `<b>Интерес:</b> ${escapeHtml(productInterest)}` : "",
+    payload.estimatedVolume || payload.request?.estimatedVolume
+      ? `<b>Объём:</b> ${escapeHtml(payload.estimatedVolume || payload.request?.estimatedVolume)}`
+      : "",
+    payload.purchaseFrequency || payload.request?.frequency
+      ? `<b>Частота:</b> ${escapeHtml(payload.purchaseFrequency || payload.request?.frequency)}`
+      : "",
+    payload.context?.sourceParam || payload.context?.source
+      ? `<b>Source:</b> ${escapeHtml(payload.context?.sourceParam || payload.context?.source)}`
+      : "",
+    payload.context?.pageType ? `<b>Страница:</b> ${escapeHtml(payload.context.pageType)}` : "",
+    payload.context?.pageUrl ? `<b>URL:</b> ${escapeHtml(payload.context.pageUrl)}` : "",
     note ? `<b>Заметка:</b> ${escapeHtml(note)}` : "",
-    payload.request.comment ? `\n${escapeHtml(payload.request.comment)}` : "",
+    payload.comment || payload.request?.comment
+      ? `\n${escapeHtml(payload.comment || payload.request?.comment)}`
+      : "",
   ].filter(Boolean);
 
   return lines.join("\n");

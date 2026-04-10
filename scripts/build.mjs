@@ -2,6 +2,16 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { categoryById, postBySlug, productById, siteData } from "../content/site-data.mjs";
+import {
+  buildLeadProductOptions,
+  leadBusinessTypes,
+  leadDeliveryFormatOptions,
+  leadEstimatedVolumeOptions,
+  leadPackagingNeedsOptions,
+  leadPreferredContactMethods,
+  leadPurchaseFrequencyOptions,
+  leadRequestTypes,
+} from "./lead-form-shared.mjs";
 
 const cwd = process.cwd();
 const indexablePages = [];
@@ -221,36 +231,49 @@ const productSchema = (product) => ({
   sku: product.id,
 });
 
-const articleSchema = (post, pathname) => ({
-  "@context": "https://schema.org",
-  "@type": "Article",
-  headline: post.title,
-  description: post.description,
-  image: renderMetaImage(post.image.src),
-  datePublished: post.date,
-  dateModified: siteData.generatedAt,
-  author: {
-    "@type": "Organization",
-    name: siteData.site.name,
-  },
-  publisher: {
-    "@type": "Organization",
-    name: siteData.site.name,
-    logo: {
-      "@type": "ImageObject",
-      url: renderMetaImage("/assets/logo.jpg"),
+const articleSchema = (post, pathname) => {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.title,
+    description: post.description,
+    image: renderMetaImage(post.image.src),
+    author: {
+      "@type": "Organization",
+      name: siteData.site.name,
     },
-  },
-  mainEntityOfPage: pageUrl(pathname),
-});
+    publisher: {
+      "@type": "Organization",
+      name: siteData.site.name,
+      logo: {
+        "@type": "ImageObject",
+        url: renderMetaImage("/assets/logo.jpg"),
+      },
+    },
+    mainEntityOfPage: pageUrl(pathname),
+  };
+
+  if (post.date) {
+    schema.datePublished = post.date;
+    schema.dateModified = post.date;
+  }
+
+  return schema;
+};
 
 const renderTopbar = () => `
   <div class="site-topbar">
     <div class="shell site-topbar__inner">
-      <span>${escapeHtml(siteData.site.officialLabel)}</span>
+      <div class="site-topbar__items">
+        ${siteData.site.noticeBar
+          .map((item) =>
+            item.href ? `<a ${linkAttrs(item.href)}>${escapeHtml(item.label)}</a>` : `<span>${escapeHtml(item.label)}</span>`,
+          )
+          .join("")}
+      </div>
       <div class="site-topbar__links">
+        <span>${escapeHtml(siteData.contact.hours)}</span>
         <a ${linkAttrs(siteData.contact.phoneHref, trackAttrs("phone_click", { location: "topbar" }))}>${escapeHtml(siteData.contact.phone)}</a>
-        <a ${linkAttrs(siteData.contact.telegramBotHref, trackAttrs("telegram_click", { location: "topbar" }))}>${escapeHtml(siteData.contact.telegramBotLabel)}</a>
       </div>
     </div>
   </div>
@@ -279,18 +302,12 @@ const renderHeader = (pathname) => `
       </nav>
       <div class="header-cta">
         ${renderAction({
-          href: "/where-to-buy/",
-          label: "Где купить",
+          href: siteData.contact.telegramBotHref,
+          label: "Написать в Telegram",
           className: "button button--small",
-        })}
-        ${renderAction({
-          href: "/b2b/",
-          label: "Опт / B2B",
-          className: "button button--small button--ghost",
-          eventName: "wholesale_cta_click",
+          eventName: "telegram_click",
           eventParams: { location: "header" },
         })}
-        <a class="header-link" ${linkAttrs(siteData.contact.telegramBotHref, trackAttrs("telegram_click", { location: "header" }))}>Telegram</a>
       </div>
     </div>
     <div class="mobile-menu" id="mobile-menu" hidden data-mobile-menu>
@@ -302,22 +319,17 @@ const renderHeader = (pathname) => `
         </nav>
         <div class="mobile-menu__actions">
           ${renderAction({
-            href: "/where-to-buy/",
-            label: "Где купить",
+            href: siteData.contact.telegramBotHref,
+            label: "Написать в Telegram",
             className: "button",
-          })}
-          ${renderAction({
-            href: "/b2b/",
-            label: "Опт / B2B",
-            className: "button button--ghost",
-            eventName: "wholesale_cta_click",
+            eventName: "telegram_click",
             eventParams: { location: "mobile_menu" },
           })}
           ${renderAction({
-            href: siteData.contact.telegramBotHref,
-            label: "Написать в Telegram",
+            href: "/b2b/?source=wholesale",
+            label: "Оптовый запрос",
             className: "text-link",
-            eventName: "telegram_click",
+            eventName: "wholesale_cta_click",
             eventParams: { location: "mobile_menu" },
           })}
         </div>
@@ -357,6 +369,13 @@ const renderFooter = () => `
     </div>
     <div class="shell site-footer__bottom">
       <p>${escapeHtml(siteData.company.requisitesNote)}</p>
+      <p>
+        <a ${linkAttrs("/legal/privacy/")}>Политика конфиденциальности</a>
+        <span> · </span>
+        <a ${linkAttrs("/legal/consent/")}>Согласие на обработку данных</a>
+        <span> · </span>
+        <a ${linkAttrs("/legal/terms/")}>Условия заказа</a>
+      </p>
     </div>
   </footer>
 `;
@@ -458,7 +477,17 @@ const renderStoryCards = (items) => `
           <article class="info-card">
             <h3>${escapeHtml(item.title)}</h3>
             <p>${escapeHtml(item.text)}</p>
-            ${item.href ? `<p>${renderAction({ href: item.href, label: item.cta || "Подробнее", className: "text-link", eventName: item.href === "/b2b/" ? "wholesale_cta_click" : null, eventParams: { location: "card" } })}</p>` : ""}
+            ${
+              item.href
+                ? `<p>${renderAction({
+                    href: item.href,
+                    label: item.cta || `Подробнее о ${item.title.toLowerCase()}`,
+                    className: "text-link",
+                    eventName: item.href?.startsWith("/b2b/") ? "wholesale_cta_click" : null,
+                    eventParams: { location: "card" },
+                  })}</p>`
+                : ""
+            }
           </article>
         `,
       )
@@ -478,7 +507,7 @@ const renderCategoryCard = (category) => {
       ${
         href
           ? renderAction({ href, label: "Открыть категорию", className: "text-link" })
-          : '<p class="card-note">Раздел подготовлен как задел для расширения ассортимента.</p>'
+          : '<p class="card-note">Скоро в ассортименте.</p>'
       }
     </article>
   `;
@@ -488,7 +517,7 @@ const renderProductCard = (product, location = "catalog") => `
   <article class="product-card" data-catalog-item data-search="${escapeHtml(
     `${product.name} ${product.description} ${product.origin} ${product.packaging} ${product.composition}`,
   )}">
-    <a class="product-card__media" ${linkAttrs(`/catalog/${product.slug}/`)}>
+    <a class="product-card__media" ${linkAttrs(`/catalog/${product.slug}/`, { "aria-label": `Страница товара: ${product.name}` })}>
       <img src="${escapeHtml(product.packshot.src)}" width="${product.packshot.width}" height="${product.packshot.height}" alt="${escapeHtml(product.packshot.alt)}" loading="lazy" decoding="async" />
     </a>
     <div class="product-card__body">
@@ -501,7 +530,12 @@ const renderProductCard = (product, location = "catalog") => `
         <li>${escapeHtml(product.packaging)}</li>
       </ul>
       <div class="button-row">
-        ${renderAction({ href: `/catalog/${product.slug}/`, label: "Открыть товар", className: "button button--small" })}
+        ${renderAction({
+          href: `/catalog/${product.slug}/`,
+          label: "Подробнее о товаре",
+          className: "button button--small",
+          ariaLabel: `Подробнее о товаре: ${product.name}`,
+        })}
         ${renderAction({
           href: "/where-to-buy/",
           label: "Где купить",
@@ -514,204 +548,324 @@ const renderProductCard = (product, location = "catalog") => `
   </article>
 `;
 
-const renderHiddenFields = (defaults = {}) =>
-  [
-    ["form_type", defaults.formType || ""],
-    ["intent", defaults.intent || ""],
-    ["source", defaults.source || ""],
-    ["page_type", defaults.pageType || ""],
-    ["page_slug", defaults.pageSlug || ""],
-    ["product_id", defaults.productId || ""],
-    ["product_name", defaults.productName || ""],
-    ["category_id", defaults.categoryId || ""],
-    ["page_url", ""],
-    ["referrer", ""],
-    ["session_id", ""],
-    ["submitted_at", ""],
-    ["utm_source", ""],
-    ["utm_medium", ""],
-    ["utm_campaign", ""],
-    ["utm_content", ""],
-    ["utm_term", ""],
-    ["first_utm_source", ""],
-    ["first_utm_medium", ""],
-    ["first_utm_campaign", ""],
-    ["company_website", ""],
-  ]
-    .map(
-      ([name, value]) =>
-        `<input type="hidden" name="${escapeHtml(name)}" value="${escapeHtml(value)}" />`,
-    )
-    .join("");
-
-const renderContactForm = () => `
-  <form class="request-form" data-lead-form action="/api/contact-request" method="post" novalidate>
-    ${renderHiddenFields({ formType: "contact", intent: "support", pageType: "contacts", pageSlug: "contacts" })}
-    <div class="form-grid">
-      <label>
-        <span>Как к вам обращаться</span>
-        <input type="text" name="contact_name" autocomplete="name" required />
-      </label>
-      <label>
-        <span>Телефон</span>
-        <input type="tel" name="phone" autocomplete="tel" inputmode="tel" required />
-      </label>
-      <label>
-        <span>Email</span>
-        <input type="email" name="email" autocomplete="email" required />
-      </label>
-      <label>
-        <span>Предпочтительный канал</span>
-        <select name="preferred_contact">
-          ${siteData.contacts.formConfig.preferredContacts
-            .map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`)
-            .join("")}
-        </select>
-      </label>
-    </div>
-    <label>
-      <span>Тема обращения</span>
-      <select name="topic" required>
-        ${siteData.contacts.formConfig.topics
-          .map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`)
-          .join("")}
-      </select>
-    </label>
-    <label>
-      <span>Комментарий</span>
-      <textarea name="comment" rows="5" placeholder="Опишите вопрос, поддержку, претензию или запрос документов."></textarea>
-    </label>
-    <label class="consent">
-      <input type="checkbox" name="consent" required />
-      <span>Согласен(а) на обработку контактных данных для ответа по моему запросу.</span>
-    </label>
-    <div class="button-row">
-      <button class="button" type="submit">Отправить сообщение</button>
-      ${renderAction({
-        href: siteData.contact.telegramBotHref,
-        label: "Написать в Telegram",
-        className: "text-link",
-        eventName: "telegram_click",
-        eventParams: { location: "contact_form" },
-      })}
-    </div>
-    <div class="form-status" aria-live="polite" data-form-status></div>
-  </form>
+const renderChoiceCards = ({ name, options, type = "radio", checkedValue = "", checkedValues = [] }) => `
+  <div class="choice-grid${type === "checkbox" ? " choice-grid--checkbox" : ""}" data-field-group="${escapeHtml(name)}">
+    ${options
+      .map((item) => {
+        const checked =
+          type === "checkbox" ? checkedValues.includes(item.value) : checkedValue === item.value;
+        return `
+          <label class="choice-card${checked ? " is-checked" : ""}">
+            <input type="${type}" name="${escapeHtml(name)}"${type === "checkbox" ? "" : ""} value="${escapeHtml(item.value)}"${checked ? " checked" : ""} />
+            <span class="choice-card__label">${escapeHtml(item.label)}</span>
+            ${item.description ? `<span class="choice-card__description">${escapeHtml(item.description)}</span>` : ""}
+          </label>
+        `;
+      })
+      .join("")}
+  </div>
 `;
 
-const renderB2BForm = (product = productById.macadamia) => `
-  <form class="request-form request-form--b2b" data-lead-form action="/api/b2b-request" method="post" novalidate>
-    ${renderHiddenFields({
-      formType: "b2b",
-      intent: "wholesale",
-      pageType: "b2b",
-      pageSlug: "b2b",
-      productId: product.id,
-      productName: product.name,
-      categoryId: product.categoryId,
-      source: "wholesale",
+const renderSelectOptions = (options, includePlaceholder = true) => `
+  ${includePlaceholder ? '<option value="">Выберите вариант</option>' : ""}
+  ${options
+    .map((item) => {
+      const value = typeof item === "string" ? item : item.value;
+      const label = typeof item === "string" ? item : item.label;
+      return `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`;
+    })
+    .join("")}
+`;
+
+const renderLeadFallbackLinks = (location) => `
+  <div class="form-fallback-links">
+    ${renderAction({
+      href: siteData.contact.telegramWholesaleHref,
+      label: "Telegram",
+      className: "text-link",
+      eventName: "lead_form_fallback_click_telegram",
+      eventParams: { location },
     })}
-    <div class="form-grid form-grid--three">
-      <label>
-        <span>Компания</span>
-        <input type="text" name="company_name" autocomplete="organization" required />
-      </label>
-      <label>
-        <span>Контактное лицо</span>
-        <input type="text" name="contact_name" autocomplete="name" required />
-      </label>
-      <label>
-        <span>Телефон</span>
-        <input type="tel" name="phone" autocomplete="tel" inputmode="tel" required />
-      </label>
-      <label>
-        <span>Email</span>
-        <input type="email" name="email" autocomplete="email" required />
-      </label>
-      <label>
-        <span>Город</span>
-        <input type="text" name="city" autocomplete="address-level2" required />
-      </label>
-      <label>
-        <span>Тип бизнеса</span>
-        <select name="business_type" required>
-          <option value="">Выберите тип бизнеса</option>
-          ${siteData.b2b.formConfig.businessTypes
-            .map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`)
-            .join("")}
-        </select>
-      </label>
-      <label>
-        <span>Интерес к продукту</span>
-        <select name="product_interest" required>
-          ${siteData.b2b.formConfig.productOptions
-            .map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`)
-            .join("")}
-        </select>
-      </label>
-      <label>
-        <span>Оценка объёма</span>
-        <input type="text" name="estimated_volume" placeholder="Например: тестовая партия, регулярные поставки, корпоративный набор" />
-      </label>
-      <label>
-        <span>Частота</span>
-        <select name="frequency">
-          ${siteData.b2b.formConfig.frequencies
-            .map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`)
-            .join("")}
-        </select>
-      </label>
-    </div>
-    <label>
-      <span>Комментарий</span>
-      <textarea name="comment" rows="5" placeholder="Опишите сценарий: магазин, HoReCa, офис, подарки, дистрибуция, документы или упаковочные требования."></textarea>
-    </label>
-    <label>
-      <span>Предпочтительный канал связи</span>
-      <select name="preferred_contact">
-        ${siteData.b2b.formConfig.preferredContacts
-          .map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`)
-          .join("")}
-      </select>
-    </label>
-    <label class="consent">
-      <input type="checkbox" name="consent" required />
-      <span>Согласен(а) на обработку персональных данных и деловой информации для ответа по B2B-запросу.</span>
-    </label>
-    <div class="button-row">
-      <button class="button" type="submit">${escapeHtml(siteData.b2b.formConfig.submitLabel)}</button>
-      ${renderAction({
-        href: siteData.contact.telegramWholesaleHref,
-        label: "Быстрый вопрос в Telegram",
-        className: "text-link",
-        eventName: "telegram_click",
-        eventParams: { location: "b2b_form" },
-      })}
-    </div>
-    <p class="form-note">Если live-интеграция с Bitrix ещё не подключена, форма всё равно работает в безопасном mock-режиме и даёт корректный success-state.</p>
-    <div class="form-status" aria-live="polite" data-form-status></div>
-  </form>
+    ${renderAction({
+      href: siteData.contact.phoneHref,
+      label: "Телефон",
+      className: "text-link",
+      eventName: "lead_form_fallback_click_phone",
+      eventParams: { location },
+    })}
+    ${renderAction({
+      href: siteData.contact.emailHref,
+      label: "Email",
+      className: "text-link",
+      eventName: "lead_form_fallback_click_email",
+      eventParams: { location },
+    })}
+  </div>
 `;
+
+const renderLeadRequestForm = ({
+  variant = "full",
+  pageType = "b2b",
+  pageSlug = "b2b",
+  sourceParam = "wholesale",
+  defaultIntent = "wholesale_purchase",
+  product = null,
+  productContextLabel = "",
+  title = "",
+  text = "",
+  submitLabel = "Отправить заявку",
+  id = "lead-request-form",
+  showExpandedFields = false,
+}) => {
+  const productOptions = buildLeadProductOptions(
+    product ? [product] : Object.values(productById),
+    { includeConsultation: true },
+  );
+  const currentProductValue = product ? `product:${product.id}` : "";
+  const location = `${pageType}_${variant}_form`;
+
+  return `
+    <form
+      class="request-form request-form--lead request-form--${escapeHtml(variant)}"
+      id="${escapeHtml(id)}"
+      data-lead-form
+      data-form-role="b2b"
+      data-form-variant="${escapeHtml(variant)}"
+      data-page-type="${escapeHtml(pageType)}"
+      data-page-slug="${escapeHtml(pageSlug)}"
+      data-default-intent="${escapeHtml(defaultIntent)}"
+      data-source-param="${escapeHtml(sourceParam)}"
+      data-product-id="${escapeHtml(product?.id || "")}"
+      data-product-slug="${escapeHtml(product?.slug || "")}"
+      data-product-name="${escapeHtml(product?.name || "")}"
+      data-category-context="${escapeHtml(product?.categoryId || "")}"
+      action="/api/b2b-request"
+      method="post"
+      novalidate
+    >
+      <div class="request-form__intro">
+        <p class="eyebrow">Для бизнеса</p>
+        <h3>${escapeHtml(title || "Оптовый или корпоративный заказ")}</h3>
+        <p>${escapeHtml(
+          text ||
+            "Оставьте заявку, и менеджер свяжется с вами, чтобы уточнить объём, формат поставки и условия.",
+        )}</p>
+      </div>
+
+      ${
+        product
+          ? `<div class="form-context-note">
+              <strong>Вы оставляете заявку по товару:</strong>
+              <span>${escapeHtml(productContextLabel || product.name)}</span>
+            </div>`
+          : ""
+      }
+
+      <fieldset class="form-fieldset">
+        <legend>Что вам нужно</legend>
+        ${renderChoiceCards({
+          name: "request_type",
+          options: leadRequestTypes,
+          checkedValue: defaultIntent,
+        })}
+      </fieldset>
+
+      <fieldset class="form-fieldset">
+        <legend>О компании и контакте</legend>
+        <div class="form-grid ${variant === "full" ? "form-grid--three" : ""}">
+          <label>
+            <span>Компания / бренд / ИП</span>
+            <input type="text" name="company_name" autocomplete="organization" />
+          </label>
+          <label>
+            <span>Контактное лицо</span>
+            <input type="text" name="contact_name" autocomplete="name" />
+          </label>
+          <label>
+            <span>Тип бизнеса</span>
+            <select name="business_type">
+              ${renderSelectOptions(leadBusinessTypes)}
+            </select>
+          </label>
+          <label>
+            <span>ИНН <small>опционально</small></span>
+            <input type="text" name="inn" inputmode="numeric" autocomplete="off" placeholder="Если хотите ускорить подготовку документов" />
+          </label>
+        </div>
+
+        <div class="form-block">
+          <span class="form-label">Как удобнее связаться</span>
+          ${renderChoiceCards({
+            name: "preferred_contact_method",
+            options: leadPreferredContactMethods.map((item) => ({ value: item, label: item })),
+            checkedValue: "Телефон",
+          })}
+          <p class="form-helper" data-contact-helper>
+            Выберите основной канал. Остальные контакты можно оставить как резервные.
+          </p>
+        </div>
+
+        <div class="form-grid ${variant === "full" ? "form-grid--three" : ""}">
+          <label>
+            <span>Телефон</span>
+            <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" />
+          </label>
+          <label>
+            <span>Email</span>
+            <input type="email" name="email" autocomplete="email" placeholder="name@company.ru" />
+          </label>
+          <label data-conditional-field="telegram">
+            <span>Telegram username</span>
+            <input type="text" name="telegram_username" autocomplete="off" placeholder="@username" />
+            <small class="form-helper">Если основной канал — Telegram, укажите username в формате @username.</small>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="form-fieldset">
+        <legend>Что нужно</legend>
+        <div class="form-block">
+          <span class="form-label">Интерес к продукту</span>
+          ${renderChoiceCards({
+            name: "product_interest",
+            type: "checkbox",
+            options: productOptions,
+            checkedValues: currentProductValue ? [currentProductValue] : [],
+          })}
+        </div>
+        <div class="form-grid ${variant === "full" ? "form-grid--three" : ""}">
+          <label>
+            <span>Оценка объёма</span>
+            <select name="estimated_volume">
+              ${renderSelectOptions(leadEstimatedVolumeOptions)}
+            </select>
+          </label>
+          <label>
+            <span>Город / регион поставки</span>
+            <input type="text" name="city" autocomplete="address-level2" placeholder="Например, Москва" />
+          </label>
+          <label>
+            <span>Частота закупки</span>
+            <select name="purchase_frequency">
+              ${renderSelectOptions(leadPurchaseFrequencyOptions)}
+            </select>
+          </label>
+        </div>
+      </fieldset>
+
+      ${
+        variant === "compact"
+          ? `<details class="form-disclosure"${showExpandedFields ? " open" : ""}>
+              <summary>Дополнительные детали</summary>
+              <div class="form-disclosure__content">
+                <label class="consent consent--toggle" data-field-group="need_commercial_offer">
+                  <input type="checkbox" name="need_commercial_offer" />
+                  <span>Добавить детали для коммерческого предложения</span>
+                </label>
+                <div class="form-grid" data-quote-details hidden>
+                  <label>
+                    <span>Точный объём, кг</span>
+                    <input type="number" name="exact_volume_kg" min="1" step="1" inputmode="numeric" />
+                  </label>
+                  <label>
+                    <span>Формат поставки</span>
+                    <select name="delivery_format">
+                      ${renderSelectOptions(leadDeliveryFormatOptions)}
+                    </select>
+                  </label>
+                  <label>
+                    <span>Когда нужен заказ</span>
+                    <input type="date" name="target_date" />
+                  </label>
+                  <label>
+                    <span>Фасовка / формат</span>
+                    <select name="packaging_needs">
+                      ${renderSelectOptions(leadPackagingNeedsOptions)}
+                    </select>
+                  </label>
+                </div>
+                <label data-quote-details hidden>
+                  <span>Полный адрес <small>опционально</small></span>
+                  <textarea name="full_address" rows="3" placeholder="Если хотите ускорить подготовку условий, можно указать адрес поставки."></textarea>
+                </label>
+                <label>
+                  <span>Комментарий</span>
+                  <textarea name="comment" rows="4" maxlength="1500" placeholder="Коротко опишите задачу, требования по фасовке, документам или формату поставки."></textarea>
+                </label>
+              </div>
+            </details>`
+          : `
+            <fieldset class="form-fieldset form-fieldset--muted">
+              <legend>Что поможет быстрее подготовить условия</legend>
+              <p class="form-helper">
+                Эти детали помогут быстрее подготовить условия. Точную стоимость и формат поставки менеджер подтвердит после заявки.
+              </p>
+              <label class="consent consent--toggle" data-field-group="need_commercial_offer">
+                <input type="checkbox" name="need_commercial_offer" />
+                <span>Добавить детали для коммерческого предложения</span>
+              </label>
+              <div class="form-grid form-grid--three" data-quote-details hidden>
+                <label>
+                  <span>Точный объём, кг</span>
+                  <input type="number" name="exact_volume_kg" min="1" step="1" inputmode="numeric" />
+                </label>
+                <label>
+                  <span>Формат поставки</span>
+                  <select name="delivery_format">
+                    ${renderSelectOptions(leadDeliveryFormatOptions)}
+                  </select>
+                </label>
+                <label>
+                  <span>Когда нужен заказ</span>
+                  <input type="date" name="target_date" />
+                </label>
+                <label>
+                  <span>Фасовка / формат</span>
+                  <select name="packaging_needs">
+                    ${renderSelectOptions(leadPackagingNeedsOptions)}
+                  </select>
+                </label>
+                <label class="form-grid__span-2">
+                  <span>Полный адрес <small>опционально</small></span>
+                  <textarea name="full_address" rows="3" placeholder="Если хотите ускорить подготовку условий, можно указать адрес поставки."></textarea>
+                </label>
+              </div>
+              <label>
+                <span>Комментарий</span>
+                <textarea name="comment" rows="5" maxlength="1500" placeholder="Опишите задачу, желаемый формат сотрудничества, фасовку или документы, которые нужно подготовить."></textarea>
+              </label>
+            </fieldset>
+          `
+      }
+
+      <fieldset class="form-fieldset form-fieldset--compact">
+        <legend>Подтверждение</legend>
+        <label class="consent" data-field-group="consent">
+          <input type="checkbox" name="consent" />
+          <span>Согласен(а) на обработку данных для ответа по заявке и подготовки условий.</span>
+        </label>
+      </fieldset>
+
+      <label class="form-honeypot" aria-hidden="true">
+        <span>Если вы не бот, оставьте это поле пустым</span>
+        <input type="text" name="company_website" tabindex="-1" autocomplete="off" />
+      </label>
+
+      <div class="button-row button-row--lead">
+        <button class="button" type="submit">${escapeHtml(submitLabel)}</button>
+        ${renderLeadFallbackLinks(location)}
+      </div>
+      <p class="form-note">
+        Telegram, телефон и email остаются резервными каналами. Основной сценарий для бизнеса — заявка через эту форму.
+      </p>
+      <div class="form-status" tabindex="-1" role="status" aria-live="polite" data-form-status></div>
+    </form>
+  `;
+};
 
 const homePage = () => {
   const product = productById.macadamia;
-  const journalCards = siteData.journal.posts
-    .map(
-      (post) => `
-        <article class="journal-card">
-          <a class="journal-card__media" ${linkAttrs(`/journal/${post.slug}/`, trackAttrs("journal_article_open", { slug: post.slug, location: "home_card" }))}>
-            <img src="${escapeHtml(post.image.src)}" width="${post.image.width}" height="${post.image.height}" alt="${escapeHtml(post.image.alt)}" loading="lazy" decoding="async" />
-          </a>
-          <div class="journal-card__body">
-            <p class="eyebrow">Журнал</p>
-            <h3><a ${linkAttrs(`/journal/${post.slug}/`, trackAttrs("journal_article_open", { slug: post.slug, location: "home_title" }))}>${escapeHtml(post.title)}</a></h3>
-            <p>${escapeHtml(post.description)}</p>
-          </div>
-        </article>
-      `,
-    )
-    .join("");
-
+  const [featuredPost, ...otherPosts] = siteData.journal.posts;
   const schemaNodes = [organizationSchema(), websiteSchema()];
 
   return renderLayout({
@@ -756,16 +910,11 @@ const homePage = () => {
             </ul>
           </div>
           <div class="hero__visual hero__visual--home">
-            <img src="/assets/about/hero-macadamia.jpg" width="1400" height="787" alt="Официальный брендовый слой Global Basket" fetchpriority="high" />
+            <img src="/assets/about/hero-macadamia.jpg" width="1400" height="787" alt="Очищенная макадамия Global Basket" fetchpriority="high" />
           </div>
         </div>
       </section>
-      <section class="trust-strip">
-        <div class="shell trust-strip__grid">
-          ${siteData.home.trustStrip.map((item) => `<p>${escapeHtml(item)}</p>`).join("")}
-        </div>
-      </section>
-      <section class="section">
+      <section class="section section--muted">
         <div class="shell feature-grid">
           <div class="feature-copy">
             <p class="eyebrow">${escapeHtml(siteData.home.flagship.title)}</p>
@@ -799,90 +948,65 @@ const homePage = () => {
           </article>
         </div>
       </section>
-      <section class="section section--muted">
-        <div class="shell">
-          <div class="section-heading">
-            <p class="eyebrow">Сценарии</p>
-            <h2>Сайт разводит четыре ключевых задачи, чтобы retail, B2B и поддержка не мешали друг другу.</h2>
-          </div>
-          ${renderStoryCards(siteData.home.scenarios)}
-        </div>
-      </section>
       <section class="section">
         <div class="shell">
           <div class="section-heading">
-            <p class="eyebrow">Где купить</p>
-            <h2>Официальные retail-каналы бренда</h2>
-            <p>Сайт Global Basket помогает понять продукт, а покупка в розницу происходит там, где вам удобно завершить заказ.</p>
+            <p class="eyebrow">Каталог</p>
+            <h2>Текущий ассортимент и ближайшие разделы</h2>
           </div>
-          <div class="channel-grid">
-            ${siteData.channels.marketplaces.map((item) => renderMarketplaceCard(item, "home_channels")).join("")}
+          <div class="catalog-grid">
+            ${renderProductCard(product, "home_catalog")}
+            ${siteData.categories.map((item) => renderCategoryCard(item)).join("")}
           </div>
         </div>
       </section>
       <section class="section">
         <div class="shell">
           <div class="section-heading">
-            <p class="eyebrow">Почему доверять</p>
-            <h2>Сайт бренда даёт больше смысла и доверия, чем одна карточка на маркетплейсе.</h2>
+            <p class="eyebrow">Почему покупать</p>
+            <h2>Происхождение, упаковка, официальный канал покупки и прямой контакт с брендом.</h2>
           </div>
-          ${renderStoryCards(siteData.home.whyBrand)}
+          ${renderStoryCards(siteData.home.advantages)}
         </div>
       </section>
-      <section class="section section--muted">
-        <div class="shell split-teasers">
-          <article class="teaser-panel">
-            <p class="eyebrow">О бренде</p>
-            <h2>${escapeHtml(siteData.home.aboutTeaser.title)}</h2>
-            <p>${escapeHtml(siteData.home.aboutTeaser.text)}</p>
-            ${renderAction({ href: siteData.home.aboutTeaser.href, label: "Открыть страницу бренда", className: "text-link" })}
-          </article>
-          <article class="teaser-panel">
+      <section class="section section--compact">
+        <div class="shell">
+          <div class="section-heading">
             <p class="eyebrow">Журнал</p>
-            <h2>${escapeHtml(siteData.home.journalTeaser.title)}</h2>
-            <p>${escapeHtml(siteData.home.journalTeaser.text)}</p>
-            ${renderAction({ href: siteData.home.journalTeaser.href, label: "Открыть журнал", className: "text-link" })}
-          </article>
-        </div>
-      </section>
-      <section class="section">
-        <div class="shell">
-          <div class="section-heading">
-            <p class="eyebrow">Материалы</p>
-            <h2>SEO и доверительный слой бренда</h2>
+            <h2>Короткие материалы о продукте, упаковке и покупке.</h2>
           </div>
-          <div class="journal-grid">${journalCards}</div>
-        </div>
-      </section>
-      <section class="section section--cta">
-        <div class="shell final-cta">
-          <div>
-            <p class="eyebrow">Следующий шаг</p>
-            <h2>${escapeHtml(siteData.home.finalCta.title)}</h2>
-            <p>${escapeHtml(siteData.home.finalCta.text)}</p>
-          </div>
-          <div class="button-stack">
-            ${renderAction({
-              href: siteData.home.finalCta.primary.href,
-              label: siteData.home.finalCta.primary.label,
-              className: "button",
-              eventName: "marketplace_click",
-              eventParams: { channel: "where_to_buy", location: "home_final" },
-            })}
-            ${renderAction({
-              href: siteData.home.finalCta.secondary.href,
-              label: siteData.home.finalCta.secondary.label,
-              className: "button button--ghost",
-              eventName: "wholesale_cta_click",
-              eventParams: { location: "home_final" },
-            })}
-            ${renderAction({
-              href: siteData.home.finalCta.tertiary.href,
-              label: siteData.home.finalCta.tertiary.label,
-              className: "text-link",
-              eventName: "telegram_click",
-              eventParams: { location: "home_final" },
-            })}
+          <div class="journal-grid">
+            <article class="journal-card journal-card--large">
+              <a class="journal-card__media" ${linkAttrs(`/journal/${featuredPost.slug}/`, {
+                ...trackAttrs("journal_article_open", { slug: featuredPost.slug, location: "home_journal_featured" }),
+                "aria-label": `Открыть материал: ${featuredPost.title}`,
+              })}>
+                <img src="${escapeHtml(featuredPost.image.src)}" width="${featuredPost.image.width}" height="${featuredPost.image.height}" alt="${escapeHtml(featuredPost.image.alt)}" loading="lazy" decoding="async" />
+              </a>
+              <div class="journal-card__body">
+                <p class="eyebrow">${escapeHtml(featuredPost.readingTime)}</p>
+                <h3><a ${linkAttrs(`/journal/${featuredPost.slug}/`, trackAttrs("journal_article_open", { slug: featuredPost.slug, location: "home_journal_featured_title" }))}>${escapeHtml(featuredPost.title)}</a></h3>
+                <p>${escapeHtml(featuredPost.description)}</p>
+              </div>
+            </article>
+            ${otherPosts
+              .map(
+                (post) => `
+                  <article class="journal-card">
+                    <a class="journal-card__media" ${linkAttrs(`/journal/${post.slug}/`, {
+                      ...trackAttrs("journal_article_open", { slug: post.slug, location: "home_journal" }),
+                      "aria-label": `Открыть материал: ${post.title}`,
+                    })}>
+                      <img src="${escapeHtml(post.image.src)}" width="${post.image.width}" height="${post.image.height}" alt="${escapeHtml(post.image.alt)}" loading="lazy" decoding="async" />
+                    </a>
+                    <div class="journal-card__body">
+                      <h3><a ${linkAttrs(`/journal/${post.slug}/`, trackAttrs("journal_article_open", { slug: post.slug, location: "home_journal_title" }))}>${escapeHtml(post.title)}</a></h3>
+                      <p>${escapeHtml(post.description)}</p>
+                    </div>
+                  </article>
+                `,
+              )
+              .join("")}
           </div>
         </div>
       </section>
@@ -896,8 +1020,12 @@ const catalogPage = () => {
     { label: "Каталог", href: "/catalog/" },
   ]);
   const product = productById.macadamia;
-  const faq = renderFaq(siteData.catalog.faq, "FAQ по каталогу");
-  const items = [product, ...siteData.categories.filter((item) => item.status !== "coming-soon").map((item) => ({ ...item, href: `/categories/${item.slug}/` }))];
+  const items = [
+    { ...product, href: `/catalog/${product.slug}/` },
+    ...siteData.categories
+      .filter((item) => item.status !== "coming-soon")
+      .map((item) => ({ ...item, href: `/categories/${item.slug}/` })),
+  ];
 
   return renderLayout({
     pathname: "/catalog/",
@@ -912,57 +1040,60 @@ const catalogPage = () => {
           ${breadcrumb.html}
           <div class="section-heading">
             <p class="eyebrow">Каталог</p>
-            <h1>Каталог премиальных орехов Global Basket</h1>
+            <h1>Каталог</h1>
             <p>${escapeHtml(siteData.catalog.intro)}</p>
           </div>
-          <div class="search-shell">
-            <form class="catalog-search" role="search" data-catalog-search>
-              <label class="sr-only" for="catalog-search">Поиск по каталогу</label>
-              <input id="catalog-search" type="search" name="q" placeholder="Поиск по каталогу" />
-              <button class="button button--small" type="submit">Найти</button>
-            </form>
-            <p class="catalog-search__meta" data-catalog-count>Показано: 0</p>
-          </div>
+          <p class="catalog-summary">1 товар в продаже и ${siteData.categories.length - 1} направления в ближайшем ассортименте.</p>
         </div>
       </section>
       <section class="section">
-        <div class="shell">
-          <div class="story-grid">
-            ${siteData.catalog.sections
-              .map(
-                (item) => `
-                  <article class="info-card">
-                    <h2>${escapeHtml(item.title)}</h2>
-                    <p>${escapeHtml(item.text)}</p>
-                  </article>
-                `,
-              )
-              .join("")}
+        <div class="shell catalog-layout">
+          <aside class="catalog-sidebar">
+            <article class="info-card">
+              <h2>Разделы каталога</h2>
+              <ul class="bullet-list">
+                ${siteData.categories.map((item) => `<li>${escapeHtml(item.name)}</li>`).join("")}
+              </ul>
+            </article>
+            <article class="info-card">
+              <h2>Для опта и вопросов</h2>
+              <p>Если нужен объём для бизнеса или вопрос по товару, используйте B2B-страницу или контакты.</p>
+              <div class="button-stack">
+                ${renderAction({
+                  href: "/b2b/?source=wholesale",
+                  label: "Оптовый запрос",
+                  className: "button button--small",
+                  eventName: "wholesale_cta_click",
+                  eventParams: { location: "catalog_sidebar" },
+                })}
+                ${renderAction({ href: "/contacts/?source=catalog", label: "Контакты", className: "text-link" })}
+              </div>
+            </article>
+          </aside>
+          <div class="catalog-main">
+            <div class="section-heading section-heading--compact">
+              <p class="eyebrow">Товар и разделы</p>
+              <h2>Очищенная макадамия и ближайшие направления каталога.</h2>
+            </div>
+            <div class="catalog-toolbar">
+              <p class="catalog-summary">Сейчас в продаже одна позиция. Остальные разделы готовятся к запуску.</p>
+            </div>
+            <div class="catalog-grid" data-catalog-grid>
+              ${renderProductCard(product, "catalog_grid")}
+              ${siteData.categories.map((item) => renderCategoryCard(item)).join("")}
+            </div>
           </div>
         </div>
       </section>
-      <section class="section section--muted">
+      <section class="section section--compact">
         <div class="shell">
           <div class="section-heading">
-            <p class="eyebrow">Ассортимент</p>
-            <h2>Текущий продукт и следующие направления бренда</h2>
-          </div>
-          <div class="catalog-grid" data-catalog-grid>
-            ${renderProductCard(product, "catalog_grid")}
-            ${siteData.categories.map((item) => renderCategoryCard(item)).join("")}
-          </div>
-        </div>
-      </section>
-      <section class="section">
-        <div class="shell">
-          <div class="section-heading">
-            <p class="eyebrow">Следующие шаги</p>
-            <h2>Куда идти из каталога дальше</h2>
+            <p class="eyebrow">Покупателям</p>
+            <h2>Полезные ссылки</h2>
           </div>
           ${renderStoryCards(siteData.catalog.supportCards)}
         </div>
       </section>
-      ${faq.html}
     `,
   });
 };
@@ -974,7 +1105,6 @@ const categoryPage = (category) => {
     { label: "Каталог", href: "/catalog/" },
     { label: category.name, href: `/categories/${category.slug}/` },
   ]);
-  const faq = renderFaq(category.faq, `FAQ по категории «${category.name}»`);
   const listItems = [{ name: product.name, href: `/catalog/${product.slug}/` }];
 
   return renderLayout({
@@ -984,7 +1114,12 @@ const categoryPage = (category) => {
     ogImage: product.heroImage.src,
     dataPage: "category",
     dataSlug: category.slug,
-    schemaNodes: [organizationSchema(), breadcrumb.schema, collectionSchema(category.name, listItems, `/categories/${category.slug}/`), itemListSchema(listItems), faq.schema].filter(Boolean),
+    schemaNodes: [
+      organizationSchema(),
+      breadcrumb.schema,
+      collectionSchema(category.name, listItems, `/categories/${category.slug}/`),
+      itemListSchema(listItems),
+    ].filter(Boolean),
     content: `
       <section class="hero hero--inner">
         <div class="shell">
@@ -996,19 +1131,10 @@ const categoryPage = (category) => {
           </div>
         </div>
       </section>
-      <section class="section">
-        <div class="shell split-content">
-          <div>
-            <h2>Кому подходит категория</h2>
-            <ul class="bullet-list">
-              ${category.audience.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
-            </ul>
-          </div>
-          <div>
-            <h2>Почему это важно для бренда</h2>
-            <ul class="bullet-list">
-              ${category.benefits.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
-            </ul>
+      <section class="section section--compact">
+        <div class="shell">
+          <div class="catalog-grid">
+            ${siteData.categories.map((item) => renderCategoryCard(item)).join("")}
           </div>
         </div>
       </section>
@@ -1019,9 +1145,14 @@ const categoryPage = (category) => {
             <h2>${escapeHtml(product.shortName)}</h2>
             <p>${escapeHtml(product.excerpt)}</p>
             <div class="button-row">
-              ${renderAction({ href: `/catalog/${product.slug}/`, label: "Открыть товар", className: "button button--small" })}
               ${renderAction({
-                href: "/b2b/",
+                href: `/catalog/${product.slug}/`,
+                label: "Подробнее о товаре",
+                className: "button button--small",
+                ariaLabel: `Подробнее о товаре: ${product.name}`,
+              })}
+              ${renderAction({
+                  href: "/b2b/?source=wholesale",
                 label: "Для корпоративных объёмов",
                 className: "button button--small button--ghost",
                 eventName: "wholesale_cta_click",
@@ -1034,7 +1165,15 @@ const categoryPage = (category) => {
           </article>
         </div>
       </section>
-      ${faq.html}
+      <section class="section">
+        <div class="shell">
+          ${renderStoryCards([
+            { title: "Где купить", text: "Официальные карточки бренда на маркетплейсах и прямые сервисные контакты.", href: "/where-to-buy/", cta: "Где купить" },
+            { title: "Контакты", text: "Если нужен вопрос по товару или покупке, все каналы связи собраны на одной странице.", href: "/contacts/?source=pdp", cta: "Контакты" },
+            { title: "Для бизнеса", text: "Для поставки, офиса, магазина и корпоративных заказов используйте отдельную B2B-страницу.", href: "/b2b/?source=wholesale", cta: "Оптовый запрос" },
+          ])}
+        </div>
+      </section>
     `,
   });
 };
@@ -1047,12 +1186,11 @@ const productPage = (product) => {
     { label: category.name, href: `/categories/${category.slug}/` },
     { label: product.shortName, href: `/catalog/${product.slug}/` },
   ]);
-  const relatedPosts = product.relatedArticleSlugs.map((slug) => postBySlug[slug]);
   const faq = renderFaq(product.faq, "FAQ по продукту");
 
   return renderLayout({
     pathname: `/catalog/${product.slug}/`,
-    title: `${product.name} — официальный продуктовый слой бренда`,
+    title: `${product.name} — характеристики и где купить`,
     description: product.excerpt,
     ogImage: product.heroImage.src,
     dataPage: "product",
@@ -1119,7 +1257,7 @@ const productPage = (product) => {
             </dl>
           </div>
           <div>
-            <h2>Сценарии использования</h2>
+            <h2>Как использовать</h2>
             <ul class="bullet-list">
               ${product.useCases.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
             </ul>
@@ -1128,16 +1266,40 @@ const productPage = (product) => {
       </section>
       <section class="section section--muted">
         <div class="shell feature-grid">
-          <article class="feature-media">
-            <img src="${escapeHtml(product.lifestyleImage.src)}" width="${product.lifestyleImage.width}" height="${product.lifestyleImage.height}" alt="${escapeHtml(product.lifestyleImage.alt)}" loading="lazy" decoding="async" />
-          </article>
           <div class="feature-copy">
-            <p class="eyebrow">Почему это больше, чем карточка на маркетплейсе</p>
-            <h2>Официальный сайт помогает понять товар до покупки</h2>
-            <ul class="bullet-list">
-              ${product.reasons.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
-            </ul>
-            <p class="callout">${escapeHtml(product.storage)}</p>
+            <p class="eyebrow">Для бизнеса</p>
+            <h2>Заявка по этому товару для магазина, HoReCa или корпоративной закупки</h2>
+            <p>
+              Если вас интересует поставка именно по этой позиции, оставьте короткую заявку. Менеджер свяжется с вами,
+              чтобы уточнить объём, формат поставки и следующий шаг.
+            </p>
+            <div class="story-grid story-grid--compact">
+              ${renderStoryCards([
+                {
+                  title: "Что будет дальше",
+                  text: "Получим заявку, уточним задачу и подтвердим условия общения с менеджером.",
+                },
+                {
+                  title: "Что важно указать",
+                  text: "Компанию, город поставки, ориентир по объёму и удобный канал связи.",
+                },
+              ])}
+            </div>
+          </div>
+          <div>
+            ${renderLeadRequestForm({
+              variant: "compact",
+              pageType: "product",
+              pageSlug: product.slug,
+              sourceParam: "pdp",
+              defaultIntent: "wholesale_purchase",
+              product,
+              productContextLabel: product.shortName,
+              title: "Оптовый или корпоративный запрос",
+              text: "Форма подходит для магазинов, HoReCa, офисов, подарочных наборов и других B2B-сценариев.",
+              submitLabel: "Получить условия",
+              id: "product-b2b-form",
+            })}
           </div>
         </div>
       </section>
@@ -1145,74 +1307,21 @@ const productPage = (product) => {
         <div class="shell">
           <div class="section-heading">
             <p class="eyebrow">Где купить</p>
-            <h2>Официальные каналы покупки и поддержки</h2>
+            <h2>Где купить и как связаться</h2>
           </div>
           <div class="channel-grid">
             ${siteData.channels.marketplaces.map((item) => renderMarketplaceCard(item, "product_channels")).join("")}
           </div>
-        </div>
-      </section>
-      <section class="section section--muted">
-        <div class="shell split-teasers">
-          <article class="teaser-panel">
-            <p class="eyebrow">B2B</p>
-            <h2>Нужен объём для бизнеса?</h2>
-            <p>Для магазина, офиса, HoReCa, подарков или дистрибуции используйте отдельную B2B-страницу — это другой сценарий, и он не прячется внутри общих контактов.</p>
-            ${renderAction({
-              href: "/b2b/?source=wholesale",
-              label: "Оставить B2B-заявку",
-              className: "button button--small",
-              eventName: "wholesale_cta_click",
-              eventParams: { location: "product_b2b_block" },
-            })}
-          </article>
-          <article class="teaser-panel">
-            <p class="eyebrow">Поддержка</p>
-            <h2>Вопрос, жалоба или сопровождение?</h2>
-            <p>Telegram, телефон и email остаются рядом с продуктом, чтобы покупателю не приходилось искать поддержку после покупки по сайту вслепую.</p>
-            <div class="button-row">
-              ${renderAction({
-                href: "/contacts/?source=pdp",
-                label: "Открыть контакты",
-                className: "button button--small button--ghost",
-              })}
-              ${renderAction({
-                href: siteData.contact.telegramComplaintHref,
-                label: "Оставить претензию",
-                className: "text-link",
-                eventName: "complaint_click",
-                eventParams: { location: "product_support" },
-              })}
-            </div>
-          </article>
+          <div class="story-grid">
+            ${renderStoryCards([
+              { title: "Вопрос по товару", text: "Если нужно уточнить упаковку, состав или покупку, напишите напрямую бренду.", href: "/contacts/?source=pdp", cta: "Контакты" },
+              { title: "Для бизнеса", text: "Для магазина, офиса, HoReCa и корпоративных заказов оставьте отдельную B2B-заявку.", href: "/b2b/?source=wholesale", cta: "Оптовый запрос" },
+              { title: "Поддержка", text: "Для претензий и сервисных вопросов доступны Telegram, телефон и email.", href: "https://t.me/global_basket_bot?start=complaint", cta: "Оставить претензию" },
+            ])}
+          </div>
         </div>
       </section>
       ${faq.html}
-      <section class="section">
-        <div class="shell">
-          <div class="section-heading">
-            <p class="eyebrow">Связанные материалы</p>
-            <h2>Ещё немного контекста о бренде и продукте</h2>
-          </div>
-          <div class="journal-grid">
-            ${relatedPosts
-              .map(
-                (post) => `
-                  <article class="journal-card">
-                    <a class="journal-card__media" ${linkAttrs(`/journal/${post.slug}/`, trackAttrs("journal_article_open", { slug: post.slug, location: "product_related" }))}>
-                      <img src="${escapeHtml(post.image.src)}" width="${post.image.width}" height="${post.image.height}" alt="${escapeHtml(post.image.alt)}" loading="lazy" decoding="async" />
-                    </a>
-                    <div class="journal-card__body">
-                      <h3><a ${linkAttrs(`/journal/${post.slug}/`, trackAttrs("journal_article_open", { slug: post.slug, location: "product_related_title" }))}>${escapeHtml(post.title)}</a></h3>
-                      <p>${escapeHtml(post.description)}</p>
-                    </div>
-                  </article>
-                `,
-              )
-              .join("")}
-          </div>
-        </div>
-      </section>
     `,
   });
 };
@@ -1223,6 +1332,7 @@ const aboutPage = () => {
     { label: "О бренде", href: "/about/" },
   ]);
   const faq = renderFaq(siteData.about.faq, "FAQ о бренде");
+  const [whoSection, channelsSection, confirmedSection] = siteData.about.sections;
 
   return renderLayout({
     pathname: "/about/",
@@ -1230,7 +1340,7 @@ const aboutPage = () => {
     description: siteData.about.metaDescription,
     ogImage: "/assets/about/hero-macadamia.jpg",
     dataPage: "about",
-    schemaNodes: [organizationSchema(), breadcrumb.schema, faq.schema].filter(Boolean),
+    schemaNodes: [organizationSchema(), breadcrumb.schema].filter(Boolean),
     content: `
       <section class="hero hero--inner">
         <div class="shell feature-grid feature-grid--hero">
@@ -1248,7 +1358,7 @@ const aboutPage = () => {
                 eventParams: { channel: "where_to_buy", location: "about_hero" },
               })}
               ${renderAction({
-                href: "/b2b/",
+                href: "/b2b/?source=wholesale",
                 label: "Опт / B2B",
                 className: "button button--ghost",
                 eventName: "wholesale_cta_click",
@@ -1257,38 +1367,68 @@ const aboutPage = () => {
             </div>
           </div>
           <article class="feature-media feature-media--landscape">
-            <img src="/assets/about/hero-macadamia.jpg" width="1400" height="787" alt="Брендовый визуал Global Basket" fetchpriority="high" />
+            <img src="/assets/about/hero-macadamia.jpg" width="1400" height="787" alt="Макадамия Global Basket" fetchpriority="high" />
           </article>
         </div>
       </section>
-      <section class="section">
-        <div class="shell story-grid">
-          ${siteData.about.sections
-            .map(
-              (section) => `
-                <article class="info-card info-card--wide">
-                  <h2>${escapeHtml(section.title)}</h2>
-                  ${section.paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("")}
-                </article>
-              `,
-            )
-            .join("")}
+      <section class="section section--compact">
+        <div class="shell">
+          <nav class="subnav" aria-label="Разделы страницы">
+            <a href="#about-who">Кто такой Global Basket</a>
+            <a href="#about-channels">Покупка и связь</a>
+            <a href="#about-facts">Что подтверждено</a>
+            <a href="#about-contacts">Контакты</a>
+          </nav>
         </div>
       </section>
-      <section class="section section--muted">
+      <section class="section" id="about-who">
+        <div class="shell story-grid">
+          <article class="info-card info-card--wide">
+            <h2>${escapeHtml(whoSection.title)}</h2>
+            ${whoSection.paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("")}
+          </article>
+        </div>
+      </section>
+      <section class="section section--muted" id="about-channels">
+        <div class="shell story-grid">
+          <article class="info-card info-card--wide">
+            <h2>${escapeHtml(channelsSection.title)}</h2>
+            ${channelsSection.paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("")}
+          </article>
+        </div>
+      </section>
+      <section class="section" id="about-facts">
+        <div class="shell story-grid">
+          <article class="info-card info-card--wide">
+            <h2>${escapeHtml(confirmedSection.title)}</h2>
+            ${confirmedSection.paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("")}
+          </article>
+        </div>
+      </section>
+      <section class="section section--muted" id="about-contacts">
         <div class="shell split-content">
           <div>
-            <p class="eyebrow">Стандарты</p>
-            <h2>На чём строится официальный слой бренда</h2>
+            <p class="eyebrow">Что уже известно</p>
+            <h2>Ключевые факты о бренде и продукте</h2>
             <ul class="bullet-list">
               ${siteData.about.standards.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
             </ul>
           </div>
           <div>
-            <p class="eyebrow">Trust</p>
-            <h2>Документы и legal-слой уже предусмотрены</h2>
+            <p class="eyebrow">Контакты</p>
+            <h2>Где купить и куда написать</h2>
             <p>${escapeHtml(siteData.company.requisitesNote)}</p>
-            ${renderAction({ href: "/documents/", label: "Открыть документы и trust-материалы", className: "text-link" })}
+            <div class="button-stack">
+              ${renderAction({
+                href: "/where-to-buy/",
+                label: "Где купить",
+                className: "button button--small",
+                eventName: "marketplace_click",
+                eventParams: { channel: "where_to_buy", location: "about_contacts" },
+              })}
+              ${renderAction({ href: "/contacts/", label: "Контакты", className: "button button--small button--ghost" })}
+              ${renderAction({ href: "/documents/", label: "Документы", className: "text-link" })}
+            </div>
           </div>
         </div>
       </section>
@@ -1302,7 +1442,6 @@ const whereToBuyPage = () => {
     { label: "Главная", href: "/" },
     { label: "Где купить", href: "/where-to-buy/" },
   ]);
-  const faq = renderFaq(siteData.whereToBuy.faq, "FAQ по официальным каналам покупки");
 
   return renderLayout({
     pathname: "/where-to-buy/",
@@ -1315,7 +1454,6 @@ const whereToBuyPage = () => {
       breadcrumb.schema,
       collectionSchema("Официальные каналы покупки Global Basket", siteData.channels.marketplaces.map((item) => ({ ...item, href: item.href })), "/where-to-buy/"),
       itemListSchema(siteData.channels.marketplaces.map((item) => ({ ...item, href: item.href }))),
-      faq.schema,
     ].filter(Boolean),
     content: `
       <section class="hero hero--inner">
@@ -1331,8 +1469,8 @@ const whereToBuyPage = () => {
       <section class="section">
         <div class="shell">
           <div class="section-heading">
-            <p class="eyebrow">Retail</p>
-            <h2>Выберите удобный канал покупки</h2>
+            <p class="eyebrow">Покупка</p>
+            <h2>Где купить в розницу</h2>
           </div>
           <div class="channel-grid">
             ${siteData.channels.marketplaces.map((item) => renderMarketplaceCard(item, "where_to_buy")).join("")}
@@ -1342,24 +1480,26 @@ const whereToBuyPage = () => {
       <section class="section section--muted">
         <div class="shell">
           <div class="section-heading">
-            <p class="eyebrow">Как выбрать канал</p>
-            <h2>Когда идти на маркетплейс, а когда — в поддержку или B2B</h2>
+            <p class="eyebrow">Подсказка</p>
+            <h2>Когда покупать, а когда лучше написать бренду</h2>
           </div>
           ${renderStoryCards(siteData.whereToBuy.chooser)}
+          <div class="section-actions">
+            ${renderAction({
+              href: "/contacts/?source=support",
+              label: "Контакты",
+              className: "button button--small button--ghost",
+            })}
+            ${renderAction({
+              href: siteData.contact.telegramBotHref,
+              label: "Написать в Telegram",
+              className: "text-link",
+              eventName: "telegram_click",
+              eventParams: { location: "where_to_buy_help" },
+            })}
+          </div>
         </div>
       </section>
-      <section class="section">
-        <div class="shell">
-          <div class="section-heading">
-            <p class="eyebrow">Сервисные каналы</p>
-            <h2>Если нужен вопрос, поддержка или прямой контакт</h2>
-          </div>
-          <div class="channel-grid">
-            ${siteData.channels.direct.map((item) => renderMarketplaceCard(item, "where_to_buy_direct")).join("")}
-          </div>
-        </div>
-      </section>
-      ${faq.html}
     `,
   });
 };
@@ -1369,7 +1509,6 @@ const b2bPage = () => {
     { label: "Главная", href: "/" },
     { label: "Опт / B2B", href: "/b2b/" },
   ]);
-  const faq = renderFaq(siteData.b2b.faq, "FAQ для корпоративных клиентов");
 
   return renderLayout({
     pathname: "/b2b/",
@@ -1377,7 +1516,7 @@ const b2bPage = () => {
     description: siteData.b2b.metaDescription,
     ogImage: "/assets/about/selection-hands.jpg",
     dataPage: "b2b",
-    schemaNodes: [organizationSchema(), breadcrumb.schema, faq.schema].filter(Boolean),
+    schemaNodes: [organizationSchema(), breadcrumb.schema].filter(Boolean),
     content: `
       <section class="hero hero--inner">
         <div class="shell feature-grid feature-grid--hero">
@@ -1405,7 +1544,7 @@ const b2bPage = () => {
             </div>
           </div>
           <article class="feature-media feature-media--landscape">
-            <img src="/assets/about/selection-hands.jpg" width="1200" height="800" alt="B2B-сценарий Global Basket" fetchpriority="high" />
+            <img src="/assets/about/selection-hands.jpg" width="1200" height="800" alt="Отбор продукта Global Basket" fetchpriority="high" />
           </article>
         </div>
       </section>
@@ -1413,7 +1552,7 @@ const b2bPage = () => {
         <div class="shell">
           <div class="section-heading">
             <p class="eyebrow">Кому подходит</p>
-            <h2>Типы клиентов, для которых собран B2B-маршрут</h2>
+            <h2>Кому подходит сотрудничество</h2>
           </div>
           ${renderStoryCards(siteData.b2b.segments)}
         </div>
@@ -1422,7 +1561,7 @@ const b2bPage = () => {
         <div class="shell">
           <div class="section-heading">
             <p class="eyebrow">Преимущества</p>
-            <h2>Почему B2B вынесен в отдельную страницу</h2>
+            <h2>Что можно обсудить заранее</h2>
           </div>
           ${renderStoryCards(siteData.b2b.benefits)}
         </div>
@@ -1431,7 +1570,7 @@ const b2bPage = () => {
         <div class="shell">
           <div class="section-heading">
             <p class="eyebrow">Как это работает</p>
-            <h2>Путь от заявки до следующего шага</h2>
+            <h2>Как проходит работа после заявки</h2>
           </div>
           <div class="process-grid">
             ${siteData.b2b.process
@@ -1450,16 +1589,43 @@ const b2bPage = () => {
       <section class="section section--muted" id="b2b-form">
         <div class="shell feature-grid">
           <div class="feature-copy">
-            <p class="eyebrow">B2B-форма</p>
-            <h2>Оставьте корпоративную заявку</h2>
-            <p>Форма собирает только важные для старта данные: компания, контакт, город, тип бизнеса, интерес к продукту и сценарий работы. Дальше менеджер уже уточняет детали в нормальном диалоге.</p>
+            <p class="eyebrow">Для бизнеса</p>
+            <h2>Оптовый или корпоративный заказ</h2>
+            <p>
+              Оставьте заявку, и менеджер свяжется с вами, чтобы уточнить объём, формат поставки и условия.
+              Форма подходит для магазинов, HoReCa, офисов, корпоративных закупок и партнёрских запросов.
+            </p>
+            <div class="lead-trust">
+              <p class="lead-trust__eyebrow">Что будет дальше</p>
+              <ol class="lead-steps">
+                <li>Получим заявку и проверим вводные.</li>
+                <li>Уточним объём, формат поставки и задачу.</li>
+                <li>Подтвердим условия и следующий шаг.</li>
+              </ol>
+            </div>
+            <div class="lead-support-note">
+              <strong>Данные для коммерческого предложения</strong>
+              <p>
+                Если хотите ускорить подготовку условий, добавьте в форме объём, желаемый срок и комментарий.
+                Но точную стоимость и детали поставки подтверждает менеджер после заявки.
+              </p>
+            </div>
           </div>
           <div>
-            ${renderB2BForm()}
+            ${renderLeadRequestForm({
+              variant: "full",
+              pageType: "b2b",
+              pageSlug: "b2b",
+              sourceParam: "wholesale",
+              defaultIntent: "wholesale_purchase",
+              title: "Оставьте заявку для бизнеса",
+              text: "Соберём главное для первого разговора: компанию, формат запроса, интерес к продукту и удобный канал связи.",
+              submitLabel: "Отправить B2B-заявку",
+              id: "b2b-form-main",
+            })}
           </div>
         </div>
       </section>
-      ${faq.html}
     `,
   });
 };
@@ -1469,7 +1635,6 @@ const deliveryPage = () => {
     { label: "Главная", href: "/" },
     { label: "Доставка и оплата", href: "/delivery/" },
   ]);
-  const faq = renderFaq(siteData.delivery.faq, "FAQ по доставке и оплате");
 
   return renderLayout({
     pathname: "/delivery/",
@@ -1477,35 +1642,63 @@ const deliveryPage = () => {
     description: siteData.delivery.metaDescription,
     ogImage: "/assets/about/jar-storage.jpg",
     dataPage: "delivery",
-    schemaNodes: [organizationSchema(), breadcrumb.schema, faq.schema].filter(Boolean),
+    schemaNodes: [organizationSchema(), breadcrumb.schema].filter(Boolean),
     content: `
       <section class="hero hero--inner">
-        <div class="shell">
-          ${breadcrumb.html}
-          <div class="section-heading">
+        <div class="shell feature-grid feature-grid--hero">
+          <div class="feature-copy">
+            ${breadcrumb.html}
             <p class="eyebrow">Доставка и оплата</p>
-            <h1>Как Global Basket разводит retail, B2B и поддержку</h1>
-            <p>${escapeHtml(siteData.delivery.hero)}</p>
+            <h1>Доставка и оплата</h1>
+            <p class="hero__lead">${escapeHtml(siteData.delivery.hero)}</p>
           </div>
+          <article class="aside-card">
+            <p class="eyebrow">Следующий шаг</p>
+            <h2>Сначала запрос, затем уточнение условий.</h2>
+            <p>Если нужен вопрос по доставке, оплате или возврату, удобнее сразу написать бренду.</p>
+            <div class="button-stack">
+              ${renderAction({ href: "/contacts/?source=support", label: "Контакты", className: "button button--small" })}
+              ${renderAction({
+                href: "https://t.me/global_basket_bot?start=complaint",
+                label: "Оставить претензию",
+                className: "text-link",
+                eventName: "complaint_click",
+                eventParams: { location: "delivery_hero" },
+              })}
+            </div>
+          </article>
         </div>
       </section>
       <section class="section">
-        <div class="shell story-grid">
-          <article class="info-card info-card--wide">
+        <div class="shell">
+          <div class="section-heading">
+            <p class="eyebrow">Как это работает</p>
+            <h2>Куда обращаться по покупке, опту и вопросам доставки</h2>
+          </div>
+          <div class="story-grid">
+            <article class="info-card info-card--wide">
             <h2>Для розницы</h2>
             ${siteData.delivery.retail.map((item) => `<p>${escapeHtml(item)}</p>`).join("")}
-          </article>
-          <article class="info-card info-card--wide">
+            </article>
+            <article class="info-card info-card--wide">
             <h2>Для B2B</h2>
             ${siteData.delivery.b2b.map((item) => `<p>${escapeHtml(item)}</p>`).join("")}
-          </article>
-          <article class="info-card info-card--wide">
+            </article>
+            <article class="info-card info-card--wide">
             <h2>Поддержка, возвраты и претензии</h2>
             ${siteData.delivery.complaints.map((item) => `<p>${escapeHtml(item)}</p>`).join("")}
-          </article>
+            </article>
+          </div>
         </div>
       </section>
-      ${faq.html}
+      <section class="section section--compact" id="returns">
+        <div class="shell">
+          ${renderStoryCards([
+            { title: "Возвраты и претензии", text: "Если возник вопрос после покупки, напишите в Telegram, на email или позвоните.", href: "/contacts/?source=returns", cta: "Открыть контакты" },
+            { title: "Нужны документы", text: "Если по доставке или закупке нужны документы, их можно запросить через контакты бренда.", href: "/documents/", cta: "Документы" },
+          ])}
+        </div>
+      </section>
     `,
   });
 };
@@ -1515,7 +1708,6 @@ const contactsPage = () => {
     { label: "Главная", href: "/" },
     { label: "Контакты", href: "/contacts/" },
   ]);
-  const faq = renderFaq(siteData.contacts.faq, "FAQ по контактам");
 
   return renderLayout({
     pathname: "/contacts/",
@@ -1532,62 +1724,101 @@ const contactsPage = () => {
         name: "Контакты Global Basket",
         url: pageUrl("/contacts/"),
       },
-      faq.schema,
     ].filter(Boolean),
     content: `
       <section class="hero hero--inner">
         <div class="shell">
           ${breadcrumb.html}
           <aside class="intent-banner" hidden data-intent-banner></aside>
-          <div class="section-heading">
-            <p class="eyebrow">Контакты</p>
-            <h1>Контакты Global Basket</h1>
-            <p>${escapeHtml(siteData.contacts.hero)}</p>
-          </div>
-        </div>
-      </section>
-      <section class="section">
-        <div class="shell">
-          ${renderStoryCards(siteData.contacts.routes)}
-        </div>
-      </section>
-      <section class="section section--muted">
-        <div class="shell feature-grid">
-          <div class="feature-copy">
-            <p class="eyebrow">Прямые каналы</p>
-            <h2>Телефон, email и Telegram видны сразу</h2>
-            <div class="contact-grid">
-              ${siteData.contacts.directCards
-                .map(
-                  (item) => `
-                    <article class="contact-card">
-                      <strong>${escapeHtml(item.label)}</strong>
-                      ${
-                        item.href
-                          ? `<a ${linkAttrs(
-                              item.href,
-                              item.label === "Телефон"
-                                ? trackAttrs("phone_click", { location: "contacts_cards" })
-                                : item.label === "Email"
-                                  ? trackAttrs("email_click", { location: "contacts_cards" })
-                                  : trackAttrs("telegram_click", { location: "contacts_cards" }),
-                            )}>${escapeHtml(item.value)}</a>`
-                          : `<span>${escapeHtml(item.value)}</span>`
-                      }
-                    </article>
-                  `,
-                )
-                .join("")}
+          <div class="contacts-layout">
+            <div>
+              <div class="section-heading">
+                <p class="eyebrow">Контакты</p>
+                <h1 data-intent-hero-title>Контакты Global Basket</h1>
+                <p data-intent-hero-text>${escapeHtml(siteData.contacts.hero)}</p>
+              </div>
+              <div class="card-grid">
+                ${siteData.contacts.routes
+                  .map((item, index) => {
+                    const source =
+                      index === 0 ? "pdp" : index === 1 ? "wholesale" : index === 2 ? "support" : "returns";
+                    return `
+                      <article class="info-card" data-intent-route="${source}">
+                        <h2>${escapeHtml(item.title)}</h2>
+                        <p>${escapeHtml(item.text)}</p>
+                        <p>${renderAction({
+                          href: item.href,
+                          label: item.cta,
+                          className: "text-link",
+                          eventName: source === "wholesale" ? "wholesale_cta_click" : null,
+                          eventParams: { location: "contacts_routes" },
+                        })}</p>
+                      </article>
+                    `;
+                  })
+                  .join("")}
+              </div>
+            </div>
+            <div class="panel-stack">
+              <article class="aside-card">
+                <p class="eyebrow">Прямые каналы</p>
+                <h2>Телефон, email и Telegram под рукой</h2>
+                <div class="contact-grid">
+                  ${siteData.contacts.directCards
+                    .map(
+                      (item) => `
+                        <article class="contact-card">
+                          <strong>${escapeHtml(item.label)}</strong>
+                          ${
+                            item.href
+                              ? `<a ${linkAttrs(
+                                  item.href,
+                                  item.label === "Телефон"
+                                    ? trackAttrs("phone_click", { location: "contacts_cards" })
+                                    : item.label === "Email"
+                                      ? trackAttrs("email_click", { location: "contacts_cards" })
+                                      : trackAttrs("telegram_click", { location: "contacts_cards" }),
+                                )}>${escapeHtml(item.value)}</a>`
+                              : `<span>${escapeHtml(item.value)}</span>`
+                          }
+                        </article>
+                      `,
+                    )
+                    .join("")}
+                </div>
+              </article>
+              <article class="aside-card">
+                <p class="eyebrow">Для бизнеса</p>
+                <h2>Оптовый или корпоративный запрос</h2>
+                <p>
+                  Если вам нужна поставка, коммерческое предложение или обсуждение сотрудничества, оставьте короткую заявку.
+                  Telegram, телефон и email останутся запасными каналами связи.
+                </p>
+                <div class="lead-trust lead-trust--compact">
+                  <p class="lead-trust__eyebrow">Что будет дальше</p>
+                  <ol class="lead-steps">
+                    <li>Получим заявку.</li>
+                    <li>Уточним детали.</li>
+                    <li>Подтвердим следующий шаг.</li>
+                  </ol>
+                </div>
+                ${renderLeadRequestForm({
+                  variant: "compact",
+                  pageType: "contacts",
+                  pageSlug: "contacts",
+                  sourceParam: "contacts",
+                  defaultIntent: "commercial_offer",
+                  title: "Оставьте заявку для менеджера",
+                  text: "Форма подходит для магазинов, HoReCa, офисов, корпоративных закупок и других бизнес-клиентов.",
+                  submitLabel: "Связаться со мной",
+                  id: "contact-b2b-form",
+                  showExpandedFields: true,
+                })}
+              </article>
             </div>
           </div>
-          <div>
-            <p class="eyebrow">Короткая форма</p>
-            <h2>Напишите по товару, поддержке или документам</h2>
-            ${renderContactForm()}
-          </div>
         </div>
       </section>
-      ${faq.html}
     `,
   });
 };
@@ -1597,6 +1828,7 @@ const journalIndexPage = () => {
     { label: "Главная", href: "/" },
     { label: "Журнал", href: "/journal/" },
   ]);
+  const [featuredPost, ...otherPosts] = siteData.journal.posts;
 
   return renderLayout({
     pathname: "/journal/",
@@ -1616,23 +1848,39 @@ const journalIndexPage = () => {
     ],
     content: `
       <section class="hero hero--inner">
-        <div class="shell">
-          ${breadcrumb.html}
-          <div class="section-heading">
+        <div class="shell feature-grid feature-grid--hero">
+          <div class="feature-copy">
+            ${breadcrumb.html}
             <p class="eyebrow">Журнал</p>
             <h1>Журнал Global Basket</h1>
-            <p>${escapeHtml(siteData.journal.intro)}</p>
+            <p class="hero__lead">${escapeHtml(siteData.journal.intro)}</p>
           </div>
+          <article class="journal-card journal-card--large">
+            <a class="journal-card__media" ${linkAttrs(`/journal/${featuredPost.slug}/`, {
+              ...trackAttrs("journal_article_open", { slug: featuredPost.slug, location: "journal_featured" }),
+              "aria-label": `Открыть материал: ${featuredPost.title}`,
+            })}>
+              <img src="${escapeHtml(featuredPost.image.src)}" width="${featuredPost.image.width}" height="${featuredPost.image.height}" alt="${escapeHtml(featuredPost.image.alt)}" fetchpriority="high" />
+            </a>
+            <div class="journal-card__body">
+              <p class="eyebrow">${escapeHtml(featuredPost.readingTime)}</p>
+              <h2><a ${linkAttrs(`/journal/${featuredPost.slug}/`, trackAttrs("journal_article_open", { slug: featuredPost.slug, location: "journal_featured_title" }))}>${escapeHtml(featuredPost.title)}</a></h2>
+              <p>${escapeHtml(featuredPost.description)}</p>
+            </div>
+          </article>
         </div>
       </section>
       <section class="section">
         <div class="shell">
           <div class="journal-grid">
-            ${siteData.journal.posts
+            ${otherPosts
               .map(
                 (post) => `
-                  <article class="journal-card journal-card--large">
-                    <a class="journal-card__media" ${linkAttrs(`/journal/${post.slug}/`, trackAttrs("journal_article_open", { slug: post.slug, location: "journal_index" }))}>
+                  <article class="journal-card">
+                    <a class="journal-card__media" ${linkAttrs(`/journal/${post.slug}/`, {
+                      ...trackAttrs("journal_article_open", { slug: post.slug, location: "journal_index" }),
+                      "aria-label": `Открыть материал: ${post.title}`,
+                    })}>
                       <img src="${escapeHtml(post.image.src)}" width="${post.image.width}" height="${post.image.height}" alt="${escapeHtml(post.image.alt)}" loading="lazy" decoding="async" />
                     </a>
                     <div class="journal-card__body">
@@ -1676,12 +1924,12 @@ const articlePage = (post) => {
           <div class="shell">
             ${breadcrumb.html}
             <div class="article-hero">
-              <div class="article-hero__copy">
-                <p class="eyebrow">${escapeHtml(post.readingTime)}</p>
-                <h1>${escapeHtml(post.title)}</h1>
-                <p class="hero__lead">${escapeHtml(post.lead)}</p>
-                <p class="article-meta">Дата публикации: <time datetime="${escapeHtml(post.date)}">${escapeHtml(post.date)}</time></p>
-              </div>
+            <div class="article-hero__copy">
+              <p class="eyebrow">${escapeHtml(post.readingTime)}</p>
+              <h1>${escapeHtml(post.title)}</h1>
+              <p class="hero__lead">${escapeHtml(post.lead)}</p>
+              ${post.date ? `<p class="article-meta">Дата публикации: <time datetime="${escapeHtml(post.date)}">${escapeHtml(post.date)}</time></p>` : ""}
+            </div>
               <div class="article-hero__media">
                 <img src="${escapeHtml(post.image.src)}" width="${post.image.width}" height="${post.image.height}" alt="${escapeHtml(post.image.alt)}" fetchpriority="high" />
               </div>
@@ -1707,14 +1955,19 @@ const articlePage = (post) => {
                 <p class="eyebrow">Товар</p>
                 <h2>${escapeHtml(relatedProduct.shortName)}</h2>
                 <p>${escapeHtml(relatedProduct.excerpt)}</p>
-                ${renderAction({ href: `/catalog/${relatedProduct.slug}/`, label: "Открыть товар", className: "button button--small" })}
+                ${renderAction({
+                  href: `/catalog/${relatedProduct.slug}/`,
+                  label: "Подробнее о товаре",
+                  className: "button button--small",
+                  ariaLabel: `Подробнее о товаре: ${relatedProduct.name}`,
+                })}
               </article>
               <article class="aside-card">
                 <p class="eyebrow">Где купить</p>
-                <p>Если вы уже изучили материал и готовы перейти к покупке, используйте официальные каналы бренда.</p>
+                <p>Если вы уже изучили материал и готовы к покупке, переходите к официальным карточкам бренда.</p>
                 ${renderAction({
                   href: "/where-to-buy/",
-                  label: "Официальные каналы покупки",
+                  label: "Где купить",
                   className: "button button--small button--ghost",
                   eventName: "marketplace_click",
                   eventParams: { channel: "where_to_buy", location: "article_sidebar" },
@@ -1735,7 +1988,10 @@ const articlePage = (post) => {
                 .map(
                   (related) => `
                     <article class="journal-card">
-                      <a class="journal-card__media" ${linkAttrs(`/journal/${related.slug}/`, trackAttrs("journal_article_open", { slug: related.slug, location: "article_related" }))}>
+                      <a class="journal-card__media" ${linkAttrs(`/journal/${related.slug}/`, {
+                        ...trackAttrs("journal_article_open", { slug: related.slug, location: "article_related" }),
+                        "aria-label": `Открыть материал: ${related.title}`,
+                      })}>
                         <img src="${escapeHtml(related.image.src)}" width="${related.image.width}" height="${related.image.height}" alt="${escapeHtml(related.image.alt)}" loading="lazy" decoding="async" />
                       </a>
                       <div class="journal-card__body">
@@ -1774,7 +2030,7 @@ const legalPage = (pathname, entry, slug) => {
         <div class="shell">
           ${breadcrumb.html}
           <div class="section-heading">
-            <p class="eyebrow">Legal</p>
+            <p class="eyebrow">Правовая информация</p>
             <h1>${escapeHtml(entry.title)}</h1>
             <p>${escapeHtml(entry.intro)}</p>
           </div>
@@ -1801,7 +2057,7 @@ const legalPage = (pathname, entry, slug) => {
 const documentsPage = () => {
   const breadcrumb = renderBreadcrumbs([
     { label: "Главная", href: "/" },
-    { label: "Документы и trust", href: "/documents/" },
+    { label: "Документы", href: "/documents/" },
   ]);
 
   return renderLayout({
@@ -1816,8 +2072,8 @@ const documentsPage = () => {
         <div class="shell">
           ${breadcrumb.html}
           <div class="section-heading">
-            <p class="eyebrow">Trust</p>
-            <h1>Документы, реквизиты и trust-материалы</h1>
+            <p class="eyebrow">Документы</p>
+            <h1>Документы и реквизиты</h1>
             <p>${escapeHtml(siteData.documents.hero)}</p>
           </div>
         </div>
@@ -1832,23 +2088,12 @@ const documentsPage = () => {
           )}
         </div>
       </section>
-      <section class="section section--muted">
-        <div class="shell split-teasers">
-          <article class="teaser-panel">
-            <p class="eyebrow">Legal</p>
-            <h2>Политика и согласие</h2>
-            <p>Основной legal-скелет уже вынесен в отдельные страницы и готов для дальнейшего юридического заполнения.</p>
-            <div class="button-row">
-              ${renderAction({ href: "/legal/privacy/", label: "Политика конфиденциальности", className: "text-link" })}
-              ${renderAction({ href: "/legal/consent/", label: "Согласие на обработку данных", className: "text-link" })}
-            </div>
-          </article>
-          <article class="teaser-panel">
-            <p class="eyebrow">B2B</p>
-            <h2>Материалы для корпоративных клиентов</h2>
-            <p>По мере развития бренда сюда удобно добавлять коммерческие материалы, спецификации, перечни документов и сертификаты.</p>
-            ${renderAction({ href: "/b2b/", label: "Открыть B2B-страницу", className: "text-link" })}
-          </article>
+      <section class="section section--compact">
+        <div class="shell">
+          <div class="button-row">
+            ${renderAction({ href: "/contacts/?source=support", label: "Запросить документы", className: "button button--small" })}
+            ${renderAction({ href: "/legal/privacy/", label: "Политика конфиденциальности", className: "text-link" })}
+          </div>
         </div>
       </section>
     `,
