@@ -3,6 +3,7 @@
 output/
 .env
 .env.*
+api/_lib/runtime-telegram-local.js
 /*.png
 /*.jpg
 /*.jpeg

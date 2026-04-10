@@ -1,6 +1,12 @@
 const { callTelegram, escapeHtml } = require("./_lib/telegram");
 
-const FALLBACK_BOT_TOKEN = "8432130895:AAEA1dBzq-aPPOUSUKts4nIYEcw24gbRjbo";
+let localRuntimeConfig = {};
+try {
+  localRuntimeConfig = require("./_lib/runtime-telegram-local");
+} catch {
+  localRuntimeConfig = {};
+}
+
 const MAX_MESSAGE_LENGTH = 3900;
 
 const json = (res, status, payload) => {
@@ -68,7 +74,7 @@ const getWebhookRouteConfig = async (token) => {
   }
 };
 
-const getBotToken = () => process.env.TELEGRAM_BOT_TOKEN || FALLBACK_BOT_TOKEN;
+const getBotToken = () => process.env.TELEGRAM_BOT_TOKEN || localRuntimeConfig.botToken || "";
 
 const validatePayload = (payload = {}) => {
   const errors = [];
