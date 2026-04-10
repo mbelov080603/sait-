@@ -421,6 +421,228 @@ const renderLeadRequestForm = (config, context = {}) => {
   `;
 };
 
+const CONTACT_BASE_PRICE_PER_KG = 700;
+
+const formatRub = (value = 0) =>
+  new Intl.NumberFormat("ru-RU", {
+    style: "currency",
+    currency: "RUB",
+    maximumFractionDigits: 0,
+  }).format(Math.round(value || 0));
+
+const normalizePositiveNumber = (value) => {
+  const parsed = Number.parseFloat(String(value ?? "").replace(",", "."));
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return parsed;
+};
+
+const getDiscountRate = (quantityKg) => {
+  if (quantityKg >= 1000) return 0.2;
+  if (quantityKg >= 500) return 0.15;
+  if (quantityKg >= 100) return 0.1;
+  return 0;
+};
+
+const getDistanceBlocks = (distanceKm) => Math.floor(normalizePositiveNumber(distanceKm) / 1000);
+
+const calculateContactQuote = ({
+  quantityKg,
+  distanceKm,
+  basePricePerKg = CONTACT_BASE_PRICE_PER_KG,
+}) => {
+  const normalizedQuantity = normalizePositiveNumber(quantityKg);
+  const normalizedDistance = normalizePositiveNumber(distanceKm);
+  const discountRate = getDiscountRate(normalizedQuantity);
+  const distanceBlocks1000 = getDistanceBlocks(normalizedDistance);
+  const distanceMarkupRate = distanceBlocks1000 * 0.05;
+  const subtotalBase = normalizedQuantity * basePricePerKg;
+  const subtotalAfterDiscount = subtotalBase * (1 - discountRate);
+  const totalEstimate = subtotalAfterDiscount * (1 + distanceMarkupRate);
+  const estimatedPricePerKg = normalizedQuantity ? totalEstimate / normalizedQuantity : 0;
+
+  return {
+    quantityKg: normalizedQuantity,
+    distanceKm: normalizedDistance,
+    basePricePerKg,
+    discountRate,
+    distanceBlocks1000,
+    distanceMarkupRate,
+    subtotalBase,
+    subtotalAfterDiscount,
+    totalEstimate,
+    estimatedPricePerKg,
+  };
+};
+
+const renderContactQuoteForm = (config, context = {}) => {
+  const hiddenFields = {
+    source: context.source || "contacts",
+    page: context.page || document.body.dataset.page || "contacts",
+    product_id: context.productId || product.id,
+    product_name: context.productName || product.fullName,
+    product_category: context.productCategory || product.category,
+    lead_channel_origin: "site",
+    marketplace_interest: context.marketplaceInterest || "",
+    crm_status_seed: "new",
+    crm_pipeline_seed: "site_request",
+    integration_targets: "bitrix24,1c",
+    payload_version: "v1",
+    session_id: "",
+    landing_url: "",
+    page_title: "",
+    referrer: "",
+    submitted_at: "",
+    utm_source: "",
+    utm_medium: "",
+    utm_campaign: "",
+    utm_content: "",
+    utm_term: "",
+    base_price_per_kg: String(CONTACT_BASE_PRICE_PER_KG),
+    discount_rate: "0",
+    discount_tier: "0%",
+    distance_blocks_1000: "0",
+    distance_markup_rate: "0",
+    subtotal_base: "0",
+    subtotal_after_discount: "0",
+    total_estimate: "0",
+    estimated_price_per_kg: "0",
+    currency: "RUB",
+    is_estimate: "true",
+  };
+
+  const initialQuote = calculateContactQuote({ quantityKg: 1, distanceKm: 0 });
+
+  return `
+    <article class="request-panel request-panel--contact-form">
+      <div class="section-head section-head--compact">
+        <p class="eyebrow">${config.eyebrow}</p>
+        <h2>${config.title}</h2>
+        <p>${config.text}</p>
+      </div>
+      <form class="request-form request-form--quote" data-request-form data-quote-form data-request-adapter="crm-ready" novalidate>
+        ${Object.entries(hiddenFields)
+          .map(
+            ([name, value]) =>
+              `<input type="hidden" name="${name}" value="${escapeAttribute(value)}" />`,
+          )
+          .join("")}
+        <div class="request-form__grid">
+          <label>
+            <span>Контактное лицо</span>
+            <input type="text" name="name" autocomplete="name" placeholder="Как к вам обращаться" required />
+          </label>
+          <label>
+            <span>Телефон</span>
+            <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" required />
+          </label>
+        </div>
+        <div class="request-form__grid">
+          <label>
+            <span>Email</span>
+            <input type="email" name="email" autocomplete="email" placeholder="name@example.com" />
+          </label>
+          <label>
+            <span>Как удобнее связаться</span>
+            <select name="contact_preferred">
+              ${config.preferredContacts
+                .map((item) => `<option value="${item.value}">${item.label}</option>`)
+                .join("")}
+            </select>
+          </label>
+        </div>
+        <div class="request-form__grid">
+          <label>
+            <span>Юридическое лицо / ИП</span>
+            <input type="text" name="company_name" autocomplete="organization" placeholder="Название компании или ИП" required />
+          </label>
+          <label>
+            <span>ИНН</span>
+            <input type="text" name="company_inn" inputmode="numeric" placeholder="Если есть" />
+          </label>
+        </div>
+        <div class="request-form__grid">
+          <label>
+            <span>Что вас интересует</span>
+            <select name="topic" required>
+              ${config.topics
+                .map((item) => `<option value="${item.value}">${item.label}</option>`)
+                .join("")}
+            </select>
+          </label>
+          <label>
+            <span>Формат закупки</span>
+            <select name="purchase_format">
+              ${config.purchaseFormats
+                .map((item) => `<option value="${item.value}">${item.label}</option>`)
+                .join("")}
+            </select>
+          </label>
+        </div>
+        <div class="request-form__grid">
+          <label>
+            <span>Сколько килограммов нужно</span>
+            <input type="number" name="quantity_kg" min="1" step="1" value="1" inputmode="numeric" required data-quote-quantity />
+          </label>
+          <label>
+            <span>Расстояние от Москвы, км</span>
+            <input type="number" name="distance_km" min="0" step="1" value="0" inputmode="numeric" required data-quote-distance />
+          </label>
+        </div>
+        <label>
+          <span>Адрес доставки</span>
+          <input type="text" name="delivery_address" autocomplete="street-address" placeholder="Город, улица, склад или точка доставки" required />
+        </label>
+        <label>
+          <span>Комментарий</span>
+          <textarea name="message" placeholder="Например: нужен ежемесячный объём, тестовая партия или особые условия доставки."></textarea>
+        </label>
+        <article class="quote-summary" data-quote-summary aria-live="polite">
+          <div class="quote-summary__head">
+            <strong>Предварительный расчёт</strong>
+            <p>${config.pricingHint}</p>
+          </div>
+          <dl class="quote-summary__list">
+            <div class="quote-summary__row">
+              <dt>Базовая цена</dt>
+              <dd data-quote-base>${formatRub(CONTACT_BASE_PRICE_PER_KG)} / кг</dd>
+            </div>
+            <div class="quote-summary__row">
+              <dt>Объём</dt>
+              <dd data-quote-weight>${initialQuote.quantityKg} кг</dd>
+            </div>
+            <div class="quote-summary__row">
+              <dt>Скидка</dt>
+              <dd data-quote-discount>0%</dd>
+            </div>
+            <div class="quote-summary__row">
+              <dt>Надбавка за расстояние</dt>
+              <dd data-quote-distance-markup>+0%</dd>
+            </div>
+            <div class="quote-summary__row">
+              <dt>Цена за кг после расчёта</dt>
+              <dd data-quote-price-per-kg>${formatRub(initialQuote.estimatedPricePerKg)} / кг</dd>
+            </div>
+            <div class="quote-summary__row quote-summary__row--total">
+              <dt>Предварительная сумма</dt>
+              <dd data-quote-total>${formatRub(initialQuote.totalEstimate)}</dd>
+            </div>
+          </dl>
+        </article>
+        <label class="request-form__consent">
+          <input type="checkbox" name="consent" required />
+          <span>${config.consent}</span>
+        </label>
+        <div class="request-form__actions">
+          <button class="button" type="submit">${config.submitLabel}</button>
+          <a class="text-link text-link--inline" href="${config.quickContactHref}"${externalAttrs(config.quickContactHref)}>${config.quickContactLabel}</a>
+        </div>
+        <p class="request-form__note">${config.note}</p>
+        <p class="request-form__status" data-request-status aria-live="polite"></p>
+      </form>
+    </article>
+  `;
+};
+
 const renderHome = () => {
   const hero = $("#home-hero");
   if (hero) {
@@ -703,6 +925,8 @@ const renderProductPage = () => {
 };
 
 const renderContactsPage = () => {
+  const params = new URLSearchParams(window.location.search);
+  const requestedSource = params.get("source") || "contacts-page";
   const intro = $("#contacts-intro");
   if (intro) {
     intro.innerHTML = `
@@ -750,18 +974,24 @@ const renderContactsPage = () => {
   const panel = $("#contact-panel");
   if (panel) {
     panel.innerHTML = `
-      <article class="request-panel">
-        <div class="section-head section-head--compact">
-          <p class="eyebrow">Telegram-бот</p>
-          <h2>${store.contactsPage.telegramPanel.title}</h2>
-          <p>${store.contactsPage.telegramPanel.text}</p>
-        </div>
-        <div class="hero-product__actions">
-          <a class="button" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>${store.contactsPage.telegramPanel.primary}</a>
-          <a class="button button--ghost" href="${store.contact.telegramComplaintHref}"${externalAttrs(store.contact.telegramComplaintHref)}>${store.contactsPage.telegramPanel.secondary}</a>
-        </div>
-        <p class="request-form__note">Основной канал связи: <a href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>${store.contact.telegram}</a>. Новости бренда: <a href="${store.contact.channelHref}"${externalAttrs(store.contact.channelHref)}>${store.contact.channel}</a>. Резервный контакт: <a href="${store.contact.phoneHref}">${store.contact.phone}</a> / <a href="${store.contact.emailHref}">${store.contact.email}</a></p>
-      </article>
+      <div class="contact-panel__stack">
+        ${renderContactQuoteForm(store.contactsPage.quoteForm, {
+          source: requestedSource,
+          page: "contacts",
+        })}
+        <article class="request-panel request-panel--compact request-panel--secondary">
+          <div class="section-head section-head--compact">
+            <p class="eyebrow">Telegram-бот</p>
+            <h2>${store.contactsPage.telegramPanel.title}</h2>
+            <p>${store.contactsPage.telegramPanel.text}</p>
+          </div>
+          <div class="hero-product__actions">
+            <a class="button button--small" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>${store.contactsPage.telegramPanel.primary}</a>
+            <a class="button button--ghost button--small" href="${store.contact.telegramComplaintHref}"${externalAttrs(store.contact.telegramComplaintHref)}>${store.contactsPage.telegramPanel.secondary}</a>
+          </div>
+          <p class="request-form__note">Основной канал связи: <a href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>${store.contact.telegram}</a>. Новости бренда: <a href="${store.contact.channelHref}"${externalAttrs(store.contact.channelHref)}>${store.contact.channel}</a>. Резервный контакт: <a href="${store.contact.phoneHref}">${store.contact.phone}</a> / <a href="${store.contact.emailHref}">${store.contact.email}</a></p>
+        </article>
+      </div>
     `;
   }
 };
@@ -1659,6 +1889,10 @@ const buildLeadPayload = (form) => {
   hydrateLeadMeta(form);
 
   const data = new FormData(form);
+  const hasQuantity = data.has("quantity_kg");
+  const hasDistance = data.has("distance_km");
+  const quantityKg = hasQuantity ? normalizePositiveNumber(data.get("quantity_kg")) : null;
+  const distanceKm = hasDistance ? normalizePositiveNumber(data.get("distance_km")) : null;
   return {
     lead: {
       name: (data.get("name") || "").toString().trim(),
@@ -1669,6 +1903,11 @@ const buildLeadPayload = (form) => {
       topic: (data.get("topic") || "").toString().trim(),
       message: (data.get("message") || "").toString().trim(),
       consent: data.get("consent") === "on",
+    },
+    company: {
+      name: (data.get("company_name") || "").toString().trim(),
+      inn: (data.get("company_inn") || "").toString().trim(),
+      purchaseFormat: (data.get("purchase_format") || "").toString().trim(),
     },
     context: {
       source: (data.get("source") || "").toString().trim(),
@@ -1684,6 +1923,29 @@ const buildLeadPayload = (form) => {
       name: (data.get("product_name") || "").toString().trim(),
       category: (data.get("product_category") || "").toString().trim(),
       marketplaceInterest: (data.get("marketplace_interest") || "").toString().trim(),
+    },
+    order: {
+      quantityKg,
+      topic: (data.get("topic") || "").toString().trim(),
+    },
+    delivery: {
+      address: (data.get("delivery_address") || "").toString().trim(),
+      distanceKm,
+      distanceBlocks1000: data.has("distance_blocks_1000")
+        ? normalizePositiveNumber(data.get("distance_blocks_1000"))
+        : null,
+    },
+    pricing: {
+      basePricePerKg: normalizePositiveNumber(data.get("base_price_per_kg")),
+      discountRate: normalizePositiveNumber(data.get("discount_rate")),
+      discountTier: (data.get("discount_tier") || "").toString().trim(),
+      distanceMarkupRate: normalizePositiveNumber(data.get("distance_markup_rate")),
+      subtotalBase: normalizePositiveNumber(data.get("subtotal_base")),
+      subtotalAfterDiscount: normalizePositiveNumber(data.get("subtotal_after_discount")),
+      totalEstimate: normalizePositiveNumber(data.get("total_estimate")),
+      estimatedPricePerKg: normalizePositiveNumber(data.get("estimated_price_per_kg")),
+      currency: (data.get("currency") || "RUB").toString().trim(),
+      isEstimate: (data.get("is_estimate") || "true").toString().trim() === "true",
     },
     utm: {
       source: (data.get("utm_source") || "").toString().trim(),
@@ -1711,56 +1973,168 @@ const buildLeadMailto = (payload) => {
     `Global Basket: ${payload.lead.topic || "site_request"} (${payload.context.source || "site"})`,
   );
 
-  const body = encodeURIComponent(
-    [
-      "Новая заявка с сайта Global Basket",
-      "",
-      `Имя: ${payload.lead.name}`,
-      `Телефон: ${payload.lead.phone}`,
-      `Email: ${payload.lead.email}`,
-      `Telegram: ${payload.lead.telegramUsername}`,
-      `Удобный канал связи: ${payload.lead.preferredContact}`,
-      `Тема: ${payload.lead.topic}`,
-      `Источник: ${payload.context.source}`,
-      `Страница: ${payload.context.page}`,
-      `URL: ${payload.context.landingUrl}`,
-      `Продукт: ${payload.product.name}`,
-      `Категория: ${payload.product.category}`,
-      `Session ID: ${payload.context.sessionId}`,
-      `UTM Source: ${payload.utm.source}`,
-      `UTM Medium: ${payload.utm.medium}`,
-      `UTM Campaign: ${payload.utm.campaign}`,
-      `UTM Content: ${payload.utm.content}`,
-      `UTM Term: ${payload.utm.term}`,
-      "",
-      "Комментарий:",
-      payload.lead.message || "—",
-    ].join("\n"),
-  );
+  const lines = [
+    "Новая заявка с сайта Global Basket",
+    "",
+    `Имя: ${payload.lead.name}`,
+    `Телефон: ${payload.lead.phone}`,
+    payload.lead.email ? `Email: ${payload.lead.email}` : "",
+    payload.lead.telegramUsername ? `Telegram: ${payload.lead.telegramUsername}` : "",
+    payload.lead.preferredContact ? `Удобный канал связи: ${payload.lead.preferredContact}` : "",
+    payload.company?.name ? `Юрлицо / ИП: ${payload.company.name}` : "",
+    payload.company?.inn ? `ИНН: ${payload.company.inn}` : "",
+    payload.company?.purchaseFormat ? `Формат закупки: ${payload.company.purchaseFormat}` : "",
+    `Тема: ${payload.lead.topic}`,
+    payload.order?.quantityKg ? `Количество: ${payload.order.quantityKg} кг` : "",
+    payload.delivery?.address ? `Адрес доставки: ${payload.delivery.address}` : "",
+    Number.isFinite(payload.delivery?.distanceKm) ? `Расстояние от Москвы: ${payload.delivery.distanceKm} км` : "",
+    payload.pricing?.basePricePerKg ? `Базовая цена: ${formatRub(payload.pricing.basePricePerKg)} / кг` : "",
+    payload.pricing?.discountTier ? `Скидка: ${payload.pricing.discountTier}` : "",
+    payload.pricing?.distanceMarkupRate
+      ? `Надбавка за расстояние: +${Math.round(payload.pricing.distanceMarkupRate * 100)}%`
+      : "",
+    payload.pricing?.estimatedPricePerKg
+      ? `Цена за кг после расчёта: ${formatRub(payload.pricing.estimatedPricePerKg)} / кг`
+      : "",
+    payload.pricing?.totalEstimate ? `Предварительная сумма: ${formatRub(payload.pricing.totalEstimate)}` : "",
+    `Источник: ${payload.context.source}`,
+    `Страница: ${payload.context.page}`,
+    `URL: ${payload.context.landingUrl}`,
+    `Продукт: ${payload.product.name}`,
+    `Категория: ${payload.product.category}`,
+    `Session ID: ${payload.context.sessionId}`,
+    payload.utm.source ? `UTM Source: ${payload.utm.source}` : "",
+    payload.utm.medium ? `UTM Medium: ${payload.utm.medium}` : "",
+    payload.utm.campaign ? `UTM Campaign: ${payload.utm.campaign}` : "",
+    payload.utm.content ? `UTM Content: ${payload.utm.content}` : "",
+    payload.utm.term ? `UTM Term: ${payload.utm.term}` : "",
+    "",
+    "Комментарий:",
+    payload.lead.message || "—",
+  ].filter(Boolean);
+
+  const body = encodeURIComponent(lines.join("\n"));
 
   return `${store.contact.emailHref}?subject=${subject}&body=${body}`;
 };
 
-const setRequestStatus = (form, message) => {
+const setRequestStatus = (form, message, tone = "") => {
   const status = form.querySelector("[data-request-status]");
-  if (status) status.textContent = message;
+  if (!status) return;
+
+  status.textContent = message;
+  status.classList.remove("is-success", "is-error", "is-loading");
+  if (tone) status.classList.add(`is-${tone}`);
+};
+
+const updateQuoteSummary = (form) => {
+  const quantityField = form.elements.namedItem("quantity_kg");
+  const distanceField = form.elements.namedItem("distance_km");
+  const quote = calculateContactQuote({
+    quantityKg: quantityField?.value,
+    distanceKm: distanceField?.value,
+  });
+
+  setFormFieldValue(form, "base_price_per_kg", String(quote.basePricePerKg));
+  setFormFieldValue(form, "discount_rate", String(quote.discountRate));
+  setFormFieldValue(form, "discount_tier", `${Math.round(quote.discountRate * 100)}%`);
+  setFormFieldValue(form, "distance_blocks_1000", String(quote.distanceBlocks1000));
+  setFormFieldValue(form, "distance_markup_rate", String(quote.distanceMarkupRate));
+  setFormFieldValue(form, "subtotal_base", String(Math.round(quote.subtotalBase)));
+  setFormFieldValue(form, "subtotal_after_discount", String(Math.round(quote.subtotalAfterDiscount)));
+  setFormFieldValue(form, "total_estimate", String(Math.round(quote.totalEstimate)));
+  setFormFieldValue(form, "estimated_price_per_kg", String(Math.round(quote.estimatedPricePerKg)));
+
+  const bindings = {
+    "[data-quote-base]": `${formatRub(quote.basePricePerKg)} / кг`,
+    "[data-quote-weight]": `${quote.quantityKg || 0} кг`,
+    "[data-quote-discount]": `${Math.round(quote.discountRate * 100)}%`,
+    "[data-quote-distance-markup]": `+${Math.round(quote.distanceMarkupRate * 100)}%`,
+    "[data-quote-price-per-kg]": `${formatRub(quote.estimatedPricePerKg || 0)} / кг`,
+    "[data-quote-total]": formatRub(quote.totalEstimate || 0),
+  };
+
+  Object.entries(bindings).forEach(([selector, value]) => {
+    const node = $(selector, form);
+    if (node) node.textContent = value;
+  });
+};
+
+const setFormSubmittingState = (form, isSubmitting) => {
+  const submitButton = form.querySelector('button[type="submit"]');
+  if (!submitButton) return;
+
+  if (!submitButton.dataset.idleLabel) {
+    submitButton.dataset.idleLabel = submitButton.textContent.trim();
+  }
+
+  submitButton.disabled = isSubmitting;
+  submitButton.setAttribute("aria-busy", isSubmitting ? "true" : "false");
+  submitButton.textContent = isSubmitting ? "Отправляем..." : submitButton.dataset.idleLabel;
+};
+
+const bindQuoteCalculators = () => {
+  $$("[data-quote-form]").forEach((form) => {
+    const refresh = () => updateQuoteSummary(form);
+    form.addEventListener("input", refresh);
+    form.addEventListener("change", refresh);
+    refresh();
+  });
+};
+
+const submitLeadPayload = async (payload) => {
+  const response = await fetch("/api/contact-request", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      accept: "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data.ok) {
+    const message = data.message || "Не удалось отправить запрос. Попробуйте ещё раз или напишите нам в Telegram.";
+    throw new Error(message);
+  }
+
+  return data;
 };
 
 const bindRequestForms = () => {
   $$("[data-request-form]").forEach((form) => {
     hydrateLeadMeta(form);
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
 
+      if (form.dataset.submitting === "true") return;
       if (!form.reportValidity()) return;
 
       const payload = buildLeadPayload(form);
-      window.sessionStorage.setItem("gb-last-lead-payload", JSON.stringify(payload));
-      setRequestStatus(
-        form,
-        "Подготовили заявку. Если письмо не открылось автоматически, используйте Telegram как резервный канал.",
-      );
-      window.location.href = buildLeadMailto(payload);
+      form.dataset.submitting = "true";
+      setFormSubmittingState(form, true);
+      setRequestStatus(form, "Отправляем заявку команде Global Basket…", "loading");
+
+      try {
+        window.sessionStorage.setItem("gb-last-lead-payload", JSON.stringify(payload));
+        const result = await submitLeadPayload(payload);
+        setRequestStatus(
+          form,
+          `Заявка отправлена. Номер обращения: ${result.requestId}. Мы получили её в Telegram и свяжемся с вами в рабочее время.`,
+          "success",
+        );
+      } catch (error) {
+        const fallbackMailto = buildLeadMailto(payload);
+        setRequestStatus(
+          form,
+          `${error.message} Если нужно срочно, напишите нам в Telegram или используйте резервный email-сценарий.`,
+          "error",
+        );
+        form.dataset.mailtoFallback = fallbackMailto;
+      } finally {
+        form.dataset.submitting = "false";
+        setFormSubmittingState(form, false);
+      }
     });
   });
 };
@@ -1808,6 +2182,7 @@ document.addEventListener("DOMContentLoaded", () => {
   bindHeaderSearch();
   bindSearchForms();
   bindFaq();
+  bindQuoteCalculators();
   bindRequestForms();
   applyCatalogToolbarState();
 });
