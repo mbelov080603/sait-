@@ -290,15 +290,15 @@
         </div>
 
         <div class="form-grid ">
-          <label>
+          <label data-contact-field="Телефон">
             <span>Телефон</span>
             <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" />
           </label>
-          <label>
+          <label data-contact-field="Email">
             <span>Email</span>
             <input type="email" name="email" autocomplete="email" placeholder="name@company.ru" />
           </label>
-          <label data-conditional-field="telegram">
+          <label data-contact-field="Telegram">
             <span>Telegram username</span>
             <input type="text" name="telegram_username" autocomplete="off" placeholder="@username" />
             <small class="form-helper">Если основной канал — Telegram, укажите username в формате @username.</small>
@@ -359,7 +359,7 @@
               <div class="form-disclosure__content">
                 <label class="consent consent--toggle" data-field-group="need_commercial_offer">
                   <input type="checkbox" name="need_commercial_offer" />
-                  <span>Хочу получить коммерческое предложение / уточнение условий</span>
+                  <span>Добавить детали для коммерческого предложения</span>
                 </label>
                 <div class="form-grid" data-quote-details hidden>
                   <label>

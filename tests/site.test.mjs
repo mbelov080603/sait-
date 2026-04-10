@@ -67,6 +67,9 @@ test("contacts page embeds the compact B2B form instead of the fake calculator f
   assert.ok(page.includes('id="contact-b2b-form"'));
   assert.ok(page.includes('data-form-variant="compact"'));
   assert.ok(page.includes('name="request_type"'));
+  assert.ok(page.includes('data-contact-field="Телефон"'));
+  assert.ok(page.includes('data-contact-field="Email"'));
+  assert.ok(page.includes('data-contact-field="Telegram"'));
   assert.doesNotMatch(page, /Расстояние от Москвы/i);
   assert.doesNotMatch(page, /предварительная сумма/i);
   assert.doesNotMatch(page, /Базовая цена/i);
@@ -83,6 +86,7 @@ test("lead form client logic uses the shared B2B normalizer and analytics flow",
   const app = read("scripts/app.js");
   assert.ok(app.includes("normalizeLeadRequestInput"));
   assert.ok(app.includes("validateLeadRequest"));
+  assert.ok(app.includes("[data-contact-field]"));
   assert.ok(app.includes("lead_form_submit"));
   assert.ok(app.includes("lead_form_success"));
   assert.ok(app.includes("lead_form_error"));

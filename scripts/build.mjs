@@ -706,15 +706,15 @@ const renderLeadRequestForm = ({
         </div>
 
         <div class="form-grid ${variant === "full" ? "form-grid--three" : ""}">
-          <label>
+          <label data-contact-field="Телефон">
             <span>Телефон</span>
             <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" />
           </label>
-          <label>
+          <label data-contact-field="Email">
             <span>Email</span>
             <input type="email" name="email" autocomplete="email" placeholder="name@company.ru" />
           </label>
-          <label data-conditional-field="telegram">
+          <label data-contact-field="Telegram">
             <span>Telegram username</span>
             <input type="text" name="telegram_username" autocomplete="off" placeholder="@username" />
             <small class="form-helper">Если основной канал — Telegram, укажите username в формате @username.</small>

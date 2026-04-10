@@ -481,23 +481,37 @@ const syncLeadFormState = (form) => {
   const needsQuoteDetails = Boolean(quoteToggle?.checked);
   $$("[data-quote-details]", form).forEach((region) => setRegionHidden(region, !needsQuoteDetails));
 
-  const telegramField = form.querySelector('[data-conditional-field="telegram"]');
-  const showTelegram = preferredContactMethod === "Telegram";
-  if (telegramField) {
-    telegramField.hidden = !showTelegram;
-    $$("input", telegramField).forEach((field) => {
-      field.disabled = !showTelegram;
-    });
-  }
+  const showEmailField =
+    preferredContactMethod === "Email" ||
+    leadQuoteDrivenRequestTypes.has(requestType) ||
+    needsQuoteDetails;
+
+  $$("[data-contact-field]", form).forEach((field) => {
+    const contactType = field.dataset.contactField || "";
+    const visible =
+      contactType === "Телефон"
+        ? preferredContactMethod === "Телефон"
+        : contactType === "Email"
+          ? showEmailField
+          : contactType === "Telegram"
+            ? preferredContactMethod === "Telegram"
+            : true;
+
+    setRegionHidden(field, !visible);
+  });
 
   const contactHelper = $("[data-contact-helper]", form);
   if (contactHelper) {
     contactHelper.textContent =
       preferredContactMethod === "Telegram"
-        ? "Укажите Telegram username. Телефон или email можно оставить как резервный канал."
+        ? showEmailField
+          ? "Укажите Telegram username для связи и email для отправки условий или коммерческого предложения."
+          : "Укажите Telegram username. Телефон или email можно оставить как резервный канал."
         : preferredContactMethod === "Email"
           ? "Укажите email, на который удобно получить условия или коммерческое предложение."
-          : "Укажите телефон, чтобы менеджер мог быстро связаться и уточнить детали.";
+          : showEmailField
+            ? "Укажите телефон для связи и email для отправки условий или коммерческого предложения."
+            : "Укажите телефон, чтобы менеджер мог быстро связаться и уточнить детали.";
   }
 
   setFieldRequired(form, "company_name", true);
