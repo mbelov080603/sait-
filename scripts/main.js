@@ -379,9 +379,17 @@ const renderLeadRequestForm = (config, context = {}) => {
             <span>Ваше имя</span>
             <input type="text" name="name" autocomplete="name" placeholder="Как к вам обращаться" required />
           </label>
-          <label>
+          <label data-contact-field="phone">
             <span>Телефон</span>
             <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" required />
+          </label>
+          <label data-contact-field="email" hidden>
+            <span>Email</span>
+            <input type="email" name="email" autocomplete="email" placeholder="name@example.com" />
+          </label>
+          <label data-contact-field="telegram" hidden>
+            <span>Telegram</span>
+            <input type="text" name="telegram_username" autocomplete="off" placeholder="@username" />
           </label>
         </div>
         <div class="request-form__grid">
@@ -402,6 +410,9 @@ const renderLeadRequestForm = (config, context = {}) => {
             </select>
           </label>
         </div>
+        <p class="request-form__hint" data-contact-helper>
+          Укажите основной канал связи. Остальные данные можно сообщить менеджеру после первого контакта.
+        </p>
         <label>
           <span>Комментарий</span>
           <textarea name="message" placeholder="Например: хочу узнать цену, формат поставки или условия покупки."></textarea>
@@ -531,16 +542,20 @@ const renderContactQuoteForm = (config, context = {}) => {
             <span>Контактное лицо</span>
             <input type="text" name="name" autocomplete="name" placeholder="Как к вам обращаться" required />
           </label>
-          <label>
+          <label data-contact-field="phone">
             <span>Телефон</span>
             <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" required />
           </label>
-        </div>
-        <div class="request-form__grid">
-          <label>
+          <label data-contact-field="email" hidden>
             <span>Email</span>
             <input type="email" name="email" autocomplete="email" placeholder="name@example.com" />
           </label>
+          <label data-contact-field="telegram" hidden>
+            <span>Telegram</span>
+            <input type="text" name="telegram_username" autocomplete="off" placeholder="@username" />
+          </label>
+        </div>
+        <div class="request-form__grid">
           <label>
             <span>Как удобнее связаться</span>
             <select name="contact_preferred">
@@ -550,6 +565,9 @@ const renderContactQuoteForm = (config, context = {}) => {
             </select>
           </label>
         </div>
+        <p class="request-form__hint" data-contact-helper>
+          Выберите основной канал связи. Поле для контакта переключится автоматически.
+        </p>
         <div class="request-form__grid">
           <label>
             <span>Юридическое лицо / ИП</span>
@@ -2090,6 +2108,47 @@ const setFormSubmittingState = (form, isSubmitting) => {
   submitButton.textContent = isSubmitting ? "Отправляем..." : submitButton.dataset.idleLabel;
 };
 
+const resolvePreferredContactKey = (value = "") => {
+  const normalized = String(value).trim().toLowerCase();
+  if (normalized === "email") return "email";
+  if (normalized === "telegram") return "telegram";
+  return "phone";
+};
+
+const syncPreferredContactField = (form) => {
+  const preferredField = form.elements.namedItem("contact_preferred");
+  if (!preferredField) return;
+
+  const preferredKey = resolvePreferredContactKey(preferredField.value);
+  const helper = form.querySelector("[data-contact-helper]");
+
+  const fields = {
+    phone: form.querySelector('[data-contact-field="phone"]'),
+    email: form.querySelector('[data-contact-field="email"]'),
+    telegram: form.querySelector('[data-contact-field="telegram"]'),
+  };
+
+  Object.entries(fields).forEach(([key, field]) => {
+    if (!field) return;
+    const active = key === preferredKey;
+    field.hidden = !active;
+    field.querySelectorAll("input").forEach((input) => {
+      input.disabled = !active;
+      input.required = active;
+      input.setAttribute("aria-required", active ? "true" : "false");
+    });
+  });
+
+  if (helper) {
+    helper.textContent =
+      preferredKey === "email"
+        ? "Укажите email, на который удобно получить ответ от менеджера."
+        : preferredKey === "telegram"
+          ? "Укажите Telegram username в формате @username, чтобы менеджер мог написать вам напрямую."
+          : "Укажите телефон, чтобы менеджер мог быстро связаться и уточнить детали.";
+  }
+};
+
 const bindQuoteCalculators = () => {
   $$("[data-quote-form]").forEach((form) => {
     const refresh = () => updateQuoteSummary(form);
@@ -2121,6 +2180,13 @@ const submitLeadPayload = async (payload) => {
 const bindRequestForms = () => {
   $$("[data-request-form]").forEach((form) => {
     hydrateLeadMeta(form);
+    syncPreferredContactField(form);
+
+    const preferredField = form.elements.namedItem("contact_preferred");
+    preferredField?.addEventListener("change", () => {
+      syncPreferredContactField(form);
+    });
+
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
 
