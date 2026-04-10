@@ -1145,25 +1145,32 @@ const initAboutFactsCarousel = () => {
   const slides = $$("[data-about-slide]", root);
   const prevButton = $("[data-about-prev]", root);
   const nextButton = $("[data-about-next]", root);
-  const dots = $$("[data-about-dot]", root);
+  const dotsRoot = $("[data-about-dots]", root) || $(".about-carousel__dots", root);
 
   if (!track || slides.length < 2) return;
 
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const maxScrollLeft = () => Math.max(0, track.scrollWidth - track.clientWidth);
-  const getSnapLeft = (index) => {
-    const slide = slides[index];
-    if (!slide) return 0;
-    return Math.min(slide.offsetLeft, maxScrollLeft());
+  let snapPoints = [];
+  let dots = [];
+
+  const getSnapPoints = () => {
+    const maxLeft = maxScrollLeft();
+    return slides
+      .map((slide) => Math.min(slide.offsetLeft, maxLeft))
+      .sort((left, right) => left - right)
+      .filter((left, index, positions) => index === 0 || Math.abs(left - positions[index - 1]) > 2);
   };
 
   const getIndex = () => {
+    if (!snapPoints.length) return 0;
+
     const currentLeft = track.scrollLeft;
     let activeIndex = 0;
     let bestDistance = Number.POSITIVE_INFINITY;
 
-    slides.forEach((slide, index) => {
-      const distance = Math.abs(getSnapLeft(index) - currentLeft);
+    snapPoints.forEach((left, index) => {
+      const distance = Math.abs(left - currentLeft);
       if (distance < bestDistance) {
         bestDistance = distance;
         activeIndex = index;
@@ -1173,6 +1180,29 @@ const initAboutFactsCarousel = () => {
     return activeIndex;
   };
 
+  const buildDots = () => {
+    if (!dotsRoot) return;
+
+    dotsRoot.innerHTML = snapPoints
+      .map(
+        (_, index) => `
+          <button
+            type="button"
+            class="about-carousel__dot"
+            data-about-dot
+            aria-label="Перейти к группе фактов ${index + 1}"
+            aria-current="false"
+          ></button>
+        `,
+      )
+      .join("");
+
+    dots = $$("[data-about-dot]", dotsRoot);
+    dots.forEach((dot, index) => {
+      dot.addEventListener("click", () => scrollToIndex(index));
+    });
+  };
+
   const updateControls = () => {
     const index = getIndex();
     dots.forEach((dot, dotIndex) => {
@@ -1180,25 +1210,26 @@ const initAboutFactsCarousel = () => {
       dot.classList.toggle("is-active", isActive);
       dot.setAttribute("aria-current", isActive ? "true" : "false");
     });
-    const maxLeft = maxScrollLeft();
-    if (prevButton) prevButton.disabled = track.scrollLeft <= 2;
-    if (nextButton) nextButton.disabled = track.scrollLeft >= maxLeft - 2;
+    if (prevButton) prevButton.disabled = index <= 0;
+    if (nextButton) nextButton.disabled = index >= snapPoints.length - 1;
   };
 
   const scrollToIndex = (index) => {
-    const boundedIndex = Math.max(0, Math.min(slides.length - 1, index));
+    const boundedIndex = Math.max(0, Math.min(snapPoints.length - 1, index));
     track.scrollTo({
-      left: getSnapLeft(boundedIndex),
+      left: snapPoints[boundedIndex] ?? 0,
       behavior: prefersReducedMotion ? "auto" : "smooth",
     });
   };
 
+  const syncLayout = () => {
+    snapPoints = getSnapPoints();
+    buildDots();
+    updateControls();
+  };
+
   prevButton?.addEventListener("click", () => scrollToIndex(getIndex() - 1));
   nextButton?.addEventListener("click", () => scrollToIndex(getIndex() + 1));
-
-  dots.forEach((dot, index) => {
-    dot.addEventListener("click", () => scrollToIndex(index));
-  });
 
   let frame = 0;
   track.addEventListener(
@@ -1215,12 +1246,12 @@ const initAboutFactsCarousel = () => {
     "resize",
     () => {
       cancelAnimationFrame(resizeFrame);
-      resizeFrame = requestAnimationFrame(updateControls);
+      resizeFrame = requestAnimationFrame(syncLayout);
     },
     { passive: true },
   );
 
-  updateControls();
+  syncLayout();
 };
 
 const initRevealAnimations = () => {
@@ -1356,21 +1387,7 @@ const renderAboutPage = () => {
             ${about.facts.cards.map(renderAboutFactSlide).join("")}
           </div>
         </div>
-        <div class="about-carousel__dots" data-reveal>
-          ${about.facts.cards
-            .map(
-              (_, index) => `
-                <button
-                  type="button"
-                  class="about-carousel__dot"
-                  data-about-dot
-                  aria-label="Перейти к факту ${index + 1}"
-                  aria-current="false"
-                ></button>
-              `,
-            )
-            .join("")}
-        </div>
+        <div class="about-carousel__dots" data-about-dots data-reveal></div>
       </section>
     `;
   }
