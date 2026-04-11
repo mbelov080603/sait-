@@ -2129,14 +2129,21 @@ textarea {
 
 .contacts-disclosures--lead {
   margin-top: var(--space-4);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
 }
 
 .contacts-disclosures--lead .contact-disclosure {
   background: rgba(255, 252, 247, 0.82);
+  min-height: 112px;
 }
 
 .contacts-disclosures--lead .contact-disclosure summary {
+  align-items: flex-start;
+  flex-direction: column;
+  justify-content: flex-start;
   padding-block: 18px;
+  min-height: 112px;
 }
 
 .contacts-disclosures--lead .contact-disclosure__body {
@@ -2856,6 +2863,10 @@ a:focus-visible {
     text-align: left;
   }
 
+  .contacts-disclosures--lead {
+    grid-template-columns: 1fr;
+  }
+
   .catalog-toolbar {
     align-items: flex-start;
   }
@@ -2974,8 +2985,6 @@ a:focus-visible {
   }
 
   .catalog-sidebar,
-  .contacts-focus-grid,
-  .contacts-support-grid,
   .category-grid,
   .info-grid,
   .summary-facts,
