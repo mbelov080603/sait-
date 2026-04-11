@@ -2025,6 +2025,56 @@ textarea {
   font-size: 1.22rem;
 }
 
+.product-detail-card,
+.product-spec-card {
+  min-height: 100%;
+}
+
+.product-section-copy {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.product-section-copy p {
+  margin: 0;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.spec-list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.spec-list__row {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.spec-list__row:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.spec-list dt {
+  margin: 0;
+  color: var(--muted);
+  font-family: "Rubik", sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.spec-list dd {
+  margin: 0;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
 .contacts-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) 420px;
@@ -3100,6 +3150,7 @@ a:focus-visible {
   .category-grid,
   .info-grid,
   .summary-facts,
+  .spec-list__row,
   .article-fact-grid--summary,
   .about-mission-grid,
   .about-values-grid,

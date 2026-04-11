@@ -1,5 +1,8 @@
 const store = window.GlobalBasketData;
-const product = store.product;
+const products =
+  Array.isArray(store.products) && store.products.length
+    ? store.products
+    : [store.product].filter(Boolean);
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -12,6 +15,80 @@ const escapeAttribute = (value = "") =>
     .replaceAll('"', "&quot;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
+
+const isProductActive = (item) =>
+  Boolean(item) &&
+  (item.status === "active" || item.availability === "В наличии" || item.badgeTone === "active");
+
+const featuredProduct = products.find(isProductActive) || products[0] || store.product;
+
+const productIndex = new Map();
+products.forEach((item) => {
+  if (!item) return;
+  [item.id, item.slug, item.href].filter(Boolean).forEach((key) => {
+    productIndex.set(String(key), item);
+  });
+});
+
+const normalizeProductKey = (value = "") => String(value).trim().replace(/^\/+|\/+$/g, "");
+
+const findProduct = (value = "") => {
+  const normalized = normalizeProductKey(value);
+  if (!normalized) return null;
+  return (
+    productIndex.get(normalized) ||
+    productIndex.get(`/${normalized}/`) ||
+    productIndex.get(`/catalog/${normalized}/`) ||
+    null
+  );
+};
+
+const resolveProductFromLocation = () => {
+  const bodyProduct = document.body.dataset.product;
+  if (bodyProduct) {
+    const bodyMatch = findProduct(bodyProduct);
+    if (bodyMatch) return bodyMatch;
+  }
+
+  if (document.body.dataset.page === "product") {
+    const segments = window.location.pathname.split("/").filter(Boolean);
+    const slug = segments[segments[0] === "catalog" ? 1 : segments.length - 1];
+    const pathMatch = findProduct(slug);
+    if (pathMatch) return pathMatch;
+  }
+
+  return featuredProduct;
+};
+
+const product = resolveProductFromLocation();
+const activeProducts = products.filter(isProductActive);
+
+const buildContactHref = (productItem, source = "catalog-card") => {
+  const params = new URLSearchParams();
+  params.set("source", source);
+  if (productItem?.slug || productItem?.id) {
+    params.set("product", productItem.slug || productItem.id);
+  }
+  return `/contacts/?${params.toString()}`;
+};
+
+const productCtaCards = (productItem) => productItem.actionCards || store.marketplaces;
+
+const productQuickLinks = (productItem) =>
+  productCtaCards(productItem).map((item) => ({
+    label: item.name,
+    href: item.href,
+  }));
+
+const ensureMetaTag = (name) => {
+  let tag = document.head.querySelector(`meta[name="${name}"]`);
+  if (!tag) {
+    tag = document.createElement("meta");
+    tag.setAttribute("name", name);
+    document.head.append(tag);
+  }
+  return tag;
+};
 
 const iconPaths = {
   search:
@@ -236,7 +313,7 @@ const renderMarketplaceCard = (item) => `
   <article class="marketplace-card">
     <div class="marketplace-card__head">
       <span class="marketplace-card__brand">${item.name}</span>
-      ${renderBadge("Где купить", "service")}
+      ${renderBadge(item.badge || "Где купить", item.tone || "service")}
     </div>
     <ul class="marketplace-card__list">
       ${item.bullets.map((bullet) => `<li>${bullet}</li>`).join("")}
@@ -313,26 +390,41 @@ const formatCatalogCount = (count) => {
   return `${count} позиций`;
 };
 
-const renderEnterpriseProductCard = (featured = false) => `
+const renderEnterpriseProductCard = (productItem = product, featured = false) => `
   <article class="product-card ${featured ? "product-card--featured" : ""}">
     <div class="product-card__top">
-      ${renderBadge(product.badge, product.badgeTone)}
+      ${renderBadge(productItem.badge, productItem.badgeTone)}
     </div>
     <div class="product-card__content">
-      <a class="product-card__media" href="${product.href}">
-        <img src="${product.images.packshot}" alt="${product.fullName}" loading="lazy" decoding="async" />
+      <a class="product-card__media" href="${productItem.href}">
+        <img src="${productItem.images.packshot}" alt="${productItem.fullName}" loading="lazy" decoding="async" />
       </a>
       <div class="product-card__body">
-        <h3><a href="${product.href}">${product.shortName}</a></h3>
-        <p class="product-card__subtitle">${product.subtitle}</p>
-        <p class="product-card__lead">${product.lead}</p>
+        <h3><a href="${productItem.href}">${productItem.shortName}</a></h3>
+        <p class="product-card__subtitle">${productItem.subtitle}</p>
+        <p class="product-card__lead">${productItem.catalogDescription || productItem.lead}</p>
         <div class="product-card__actions">
-          <a class="button button--small" href="${product.href}">Подробнее</a>
-          <a class="text-link text-link--inline" href="/contacts/?source=catalog-card">Уточнить условия</a>
+          <a class="button button--small" href="${productItem.href}">Подробнее</a>
+          <a class="text-link text-link--inline" href="${buildContactHref(productItem, "catalog-card")}">Уточнить условия</a>
         </div>
       </div>
     </div>
   </article>
+`;
+
+const renderProductSpecs = (items = []) => `
+  <dl class="spec-list">
+    ${items
+      .map(
+        (item) => `
+          <div class="spec-list__row">
+            <dt>${item.label}</dt>
+            <dd>${item.value}</dd>
+          </div>
+        `,
+      )
+      .join("")}
+  </dl>
 `;
 
 const renderLeadRequestForm = (config, context = {}) => {
@@ -828,13 +920,30 @@ const renderHome = () => {
 const buildCatalogItems = () => {
   const upcoming = store.categories.filter((item) => item.status === "coming");
   return [
-    {
+    ...activeProducts.map((item, index) => ({
       type: "product",
-      title: product.shortName,
-      keywords: `${product.shortName} ${product.fullName} ${product.subtitle} ${product.origin} ${product.weight} ${product.packaging} ${product.category} ${product.lead} ${product.availability} очищенная макадамия орехи`,
-      html: renderEnterpriseProductCard(true),
+      title: item.shortName,
+      keywords: [
+        item.shortName,
+        item.fullName,
+        item.h1,
+        item.subtitle,
+        item.origin,
+        item.weight,
+        item.packaging,
+        item.category,
+        item.catalogDescription,
+        item.annotation,
+        item.shortDescription,
+        item.fullDescription,
+        item.composition,
+        item.seoKeywords,
+      ]
+        .filter(Boolean)
+        .join(" "),
+      html: renderEnterpriseProductCard(item, index === 0),
       status: "active",
-    },
+    })),
     ...upcoming.map((item) => ({
       type: "section",
       title: item.name,
@@ -920,11 +1029,11 @@ const renderCatalog = () => {
     grid.innerHTML = items.length
       ? items.map((item) => item.html).join("")
       : `
-          <article class="empty-state">
-            <strong>По вашему запросу пока ничего не найдено.</strong>
-            <p>Попробуйте поискать «макадамия», «орехи» или вернитесь ко всему каталогу.</p>
-            <a class="button button--small" href="/catalog/">В каталог</a>
-          </article>
+            <article class="empty-state">
+              <strong>По вашему запросу пока ничего не найдено.</strong>
+              <p>Попробуйте поискать «макадамия», «пекан», «грецкий орех» или вернитесь ко всему каталогу.</p>
+              <a class="button button--small" href="/catalog/">В каталог</a>
+            </article>
         `;
   }
 
@@ -935,14 +1044,29 @@ const renderCatalog = () => {
 };
 
 const renderProductPage = () => {
+  const productItem = product;
+  if (!productItem) return;
+
+  document.title = `Global Basket | ${productItem.seoTitle || productItem.h1 || productItem.shortName}`;
+  ensureMetaTag("description").setAttribute(
+    "content",
+    productItem.seoDescription || productItem.annotation || productItem.catalogDescription || "",
+  );
+  ensureMetaTag("keywords").setAttribute("content", productItem.seoKeywords || "");
+
+  const breadcrumbCurrent = $("#product-breadcrumb-current");
+  if (breadcrumbCurrent) {
+    breadcrumbCurrent.textContent = productItem.shortName;
+  }
+
   const gallery = $("#product-gallery");
   if (gallery) {
     gallery.innerHTML = `
       <div class="product-gallery__main">
-        <img src="${product.images.main}" alt="${product.fullName}" />
+        <img src="${productItem.images.main}" alt="${productItem.gallery?.[0]?.alt || productItem.fullName}" />
       </div>
       <div class="product-gallery__thumbs">
-        ${product.gallery
+        ${productItem.gallery
           .map(
             (item) => `
               <figure>
@@ -958,15 +1082,15 @@ const renderProductPage = () => {
   const summary = $("#product-summary");
   if (summary) {
     summary.innerHTML = `
-      ${renderBadge(product.badge, product.badgeTone)}
-      <h1>${product.shortName}</h1>
-      <p class="product-summary__subtitle">${product.subtitle}</p>
-      <p class="product-page__lead">${product.lead}</p>
+      ${renderBadge(productItem.badge, productItem.badgeTone)}
+      <h1>${productItem.h1 || productItem.shortName}</h1>
+      <p class="product-summary__subtitle">${productItem.subtitle}</p>
+      <p class="product-page__lead">${productItem.annotation || productItem.lead}</p>
       <ul class="hero-product__pills hero-product__pills--summary">
-        ${product.pills.map((item) => `<li>${item}</li>`).join("")}
+        ${productItem.pills.map((item) => `<li>${item}</li>`).join("")}
       </ul>
       <dl class="summary-facts">
-        ${product.factCards
+        ${productItem.factCards
           .map(
             (item) => `
               <div>
@@ -980,36 +1104,83 @@ const renderProductPage = () => {
       <div class="purchase-panel">
         <div>
           <span class="purchase-panel__label">Стоимость</span>
-          <strong>${product.price}</strong>
-          <p>${product.priceNote}</p>
+          <strong>${productItem.price}</strong>
+          <p>${productItem.priceNote}</p>
         </div>
         <div class="purchase-panel__actions">
-          <a class="button" href="/contacts/?source=pdp">Уточнить условия</a>
+          <a class="button" href="${buildContactHref(productItem, "pdp")}">Уточнить условия</a>
           <a class="text-link text-link--inline" href="/catalog/">Вернуться в каталог</a>
         </div>
       </div>
       <div class="market-links market-links--summary">
-        <span>Где купить:</span>
-        ${store.marketplaces
-          .map((item) => `<a href="${item.href}"${externalAttrs(item.href)}>${item.name}</a>`)
+        <span>${productItem.quickLinksLabel || "Где купить"}:</span>
+        ${productQuickLinks(productItem)
+          .map((item) => `<a href="${item.href}"${externalAttrs(item.href)}>${item.label}</a>`)
           .join("")}
       </div>
     `;
   }
 
+  const details = $("#product-details");
+  if (details) {
+    details.innerHTML = `
+      <article class="panel product-detail-card">
+        <div class="section-head section-head--compact">
+          <p class="eyebrow">${productItem.detailsEyebrow || "О продукте"}</p>
+          <h2>${productItem.detailsTitle || "Описание и характеристики"}</h2>
+          <p>${productItem.shortDescription}</p>
+        </div>
+        <div class="product-section-copy">
+          <p>${productItem.fullDescription}</p>
+        </div>
+      </article>
+      <article class="panel product-spec-card">
+        <div class="section-head section-head--compact">
+          <p class="eyebrow">Характеристики</p>
+          <h2>Ключевые данные по позиции</h2>
+        </div>
+        ${renderProductSpecs(productItem.specs || [])}
+      </article>
+    `;
+  }
+
+  const benefitsEyebrow = $("#product-benefits-eyebrow");
+  if (benefitsEyebrow) {
+    benefitsEyebrow.textContent = productItem.benefitSectionEyebrow || "Польза продукта";
+  }
+
+  const benefitsTitle = $("#product-benefits-title");
+  if (benefitsTitle) {
+    benefitsTitle.textContent =
+      productItem.benefitSectionTitle ||
+      "Ключевые свойства товара собраны так, чтобы позиция читалась спокойно и убедительно.";
+  }
+
   const benefits = $("#product-benefits");
   if (benefits) {
-    benefits.innerHTML = product.benefitCards.map(renderBenefitCard).join("");
+    benefits.innerHTML = productItem.benefitCards.map(renderBenefitCard).join("");
+  }
+
+  const actionsEyebrow = $("#product-actions-eyebrow");
+  if (actionsEyebrow) {
+    actionsEyebrow.textContent = productItem.actionsSectionEyebrow || "Следующий шаг";
+  }
+
+  const actionsTitle = $("#product-actions-title");
+  if (actionsTitle) {
+    actionsTitle.textContent =
+      productItem.actionsSectionTitle ||
+      "Уточните наличие, формат поставки и следующий шаг по этой позиции.";
   }
 
   const marketplaces = $("#product-marketplaces");
   if (marketplaces) {
-    marketplaces.innerHTML = store.marketplaces.map(renderMarketplaceCard).join("");
+    marketplaces.innerHTML = productCtaCards(productItem).map(renderMarketplaceCard).join("");
   }
 
   const faq = $("#product-faq");
   if (faq) {
-    faq.innerHTML = product.faq
+    faq.innerHTML = productItem.faq
       .map(
         (item, index) => `
           <article class="faq-item ${index === 0 ? "is-open" : ""}">
@@ -1752,7 +1923,21 @@ const renderCategoryPage = () => {
 
   const shelf = $("#category-shelf");
   if (shelf) {
-    shelf.innerHTML = renderEnterpriseProductCard();
+    shelf.innerHTML = renderEnterpriseProductCard(featuredProduct, true);
+  }
+
+  const related = $("#category-related");
+  if (related) {
+    const relatedProducts = activeProducts.filter((item) => item.slug !== featuredProduct.slug);
+    related.innerHTML = `
+      <div class="section-head">
+        <p class="eyebrow">В наличии</p>
+        <h2>Ещё товары раздела «Премиальные орехи».</h2>
+      </div>
+      <div class="catalog-grid">
+        ${relatedProducts.map((item) => renderEnterpriseProductCard(item)).join("")}
+      </div>
+    `;
   }
 };
 
