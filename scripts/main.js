@@ -583,129 +583,162 @@ const renderContactQuoteForm = (config, context = {}) => {
               `<input type="hidden" name="${name}" value="${escapeAttribute(value)}" />`,
           )
           .join("")}
-        <div class="request-form__grid request-form__grid--contact">
-          <label>
-            <span>Контактное лицо</span>
-            <input type="text" name="name" autocomplete="name" placeholder="Как к вам обращаться" required />
-          </label>
-          <div class="request-form__contact-slot" data-contact-slot data-active-contact="phone">
-            <label class="request-form__contact-panel is-active" data-contact-field="phone">
-              <span>Телефон</span>
-              <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" required />
+        <div class="request-form__intro">
+          <p class="request-form__intro-copy">Для магазинов, оптовых клиентов, корпоративных закупок и запросов по поставке.</p>
+          <ol class="request-form__steps">
+            <li>Получим заявку и увидим параметры запроса.</li>
+            <li>Уточним объём, формат поставки и детали доставки.</li>
+            <li>Подтвердим условия и следующий шаг.</li>
+          </ol>
+        </div>
+        <fieldset class="request-form__section">
+          <legend>Контактные данные</legend>
+          <div class="request-form__grid request-form__grid--contact">
+            <label>
+              <span>Контактное лицо</span>
+              <input type="text" name="name" autocomplete="name" placeholder="Как к вам обращаться" required />
             </label>
-            <label class="request-form__contact-panel" data-contact-field="email" aria-hidden="true">
-              <span>Email</span>
-              <input type="email" name="email" autocomplete="email" placeholder="name@example.com" disabled />
-            </label>
-            <label class="request-form__contact-panel" data-contact-field="telegram" aria-hidden="true">
-              <span>Telegram</span>
-              <input type="text" name="telegram_username" autocomplete="off" placeholder="@username" disabled />
+            <div class="request-form__contact-slot" data-contact-slot data-active-contact="phone">
+              <label class="request-form__contact-panel is-active" data-contact-field="phone">
+                <span>Телефон</span>
+                <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" required />
+              </label>
+              <label class="request-form__contact-panel" data-contact-field="email" aria-hidden="true">
+                <span>Email</span>
+                <input type="email" name="email" autocomplete="email" placeholder="name@example.com" disabled />
+              </label>
+              <label class="request-form__contact-panel" data-contact-field="telegram" aria-hidden="true">
+                <span>Telegram</span>
+                <input type="text" name="telegram_username" autocomplete="off" placeholder="@username" disabled />
+              </label>
+            </div>
+          </div>
+          <div class="request-form__grid">
+            <label>
+              <span>Как удобнее связаться</span>
+              <select name="contact_preferred">
+                ${config.preferredContacts
+                  .map((item) => `<option value="${item.value}">${item.label}</option>`)
+                  .join("")}
+              </select>
             </label>
           </div>
-        </div>
-        <div class="request-form__grid">
+          <p class="request-form__hint" data-contact-helper>
+            Выберите основной канал связи. Поле для контакта переключится автоматически.
+          </p>
+        </fieldset>
+        <fieldset class="request-form__section">
+          <legend>Данные компании</legend>
+          <div class="request-form__grid">
+            <label>
+              <span>Юридическое лицо / ИП</span>
+              <input type="text" name="company_name" autocomplete="organization" placeholder="Название компании или ИП" required />
+            </label>
+            <label>
+              <span>ИНН</span>
+              <input type="text" name="company_inn" inputmode="numeric" placeholder="Если есть" />
+            </label>
+          </div>
+        </fieldset>
+        <fieldset class="request-form__section">
+          <legend>Параметры запроса</legend>
+          <div class="request-form__grid">
+            <label>
+              <span>Что вас интересует</span>
+              <select name="topic" required>
+                ${config.topics
+                  .map((item) => `<option value="${item.value}">${item.label}</option>`)
+                  .join("")}
+              </select>
+            </label>
+            <label>
+              <span>Формат закупки</span>
+              <select name="purchase_format">
+                ${config.purchaseFormats
+                  .map((item) => `<option value="${item.value}">${item.label}</option>`)
+                  .join("")}
+              </select>
+            </label>
+          </div>
+          <div class="request-form__grid">
+            <label>
+              <span>Сколько килограммов нужно</span>
+              <input type="number" name="quantity_kg" min="1" step="1" value="1" inputmode="numeric" required data-quote-quantity />
+            </label>
+            <article class="request-form__distance-card" data-distance-card data-distance-state="idle" aria-live="polite">
+              <span class="request-form__distance-label">Расстояние от Москвы</span>
+              <strong data-distance-value>Определим автоматически</strong>
+              <p data-distance-helper>Введите адрес доставки, и система посчитает расстояние по нему автоматически.</p>
+            </article>
+          </div>
+        </fieldset>
+        <fieldset class="request-form__section">
+          <legend>Доставка</legend>
           <label>
-            <span>Как удобнее связаться</span>
-            <select name="contact_preferred">
-              ${config.preferredContacts
-                .map((item) => `<option value="${item.value}">${item.label}</option>`)
-                .join("")}
-            </select>
+            <span>Адрес доставки</span>
+            <input type="text" name="delivery_address" autocomplete="street-address" placeholder="Город, улица, склад или точка доставки" required data-distance-source />
           </label>
-        </div>
-        <p class="request-form__hint" data-contact-helper>
-          Выберите основной канал связи. Поле для контакта переключится автоматически.
-        </p>
-        <div class="request-form__grid">
-          <label>
-            <span>Юридическое лицо / ИП</span>
-            <input type="text" name="company_name" autocomplete="organization" placeholder="Название компании или ИП" required />
-          </label>
-          <label>
-            <span>ИНН</span>
-            <input type="text" name="company_inn" inputmode="numeric" placeholder="Если есть" />
-          </label>
-        </div>
-        <div class="request-form__grid">
-          <label>
-            <span>Что вас интересует</span>
-            <select name="topic" required>
-              ${config.topics
-                .map((item) => `<option value="${item.value}">${item.label}</option>`)
-                .join("")}
-            </select>
-          </label>
-          <label>
-            <span>Формат закупки</span>
-            <select name="purchase_format">
-              ${config.purchaseFormats
-                .map((item) => `<option value="${item.value}">${item.label}</option>`)
-                .join("")}
-            </select>
-          </label>
-        </div>
-        <div class="request-form__grid">
-          <label>
-            <span>Сколько килограммов нужно</span>
-            <input type="number" name="quantity_kg" min="1" step="1" value="1" inputmode="numeric" required data-quote-quantity />
-          </label>
-          <article class="request-form__distance-card" data-distance-card data-distance-state="idle" aria-live="polite">
-            <span class="request-form__distance-label">Расстояние от Москвы</span>
-            <strong data-distance-value>Определим автоматически</strong>
-            <p data-distance-helper>Введите адрес доставки, и система посчитает расстояние по нему автоматически.</p>
-          </article>
-        </div>
-        <label>
-          <span>Адрес доставки</span>
-          <input type="text" name="delivery_address" autocomplete="street-address" placeholder="Город, улица, склад или точка доставки" required data-distance-source />
-        </label>
+        </fieldset>
         <input type="hidden" name="distance_km" value="" data-quote-distance />
-        <label>
-          <span>Комментарий</span>
-          <textarea name="message" placeholder="Например: нужен ежемесячный объём, тестовая партия или особые условия доставки."></textarea>
-        </label>
-        <article class="quote-summary" data-quote-summary aria-live="polite">
-          <div class="quote-summary__head">
-            <strong>Предварительный расчёт</strong>
-            <p>${config.pricingHint}</p>
+        <fieldset class="request-form__section">
+          <legend>Комментарий</legend>
+          <label>
+            <span>Комментарий</span>
+            <textarea name="message" placeholder="Например: нужен ежемесячный объём, тестовая партия или особые условия доставки."></textarea>
+          </label>
+        </fieldset>
+        <fieldset class="request-form__section request-form__section--summary">
+          <legend>Предварительный расчёт</legend>
+          <article class="quote-summary" data-quote-summary aria-live="polite">
+            <div class="quote-summary__head">
+              <strong>Предварительный расчёт</strong>
+              <p>Сводка по объёму и доставке обновляется автоматически по мере заполнения формы.</p>
+            </div>
+            <dl class="quote-summary__list">
+              <div class="quote-summary__row">
+                <dt>Базовая цена</dt>
+                <dd data-quote-base>${formatRub(CONTACT_BASE_PRICE_PER_KG)} / кг</dd>
+              </div>
+              <div class="quote-summary__row">
+                <dt>Объём</dt>
+                <dd data-quote-weight>${initialQuote.quantityKg} кг</dd>
+              </div>
+              <div class="quote-summary__row">
+                <dt>Скидка</dt>
+                <dd data-quote-discount>0%</dd>
+              </div>
+              <div class="quote-summary__row">
+                <dt>Надбавка за расстояние</dt>
+                <dd data-quote-distance-markup>+0%</dd>
+              </div>
+              <div class="quote-summary__row">
+                <dt>Цена за кг после расчёта</dt>
+                <dd data-quote-price-per-kg>${formatRub(initialQuote.estimatedPricePerKg)} / кг</dd>
+              </div>
+              <div class="quote-summary__row quote-summary__row--total">
+                <dt>Предварительная сумма</dt>
+                <dd data-quote-total>${formatRub(initialQuote.totalEstimate)}</dd>
+              </div>
+            </dl>
+            <details class="quote-summary__details">
+              <summary>Как считается стоимость</summary>
+              <p>${config.pricingHint}</p>
+            </details>
+          </article>
+        </fieldset>
+        <fieldset class="request-form__section request-form__section--actions">
+          <legend>Согласие и отправка</legend>
+          <label class="request-form__consent">
+            <input type="checkbox" name="consent" required />
+            <span>${config.consent}</span>
+          </label>
+          <div class="request-form__actions">
+            <button class="button" type="submit">${config.submitLabel}</button>
+            <a class="text-link text-link--inline" href="${config.quickContactHref}"${externalAttrs(config.quickContactHref)}>${config.quickContactLabel}</a>
           </div>
-          <dl class="quote-summary__list">
-            <div class="quote-summary__row">
-              <dt>Базовая цена</dt>
-              <dd data-quote-base>${formatRub(CONTACT_BASE_PRICE_PER_KG)} / кг</dd>
-            </div>
-            <div class="quote-summary__row">
-              <dt>Объём</dt>
-              <dd data-quote-weight>${initialQuote.quantityKg} кг</dd>
-            </div>
-            <div class="quote-summary__row">
-              <dt>Скидка</dt>
-              <dd data-quote-discount>0%</dd>
-            </div>
-            <div class="quote-summary__row">
-              <dt>Надбавка за расстояние</dt>
-              <dd data-quote-distance-markup>+0%</dd>
-            </div>
-            <div class="quote-summary__row">
-              <dt>Цена за кг после расчёта</dt>
-              <dd data-quote-price-per-kg>${formatRub(initialQuote.estimatedPricePerKg)} / кг</dd>
-            </div>
-            <div class="quote-summary__row quote-summary__row--total">
-              <dt>Предварительная сумма</dt>
-              <dd data-quote-total>${formatRub(initialQuote.totalEstimate)}</dd>
-            </div>
-          </dl>
-        </article>
-        <label class="request-form__consent">
-          <input type="checkbox" name="consent" required />
-          <span>${config.consent}</span>
-        </label>
-        <div class="request-form__actions">
-          <button class="button" type="submit">${config.submitLabel}</button>
-          <a class="text-link text-link--inline" href="${config.quickContactHref}"${externalAttrs(config.quickContactHref)}>${config.quickContactLabel}</a>
-        </div>
-        <p class="request-form__note">${config.note}</p>
-        <p class="request-form__status" data-request-status aria-live="polite"></p>
+          <p class="request-form__note">${config.note}</p>
+          <p class="request-form__status" data-request-status aria-live="polite"></p>
+        </fieldset>
       </form>
     </article>
   `;
@@ -995,19 +1028,21 @@ const renderProductPage = () => {
 const renderContactsPage = () => {
   const params = new URLSearchParams(window.location.search);
   const requestedSource = params.get("source") || "contacts-page";
+  const [retailCard, wholesaleCard, marketplacesCard, telegramCard] = store.contactsPage.leftCards;
   const intro = $("#contacts-intro");
   if (intro) {
     intro.innerHTML = `
-      <div class="hero-copy">
+      <div class="hero-copy contacts-copy">
         <p class="eyebrow">Контакты</p>
         <h1>Связаться с Global Basket</h1>
         <p>${store.contactsPage.intro}</p>
       </div>
-      <div class="contacts-info-grid">
-        ${store.contactsPage.leftCards
+      <div class="contacts-focus-grid">
+        ${[retailCard, wholesaleCard]
+          .filter(Boolean)
           .map(
             (item) => `
-              <article class="fact-card fact-card--vertical">
+              <article class="fact-card fact-card--vertical contact-focus-card">
                 <div>
                   <strong>${item.title}</strong>
                   <p>${item.text}</p>
@@ -1017,25 +1052,60 @@ const renderContactsPage = () => {
           )
           .join("")}
       </div>
-      <article class="contact-direct">
-        <strong>Прямой контакт</strong>
-        <p><a href="${store.contact.phoneHref}">${store.contact.phone}</a></p>
-        <p><a href="${store.contact.emailHref}">${store.contact.email}</a></p>
-        <p><a href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>${store.contact.telegram}</a></p>
-        <p><a href="${store.contact.channelHref}"${externalAttrs(store.contact.channelHref)}>${store.contact.channel}</a></p>
-        <p>${store.contact.hours}</p>
-      </article>
-      <article class="contact-marketplaces">
-        <strong>Где купить</strong>
-        <div class="contact-marketplaces__links">
-          ${store.marketplaces
-            .map(
-              (item) =>
-                `<a href="${item.href}"${externalAttrs(item.href)}>${item.name}</a>`,
-            )
-            .join("")}
-        </div>
-      </article>
+      <div class="contacts-support-grid">
+        <article class="contact-direct contact-direct--primary">
+          <div class="contact-block__head">
+            <strong>Контакты</strong>
+            <p>Форма справа — основной сценарий для запроса на поставку. Телефон, email и Telegram остаются резервными каналами.</p>
+          </div>
+          <div class="contact-direct__list">
+            <p><a href="${store.contact.phoneHref}">${store.contact.phone}</a></p>
+            <p><a href="${store.contact.emailHref}">${store.contact.email}</a></p>
+            <p><a href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>${store.contact.telegram}</a></p>
+            <p>${store.contact.hours}</p>
+          </div>
+        </article>
+        <article class="contact-marketplaces">
+          <div class="contact-block__head">
+            <strong>Где купить</strong>
+            <p>${marketplacesCard.text}</p>
+          </div>
+          <div class="contact-marketplaces__links">
+            ${store.marketplaces
+              .map(
+                (item) =>
+                  `<a href="${item.href}"${externalAttrs(item.href)}>${item.name}</a>`,
+              )
+              .join("")}
+          </div>
+        </article>
+      </div>
+      <div class="contacts-disclosures">
+        <details class="contact-disclosure">
+          <summary>
+            <span class="contact-disclosure__title">Telegram и быстрые сообщения</span>
+            <span class="contact-disclosure__meta">Бот, жалобы и канал бренда</span>
+          </summary>
+          <div class="contact-disclosure__body">
+            <p>${telegramCard.text}</p>
+            <div class="contact-disclosure__links">
+              <a class="text-link text-link--inline" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>Открыть бота</a>
+              <a class="text-link text-link--inline" href="${store.contact.telegramComplaintHref}"${externalAttrs(store.contact.telegramComplaintHref)}>Оставить жалобу</a>
+              <a class="text-link text-link--inline" href="${store.contact.channelHref}"${externalAttrs(store.contact.channelHref)}>${store.contact.channel}</a>
+            </div>
+          </div>
+        </details>
+        <details class="contact-disclosure">
+          <summary>
+            <span class="contact-disclosure__title">Подсказки по запросу</span>
+            <span class="contact-disclosure__meta">Когда использовать форму и что указать</span>
+          </summary>
+          <div class="contact-disclosure__body">
+            <p>${retailCard.text}</p>
+            <p>${wholesaleCard.text}</p>
+          </div>
+        </details>
+      </div>
     `;
   }
 
@@ -1047,18 +1117,23 @@ const renderContactsPage = () => {
           source: requestedSource,
           page: "contacts",
         })}
-        <article class="request-panel request-panel--compact request-panel--secondary">
-          <div class="section-head section-head--compact">
-            <p class="eyebrow">Telegram-бот</p>
-            <h2>${store.contactsPage.telegramPanel.title}</h2>
+        <details class="request-panel request-panel--compact request-panel--secondary contact-fallback-panel">
+          <summary class="contact-fallback-panel__summary">
+            <div>
+              <p class="eyebrow">Telegram и резервные каналы</p>
+              <strong>${store.contactsPage.telegramPanel.title}</strong>
+            </div>
+            <span class="contact-fallback-panel__toggle" aria-hidden="true"></span>
+          </summary>
+          <div class="contact-fallback-panel__body">
             <p>${store.contactsPage.telegramPanel.text}</p>
+            <div class="contact-fallback-panel__actions">
+              <a class="button button--ghost button--small" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>${store.contactsPage.telegramPanel.primary}</a>
+              <a class="text-link text-link--inline" href="${store.contact.telegramComplaintHref}"${externalAttrs(store.contact.telegramComplaintHref)}>${store.contactsPage.telegramPanel.secondary}</a>
+            </div>
+            <p class="request-form__note">Бот: <a href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>${store.contact.telegram}</a>. Канал: <a href="${store.contact.channelHref}"${externalAttrs(store.contact.channelHref)}>${store.contact.channel}</a>. Резервный контакт: <a href="${store.contact.phoneHref}">${store.contact.phone}</a> / <a href="${store.contact.emailHref}">${store.contact.email}</a>.</p>
           </div>
-          <div class="hero-product__actions">
-            <a class="button button--small" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>${store.contactsPage.telegramPanel.primary}</a>
-            <a class="button button--ghost button--small" href="${store.contact.telegramComplaintHref}"${externalAttrs(store.contact.telegramComplaintHref)}>${store.contactsPage.telegramPanel.secondary}</a>
-          </div>
-          <p class="request-form__note">Основной канал связи: <a href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>${store.contact.telegram}</a>. Новости бренда: <a href="${store.contact.channelHref}"${externalAttrs(store.contact.channelHref)}>${store.contact.channel}</a>. Резервный контакт: <a href="${store.contact.phoneHref}">${store.contact.phone}</a> / <a href="${store.contact.emailHref}">${store.contact.email}</a></p>
-        </article>
+        </details>
       </div>
     `;
   }
