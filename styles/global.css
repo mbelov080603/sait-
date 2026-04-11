@@ -2139,15 +2139,67 @@ textarea {
 }
 
 .contacts-disclosures--lead .contact-disclosure summary {
-  align-items: flex-start;
-  flex-direction: column;
-  justify-content: flex-start;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "title chevron"
+    "meta meta";
+  align-items: start;
+  justify-content: stretch;
+  row-gap: 12px;
   padding-block: 18px;
   min-height: 112px;
 }
 
 .contacts-disclosures--lead .contact-disclosure__body {
   padding-top: 2px;
+}
+
+.contacts-disclosures--lead .contact-disclosure__title {
+  grid-area: title;
+  align-self: start;
+}
+
+.contacts-disclosures--lead .contact-disclosure__meta {
+  grid-area: meta;
+  text-align: left;
+  max-width: 28ch;
+  line-height: 1.35;
+}
+
+.contact-disclosure__chevron {
+  grid-area: chevron;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(43, 29, 18, 0.1);
+  background: rgba(255, 255, 255, 0.82);
+  position: relative;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.contact-disclosure__chevron::before {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: translate(-50%, -65%) rotate(45deg);
+  transition: transform 180ms ease;
+}
+
+.contact-disclosure[open] .contact-disclosure__chevron {
+  background: rgba(201, 122, 43, 0.08);
+  border-color: rgba(201, 122, 43, 0.18);
+}
+
+.contact-disclosure[open] .contact-disclosure__chevron::before {
+  transform: translate(-50%, -40%) rotate(225deg);
 }
 
 .contact-disclosure,

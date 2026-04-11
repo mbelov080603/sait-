@@ -1095,6 +1095,7 @@ const renderContactsPage = () => {
                 <summary>
                   <span class="contact-disclosure__title">${item.title}</span>
                   <span class="contact-disclosure__meta">${item.meta}</span>
+                  <span class="contact-disclosure__chevron" aria-hidden="true"></span>
                 </summary>
                 <div class="contact-disclosure__body">
                   ${item.body}
