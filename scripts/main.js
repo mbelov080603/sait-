@@ -1768,6 +1768,47 @@ const renderJournalPage = () => {
   list.innerHTML = otherPosts.map((post) => renderJournalCard(post)).join("");
 };
 
+const renderArticleCards = (cards = [], tone = "default") => {
+  if (!cards.length) return "";
+
+  return `
+    <div class="fact-grid fact-grid--stacked article-fact-grid ${tone === "summary" ? "article-fact-grid--summary" : ""}">
+      ${cards
+        .map(
+          (card) => `
+            <article class="fact-card fact-card--vertical article-fact-card ${tone ? `article-fact-card--${tone}` : ""}">
+              <div>
+                <strong>${card.title}</strong>
+                <p>${card.text}</p>
+              </div>
+            </article>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+};
+
+const renderArticleBlock = (section) => {
+  if (!section) return "";
+
+  const paragraphs = (section.paragraphs || [])
+    .map((paragraph) => `<p>${paragraph}</p>`)
+    .join("");
+  const legacyText = section.text ? `<p>${section.text}</p>` : "";
+  const intro = section.intro ? `<p class="article-block__intro">${section.intro}</p>` : "";
+  const cards = renderArticleCards(section.cards, section.tone);
+
+  return `
+    <section class="panel article-block ${section.tone ? `article-block--${section.tone}` : ""}">
+      ${section.title ? `<h2>${section.title}</h2>` : ""}
+      ${intro}
+      ${paragraphs || legacyText}
+      ${cards}
+    </section>
+  `;
+};
+
 const renderArticlePage = () => {
   const slug = document.body.dataset.article;
   if (!slug) return;
@@ -1794,32 +1835,66 @@ const renderArticlePage = () => {
 
   const sections = $("#article-sections");
   if (sections) {
+    const introParagraphs = (post.introParagraphs || []).length
+      ? `
+        <section class="panel article-lead-copy">
+          ${(post.introParagraphs || []).map((paragraph) => `<p>${paragraph}</p>`).join("")}
+        </section>
+      `
+      : "";
+
+    const contentBlocks = (post.blocks || post.sections || []).map(renderArticleBlock).join("");
+    const conclusion = post.conclusion
+      ? `
+        <section class="panel article-conclusion">
+          <p>${post.conclusion}</p>
+        </section>
+      `
+      : "";
+
+    const productBridge = post.productBridge
+      ? `<p class="article-product-bridge">${post.productBridge}</p>`
+      : "";
+
+    const productPanel = `
+      <article class="request-panel request-panel--compact article-product-panel">
+        <div class="section-head section-head--compact">
+          <p class="eyebrow">Товар</p>
+          <h2>${product.shortName}</h2>
+          <p>${product.lead}</p>
+        </div>
+        <div class="aside-actions">
+          <a class="button button--small" href="${product.href}">Подробнее</a>
+          <a class="text-link text-link--inline" href="/contacts/?source=journal">Уточнить условия</a>
+        </div>
+      </article>
+    `;
+
+    if (post.ctaPosition === "after-content") {
+      sections.innerHTML = `
+        <div class="article-layout article-layout--single">
+          <article class="article-prose article-prose--editorial">
+            ${introParagraphs}
+            ${contentBlocks}
+            ${conclusion}
+            ${productBridge}
+            ${productPanel}
+          </article>
+        </div>
+      `;
+      return;
+    }
+
     sections.innerHTML = `
       <div class="article-layout">
         <article class="article-prose">
-          ${post.sections
-            .map(
-              (section) => `
-                <section class="panel">
-                  <h2>${section.title}</h2>
-                  <p>${section.text}</p>
-                </section>
-              `,
-            )
-            .join("")}
+          ${introParagraphs}
+          ${contentBlocks}
+          ${conclusion}
         </article>
         <aside class="article-aside">
-          <article class="request-panel request-panel--compact">
-            <div class="section-head section-head--compact">
-              <p class="eyebrow">Товар</p>
-              <h2>${product.shortName}</h2>
-              <p>${product.lead}</p>
-            </div>
-            <div class="aside-actions">
-              <a class="button button--small" href="${product.href}">Подробнее</a>
-              <a class="text-link text-link--inline" href="/contacts/?source=journal">Уточнить условия</a>
-            </div>
-          </article>
+          ${productBridge}
+          ${productPanel}
         </aside>
       </div>
     `;

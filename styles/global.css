@@ -2706,9 +2706,17 @@ textarea {
   align-items: start;
 }
 
+.article-layout--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .article-prose {
   display: grid;
   gap: var(--space-4);
+}
+
+.article-prose--editorial {
+  max-width: 920px;
 }
 
 .article-prose h2 {
@@ -2716,6 +2724,54 @@ textarea {
   font-family: "Rubik", sans-serif;
   font-size: 1.5rem;
   line-height: 1.04;
+}
+
+.article-lead-copy,
+.article-conclusion {
+  background: rgba(255, 252, 247, 0.82);
+}
+
+.article-lead-copy p + p,
+.article-block p + p,
+.article-conclusion p + p {
+  margin-top: var(--space-3);
+}
+
+.article-block__intro {
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+
+.article-fact-grid {
+  margin-top: var(--space-4);
+}
+
+.article-fact-grid--summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.article-fact-card {
+  background: rgba(255, 252, 247, 0.76);
+  box-shadow: none;
+}
+
+.article-fact-card--summary {
+  background: rgba(201, 122, 43, 0.06);
+}
+
+.article-fact-card--caution {
+  background: rgba(147, 96, 48, 0.05);
+}
+
+.article-product-bridge {
+  margin: 0;
+  max-width: 54ch;
+  color: var(--muted);
+}
+
+.article-product-panel {
+  max-width: 460px;
+  justify-self: start;
 }
 
 .site-footer {
@@ -2848,6 +2904,10 @@ a:focus-visible {
 
   .about-why-copy {
     grid-template-columns: 1fr;
+  }
+
+  .article-fact-grid--summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .about-brand-hero__copy,
@@ -3040,6 +3100,7 @@ a:focus-visible {
   .category-grid,
   .info-grid,
   .summary-facts,
+  .article-fact-grid--summary,
   .about-mission-grid,
   .about-values-grid,
   .about-steps-grid {
