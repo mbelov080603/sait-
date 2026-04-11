@@ -878,688 +878,1422 @@ window.GlobalBasketData = {
   },
 };
 
+
 const gb = window.GlobalBasketData;
-
-const svgDataUri = (svg) =>
-  `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
-    svg.replace(/\n+/g, " ").replace(/\s{2,}/g, " ").trim(),
-  )}`;
-
-const renderScene = ({ content, bgStart = "#fbf3e8", bgEnd = "#f3e4cf", shadow = "#dcc7a3" }) =>
-  svgDataUri(`
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" fill="none">
-      <defs>
-        <linearGradient id="bg" x1="120" y1="80" x2="1020" y2="820" gradientUnits="userSpaceOnUse">
-          <stop stop-color="${bgStart}" />
-          <stop offset="1" stop-color="${bgEnd}" />
-        </linearGradient>
-        <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(280 190) rotate(35) scale(360 280)">
-          <stop stop-color="white" stop-opacity="0.72" />
-          <stop offset="1" stop-color="white" stop-opacity="0" />
-        </radialGradient>
-        <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="22" stdDeviation="24" flood-color="${shadow}" flood-opacity="0.32"/>
-        </filter>
-      </defs>
-      <rect width="1200" height="900" rx="56" fill="url(#bg)"/>
-      <rect x="56" y="56" width="1088" height="788" rx="44" fill="rgba(255,255,255,0.24)"/>
-      <ellipse cx="610" cy="756" rx="320" ry="58" fill="${shadow}" fill-opacity="0.18"/>
-      <ellipse cx="260" cy="180" rx="320" ry="240" fill="url(#glow)"/>
-      ${content}
-    </svg>
-  `);
-
-const shellNut = (x, y, scale = 1, rotate = 0, opened = false) => `
-  <g transform="translate(${x} ${y}) rotate(${rotate}) scale(${scale})" filter="url(#softShadow)">
-    <circle cx="0" cy="0" r="74" fill="${opened ? "#f7efe1" : "#b68952"}" stroke="#714a27" stroke-width="10"/>
-    <circle cx="-8" cy="-10" r="60" fill="${opened ? "#f5e7c8" : "#c89a63"}" fill-opacity="${opened ? "1" : "0.88"}"/>
-    ${opened ? `<path d="M-54 5c18-18 48-30 78-28" stroke="#74411f" stroke-width="8" stroke-linecap="round"/>` : `<path d="M-50 0h100" stroke="#6b4526" stroke-width="10" stroke-linecap="round"/>`}
-    ${opened ? `<ellipse cx="0" cy="6" rx="32" ry="26" fill="#fff2da" stroke="#d8bf92" stroke-width="6"/>` : ""}
-  </g>
-`;
-
-const pecanNut = (x, y, scale = 1, rotate = 0) => `
-  <g transform="translate(${x} ${y}) rotate(${rotate}) scale(${scale})" filter="url(#softShadow)">
-    <path d="M0-88C30-88 62-64 70-18c8 48-12 104-70 120C-58 86-78 30-70-18-62-64-30-88 0-88Z" fill="#8a5a33" stroke="#5c3922" stroke-width="9"/>
-    <path d="M0-74C24-74 48-52 53-16c7 40-10 82-53 96-43-14-60-56-53-96 5-36 29-58 53-58Z" fill="#b47743"/>
-    <path d="M0-70v164" stroke="#6a4228" stroke-width="8" stroke-linecap="round"/>
-    <path d="M-28-48c16 12 20 28 18 44" stroke="#d2a06d" stroke-width="6" stroke-linecap="round"/>
-    <path d="M28-48c-16 12-20 28-18 44" stroke="#d2a06d" stroke-width="6" stroke-linecap="round"/>
-    <path d="M-32 8c18 12 28 30 32 48" stroke="#d2a06d" stroke-width="6" stroke-linecap="round"/>
-    <path d="M32 8C14 20 4 38 0 56" stroke="#d2a06d" stroke-width="6" stroke-linecap="round"/>
-  </g>
-`;
-
-const walnutNut = (x, y, scale = 1, rotate = 0) => `
-  <g transform="translate(${x} ${y}) rotate(${rotate}) scale(${scale})" filter="url(#softShadow)">
-    <path d="M0-96c32 0 68 20 82 58 12 34 0 82-36 108-18 14-28 18-46 18-18 0-28-4-46-18-36-26-48-74-36-108C-68-76-32-96 0-96Z" fill="#8b5b39" stroke="#5e3c28" stroke-width="10"/>
-    <path d="M0-84c22 0 48 16 58 44 10 28 0 68-26 88-12 10-18 12-32 12-14 0-20-2-32-12-26-20-36-60-26-88 10-28 36-44 58-44Z" fill="#b07a4b"/>
-    <path d="M0-82v150" stroke="#5f3f29" stroke-width="8" stroke-linecap="round"/>
-    <path d="M-28-54c14 12 18 24 18 40" stroke="#d3a06d" stroke-width="6" stroke-linecap="round"/>
-    <path d="M28-54C14-42 10-30 10-14" stroke="#d3a06d" stroke-width="6" stroke-linecap="round"/>
-    <path d="M-34 0c20 10 28 24 30 44" stroke="#d3a06d" stroke-width="6" stroke-linecap="round"/>
-    <path d="M34 0C12 12 4 26 2 44" stroke="#d3a06d" stroke-width="6" stroke-linecap="round"/>
-  </g>
-`;
-
-const cashewNut = (x, y, scale = 1, rotate = 0) => `
-  <g transform="translate(${x} ${y}) rotate(${rotate}) scale(${scale})" filter="url(#softShadow)">
-    <path d="M74-6c0 40-26 70-64 76-48 8-92-18-104-64-12-48 18-96 68-108 18-4 36-4 54 0-16 6-34 18-48 34-22 24-26 54-12 78 14 24 44 38 74 34 12-2 22-6 32-12Z" fill="#f3d7a6" stroke="#b8823d" stroke-width="10"/>
-    <path d="M58 0c0 30-20 54-50 60-38 6-72-14-82-50-8-34 14-70 50-78 12-2 24-2 38 2-14 6-24 12-32 22-16 16-18 38-8 56 10 18 32 28 54 26 12-2 22-8 30-14Z" fill="#fff3df"/>
-  </g>
-`;
-
-const bowl = (x, y, width = 300, height = 114) => `
-  <g transform="translate(${x} ${y})">
-    <ellipse cx="${width / 2}" cy="28" rx="${width / 2}" ry="28" fill="#e8d6bc"/>
-    <path d="M14 26h${width - 28}c-10 84-44 118-136 118S24 110 14 26Z" fill="#f6ebda" stroke="#d0b892" stroke-width="8"/>
-  </g>
-`;
-
-const keyTool = (x, y, scale = 1) => `
-  <g transform="translate(${x} ${y}) scale(${scale})" filter="url(#softShadow)">
-    <circle cx="0" cy="0" r="22" fill="#ad7a35" stroke="#6b451f" stroke-width="6"/>
-    <path d="M18 2h86l-10 14 10 14h-40l-10 12H18Z" fill="#c99548" stroke="#6b451f" stroke-width="6" stroke-linejoin="round"/>
-  </g>
-`;
-
-const scatter = (renderer, items) => items.map((item) => renderer(...item)).join("");
-
-const buildGallerySet = ({ shape, palette, extras = "" }) => {
-  const main = renderScene({
-    bgStart: palette.bgStart,
-    bgEnd: palette.bgEnd,
-    shadow: palette.shadow,
-    content: `
-      ${scatter(shape, [
-        [300, 560, 1.2, -12],
-        [468, 504, 1.06, 18],
-        [640, 560, 1.18, -6],
-        [800, 508, 1.04, 18],
-        [914, 590, 0.98, -18],
-        [228, 690, 0.84, 12],
-        [384, 712, 0.8, -16],
-        [564, 710, 0.78, 8],
-        [736, 706, 0.82, -12],
-      ])}
-      ${extras}
-    `,
-  });
-
-  const macro = renderScene({
-    bgStart: "#fbf4e9",
-    bgEnd: "#efdfc8",
-    shadow: palette.shadow,
-    content: `
-      ${shape(434, 484, 1.64, -10)}
-      ${shape(740, 472, 1.42, 18)}
-      ${shape(578, 664, 0.9, -4)}
-    `,
-  });
-
-  const bowlScene = renderScene({
-    bgStart: "#f8ecdd",
-    bgEnd: "#f1dfc6",
-    shadow: palette.shadow,
-    content: `
-      ${bowl(366, 492, 470, 130)}
-      ${scatter(shape, [
-        [470, 500, 0.68, -10],
-        [550, 480, 0.62, 8],
-        [628, 494, 0.64, -14],
-        [706, 486, 0.66, 10],
-        [588, 430, 0.64, -6],
-        [520, 430, 0.58, 14],
-      ])}
-    `,
-  });
-
-  const context = renderScene({
-    bgStart: "#f7eee4",
-    bgEnd: "#ead7bd",
-    shadow: palette.shadow,
-    content: `
-      <rect x="168" y="244" width="864" height="412" rx="42" fill="rgba(255,255,255,0.48)" />
-      <rect x="184" y="580" width="832" height="40" rx="20" fill="rgba(197,166,121,0.22)" />
-      ${scatter(shape, [
-        [332, 548, 0.62, -6],
-        [418, 512, 0.66, 10],
-        [520, 540, 0.6, -12],
-        [618, 520, 0.68, 12],
-        [714, 548, 0.62, -8],
-        [816, 516, 0.66, 8],
-      ])}
-    `,
-  });
-
-  return { main, macro, bowl: bowlScene, context };
+const catalogPayload = {
+  "meta": {
+    "project": "Global Basket catalog update",
+    "catalog_counts": {
+      "products_in_stock": 11,
+      "category_cards": 4,
+      "all_mode_total": 15
+    },
+    "required_fixes": [
+      "remove oversized first card",
+      "add variant selector",
+      "replace placeholder sections with real categories",
+      "use media pack for all products/categories",
+      "keep warm premium visual system"
+    ]
+  },
+  "categories": [
+    {
+      "category_title": "Премиальные орехи",
+      "category_slug": "premium-nuts",
+      "category_url": "/categories/premium-nuts/",
+      "status": "В наличии",
+      "catalog_order": 1,
+      "card_description": "Орехи в наличии с детальными страницами и выбором фасовки по запросу.",
+      "page_intro": "Подборка премиальных орехов Global Basket с тёплой натуральной подачей, понятными фасовками и переходом в детальные карточки.",
+      "cover_image": "media/categories/premium-nuts-cover.png"
+    },
+    {
+      "category_title": "Сухофрукты",
+      "category_slug": "dried-fruits",
+      "category_url": "/categories/dried-fruits/",
+      "status": "В наличии",
+      "catalog_order": 2,
+      "card_description": "Реальный раздел с курагой, финиками, клюквой и манго вместо заглушки «Скоро».",
+      "page_intro": "Натуральные сухофрукты для ежедневного перекуса, завтраков, десертов, подарочных наборов и аккуратной витрины Global Basket.",
+      "cover_image": "media/categories/dried-fruits-cover.png"
+    },
+    {
+      "category_title": "Ореховые смеси",
+      "category_slug": "nut-mixes",
+      "category_url": "/categories/nut-mixes/",
+      "status": "В наличии",
+      "catalog_order": 3,
+      "card_description": "Раздел с готовыми смесями и переходом в детальные страницы.",
+      "page_intro": "Смеси для повседневной подачи, офиса, семейного запаса и подарочных сценариев в той же тёплой премиальной логике бренда.",
+      "cover_image": "media/categories/nut-mixes-cover.png"
+    },
+    {
+      "category_title": "Подарочные наборы",
+      "category_slug": "gift-sets",
+      "category_url": "/categories/gift-sets/",
+      "status": "В наличии",
+      "catalog_order": 4,
+      "card_description": "Реальный раздел с подарочными форматами вместо пустой плитки «Скоро».",
+      "page_intro": "Подарочные композиции и сезонные форматы с аккуратной премиальной подачей для частных и корпоративных запросов.",
+      "cover_image": "media/categories/gift-sets-cover.png"
+    }
+  ],
+  "products_cards": [
+    {
+      "catalog_order": 1,
+      "status": "В наличии",
+      "category": "Премиальные орехи",
+      "category_slug": "premium-nuts",
+      "category_url": "/categories/premium-nuts/",
+      "product_title": "Очищенная макадамия",
+      "product_slug": "macadamia",
+      "product_url": "/catalog/macadamia/",
+      "card_subtitle": "Кения / 250 г",
+      "card_description": "Натуральный продукт без соли и сахара в тёплой премиальной подаче Global Basket.",
+      "cover_image": "media/products/macadamia-cover.png",
+      "detail_image": "media/products/macadamia-detail.png",
+      "uniform_card_required": "yes"
+    },
+    {
+      "catalog_order": 2,
+      "status": "В наличии",
+      "category": "Премиальные орехи",
+      "category_slug": "premium-nuts",
+      "category_url": "/categories/premium-nuts/",
+      "product_title": "Макадамия в скорлупе с ключом",
+      "product_slug": "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg",
+      "product_url": "/catalog/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg/",
+      "card_subtitle": "В скорлупе / 1 кг",
+      "card_description": "Натуральная макадамия в скорлупе с мягким сладковатым вкусом. Скорлупа надпилена, ключ в комплекте для удобного раскрытия.",
+      "cover_image": "media/products/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg-cover.png",
+      "detail_image": "media/products/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg-detail.png",
+      "uniform_card_required": "yes"
+    },
+    {
+      "catalog_order": 3,
+      "status": "В наличии",
+      "category": "Премиальные орехи",
+      "category_slug": "premium-nuts",
+      "category_url": "/categories/premium-nuts/",
+      "product_title": "Пекан очищенный",
+      "product_slug": "pekan-ochishchennyy-syroy-500-g",
+      "product_url": "/catalog/pekan-ochishchennyy-syroy-500-g/",
+      "card_subtitle": "Сырой / 500 г",
+      "card_description": "Очищенный сырой пекан с мягким сливочным вкусом и естественной сладостью. Подходит для перекуса, выпечки, каш и десертов.",
+      "cover_image": "media/products/pekan-ochishchennyy-syroy-500-g-cover.png",
+      "detail_image": "media/products/pekan-ochishchennyy-syroy-500-g-detail.png",
+      "uniform_card_required": "yes"
+    },
+    {
+      "catalog_order": 4,
+      "status": "В наличии",
+      "category": "Премиальные орехи",
+      "category_slug": "premium-nuts",
+      "category_url": "/categories/premium-nuts/",
+      "product_title": "Грецкий орех половинки",
+      "product_slug": "gretskiy-oreh-ochishchennyy-polovinki-1-kg",
+      "product_url": "/catalog/gretskiy-oreh-ochishchennyy-polovinki-1-kg/",
+      "card_subtitle": "Половинки / 1 кг",
+      "card_description": "Очищенные половинки грецкого ореха для перекуса, салатов, каш, выпечки и домашней кухни.",
+      "cover_image": "media/products/gretskiy-oreh-ochishchennyy-polovinki-1-kg-cover.png",
+      "detail_image": "media/products/gretskiy-oreh-ochishchennyy-polovinki-1-kg-detail.png",
+      "uniform_card_required": "yes"
+    },
+    {
+      "catalog_order": 5,
+      "status": "В наличии",
+      "category": "Премиальные орехи",
+      "category_slug": "premium-nuts",
+      "category_url": "/categories/premium-nuts/",
+      "product_title": "Кешью сырой сушеный",
+      "product_slug": "keshyu-syroy-sushenyy-1-kg",
+      "product_url": "/catalog/keshyu-syroy-sushenyy-1-kg/",
+      "card_subtitle": "Сырой сушеный / 1 кг",
+      "card_description": "Цельные светлые ядра с мягким сливочным вкусом. Подходят для перекуса, блюд, десертов, кремов, соусов и растительного молока.",
+      "cover_image": "media/products/keshyu-syroy-sushenyy-1-kg-cover.png",
+      "detail_image": "media/products/keshyu-syroy-sushenyy-1-kg-detail.png",
+      "uniform_card_required": "yes"
+    },
+    {
+      "catalog_order": 6,
+      "status": "В наличии",
+      "category": "Сухофрукты",
+      "category_slug": "dried-fruits",
+      "category_url": "/categories/dried-fruits/",
+      "product_title": "Курага монетка",
+      "product_slug": "kuraga-monetka-bez-sahara-150-g",
+      "product_url": "/catalog/kuraga-monetka-bez-sahara-150-g/",
+      "card_subtitle": "Без сахара / 150 г",
+      "card_description": "Кисло-сладкая курага без добавленного сахара в компактном формате. Удобна для перекуса, каш, сырных тарелок и выпечки.",
+      "cover_image": "media/products/kuraga-monetka-bez-sahara-150-g-cover.png",
+      "detail_image": "media/products/kuraga-monetka-bez-sahara-150-g-detail.png",
+      "uniform_card_required": "yes"
+    },
+    {
+      "catalog_order": 7,
+      "status": "В наличии",
+      "category": "Сухофрукты",
+      "category_slug": "dried-fruits",
+      "category_url": "/categories/dried-fruits/",
+      "product_title": "Финики без сахара",
+      "product_slug": "finiki-bez-sahara-iran-1-kg",
+      "product_url": "/catalog/finiki-bez-sahara-iran-1-kg/",
+      "card_subtitle": "Иран / 1 кг",
+      "card_description": "Мягкие сушёные финики с косточкой и естественной сладостью без добавленного сахара. Для перекуса, десертов и подарочных композиций.",
+      "cover_image": "media/products/finiki-bez-sahara-iran-1-kg-cover.png",
+      "detail_image": "media/products/finiki-bez-sahara-iran-1-kg-detail.png",
+      "uniform_card_required": "yes"
+    },
+    {
+      "catalog_order": 8,
+      "status": "В наличии",
+      "category": "Сухофрукты",
+      "category_slug": "dried-fruits",
+      "category_url": "/categories/dried-fruits/",
+      "product_title": "Клюква сушеная",
+      "product_slug": "klyukva-sushenaya-150-g",
+      "product_url": "/catalog/klyukva-sushenaya-150-g/",
+      "card_subtitle": "Ягодная кислинка / 150 г",
+      "card_description": "Яркий вкус с характерной ягодной кислинкой. Подходит для выпечки, завтраков, гранолы и подарочных наборов.",
+      "cover_image": "media/products/klyukva-sushenaya-150-g-cover.png",
+      "detail_image": "media/products/klyukva-sushenaya-150-g-detail.png",
+      "uniform_card_required": "yes"
+    },
+    {
+      "catalog_order": 9,
+      "status": "В наличии",
+      "category": "Сухофрукты",
+      "category_slug": "dried-fruits",
+      "category_url": "/categories/dried-fruits/",
+      "product_title": "Манго сушеное",
+      "product_slug": "mango-sushenoe-naturalnoe-200-g",
+      "product_url": "/catalog/mango-sushenoe-naturalnoe-200-g/",
+      "card_subtitle": "Без сахара / 200 г",
+      "card_description": "Тонкие ярко-оранжевые пластинки манго, высушенные естественным способом без добавленного сахара и консервантов.",
+      "cover_image": "media/products/mango-sushenoe-naturalnoe-200-g-cover.png",
+      "detail_image": "media/products/mango-sushenoe-naturalnoe-200-g-detail.png",
+      "uniform_card_required": "yes"
+    },
+    {
+      "catalog_order": 10,
+      "status": "В наличии",
+      "category": "Ореховые смеси",
+      "category_slug": "nut-mixes",
+      "category_url": "/categories/nut-mixes/",
+      "product_title": "Ореховая смесь с изюмом",
+      "product_slug": "orehovaya-smes-s-izyumom-1-kg",
+      "product_url": "/catalog/orehovaya-smes-s-izyumom-1-kg/",
+      "card_subtitle": "Подарочная / 1 кг",
+      "card_description": "Премиальная смесь орехов и двух видов изюма для повседневной подачи, офиса, подарка и совместных чаепитий.",
+      "cover_image": "media/products/orehovaya-smes-s-izyumom-1-kg-cover.png",
+      "detail_image": "media/products/orehovaya-smes-s-izyumom-1-kg-detail.png",
+      "uniform_card_required": "yes"
+    },
+    {
+      "catalog_order": 11,
+      "status": "В наличии",
+      "category": "Подарочные наборы",
+      "category_slug": "gift-sets",
+      "category_url": "/categories/gift-sets/",
+      "product_title": "Подарочный набор орехов",
+      "product_slug": "podarochnyy-nabor-orehov",
+      "product_url": "/catalog/podarochnyy-nabor-orehov/",
+      "card_subtitle": "Подарочный формат",
+      "card_description": "Премиальный набор для подарка и праздничной подачи. Подходит для корпоративных запросов и аккуратной сезонной витрины.",
+      "cover_image": "media/products/podarochnyy-nabor-orehov-cover.png",
+      "detail_image": "media/products/podarochnyy-nabor-orehov-detail.png",
+      "uniform_card_required": "yes"
+    }
+  ],
+  "product_pages": [
+    {
+      "category": "Премиальные орехи",
+      "product_title": "Очищенная макадамия",
+      "product_slug": "macadamia",
+      "product_url": "/catalog/macadamia/",
+      "h1": "Очищенная макадамия 250 г",
+      "annotation": "Очищенная макадамия 250 г. Натуральный продукт без соли и сахара с мягким сливочным вкусом и аккуратной премиальной подачей.",
+      "short_description": "Очищенная макадамия 250 г - деликатный орех с мягким сливочным вкусом и чистым составом без соли и сахара. Подходит для перекуса, сырных тарелок, десертов и подарочной подачи.",
+      "full_description": "Очищенная макадамия Global Basket - это светлые цельные ядра с мягким сливочным вкусом и аккуратной подачей в фирменном стиле. Формат 250 г удобен для первого знакомства, подарка или домашнего запаса на несколько подач. Орех подходит для перекуса, сырных тарелок, десертов и сервировки.",
+      "benefit_title": "Польза очищенной макадамии",
+      "benefit_subtitle": "Мягкий сливочный вкус и удобный формат делают продукт сильной премиальной позицией для перекуса и подарочной подачи.",
+      "specifications": "Тип продукта: Орехи\nВид орехов: Макадамия\nФорма: Очищенный\nВес: 250 г\nСостав: Ядра ореха макадамии 100%\nПроисхождение: Кения\nУпаковка: Вакуумная / дой-пак",
+      "faq": "Q: Подходит ли для подарка?\nA: Да, формат 250 г удобно использовать как аккуратную премиальную позицию для подарка или комплимента.\nQ: Есть ли добавки?\nA: Нет, в описании акцент сделан на натуральный продукт без соли и сахара.\nQ: Где использовать макадамию?\nA: Для перекуса, сырных тарелок, десертов и аккуратной сервировки.",
+      "seo_title": "Очищенная макадамия 250 г | Global Basket",
+      "seo_description": "Очищенная макадамия 250 г без соли и сахара. Мягкий сливочный вкус и премиальная подача Global Basket.",
+      "keywords": "очищенная макадамия, макадамия 250 г, макадамия купить, орех макадамия",
+      "cover_image": "media/products/macadamia-cover.png",
+      "detail_image": "media/products/macadamia-detail.png",
+      "variant_type": "Вес",
+      "default_variant": "250 г"
+    },
+    {
+      "category": "Премиальные орехи",
+      "product_title": "Макадамия в скорлупе с ключом",
+      "product_slug": "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg",
+      "product_url": "/catalog/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg/",
+      "h1": "Орех макадамия в скорлупе с ключом 1 кг",
+      "annotation": "Макадамия в скорлупе с ключом, сырой орех 1 кг. Натуральный продукт с мягким сладковатым вкусом. Скорлупа надпилена, ключ в комплекте.",
+      "short_description": "Орех макадамия в скорлупе с ключом, 1 кг. Натуральный сырой продукт с мягким сладковатым вкусом и приятной хрустящей текстурой ядра. Подходит для перекуса, красивой подачи, подарочных наборов и домашней кухни.",
+      "full_description": "Орех макадамия в скорлупе с ключом - это эффектный формат для тех, кто ценит натуральный продукт и красивую подачу. Скорлупа предварительно надпилена, поэтому орех удобно раскрывать специальным ключом из комплекта. Внутри находится светлое ядро с мягким сливочно-сладковатым вкусом и деликатной хрустящей текстурой.",
+      "benefit_title": "Польза макадамии в скорлупе",
+      "benefit_subtitle": "Натуральный орех с мягким сливочным вкусом и эффектной подачей для перекуса, сервировки и десертов.",
+      "specifications": "Тип продукта: Орехи\nВид орехов: Макадамия\nФорма: В скорлупе\nСпособ обработки: Сырые\nВес: 1000 г\nСостав: Орех макадамия в скорлупе 100%\nОсобенности: Надпиленная скорлупа, ключ в комплекте\nУсловия хранения: Хранить в сухом месте, в плотно закрытой упаковке после вскрытия",
+      "faq": "Q: Как открыть орех?\nA: Используйте ключ из комплекта: вставьте его в надпил на скорлупе и аккуратно поверните.\nQ: Для чего подходит макадамия в скорлупе?\nA: Для перекуса, подарочных наборов, сырных тарелок, десертов и красивой сервировки.\nQ: Как хранить после вскрытия?\nA: Держите орехи в плотно закрытой упаковке, в сухом и прохладном месте без прямого солнечного света.",
+      "seo_title": "Орех макадамия в скорлупе с ключом 1 кг | Global Basket",
+      "seo_description": "Макадамия в скорлупе с ключом, сырой орех 1 кг. Натуральный продукт без добавок для перекуса, сервировки и десертов.",
+      "keywords": "макадамия в скорлупе, макадамия с ключом, орех макадамия 1 кг, макадамия сырой",
+      "cover_image": "media/products/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg-cover.png",
+      "detail_image": "media/products/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg-detail.png",
+      "variant_type": "Вес",
+      "default_variant": "1 кг"
+    },
+    {
+      "category": "Премиальные орехи",
+      "product_title": "Пекан очищенный",
+      "product_slug": "pekan-ochishchennyy-syroy-500-g",
+      "product_url": "/catalog/pekan-ochishchennyy-syroy-500-g/",
+      "h1": "Пекан очищенный сырой 500 г",
+      "annotation": "Пекан очищенный, сырой, 500 г. Мягкий сливочный вкус с естественной сладостью. Подходит для перекуса, выпечки, каш, гранолы, салатов и десертов.",
+      "short_description": "Очищенный сырой пекан 500 г - удобный формат для домашней кухни, перекуса и выпечки. У пекана мягкий сливочный вкус и естественная сладость, поэтому он отлично подходит для пирогов, печенья, гранолы, каш, салатов и десертов.",
+      "full_description": "Пекан очищенный 500 г - это натуральный орех без скорлупы и без лишних добавок, который удобно использовать сразу после открытия упаковки. Пекан ценят за мягкий сливочный вкус, деликатную сладость и красивую форму ядра. Он хорошо подходит для перекуса, выпечки, домашней гранолы, каш, салатов, мороженого и десертов.",
+      "benefit_title": "Польза пекана",
+      "benefit_subtitle": "Мягкий сливочный вкус и деликатная естественная сладость делают пекан сильной позицией для перекуса и выпечки.",
+      "specifications": "Тип продукта: Орехи\nВид орехов: Пекан\nФорма: Очищенный\nСпособ обработки: Сырые\nВес: 500 г\nСостав: Орех пекан очищенный 100%\nОсобенности: Подходит для десертов и выпечки",
+      "faq": "Q: Чем пекан отличается от грецкого ореха?\nA: У пекана более мягкий сливочный вкус и выраженная естественная сладость.\nQ: Подходит ли для выпечки?\nA: Да, пекан отлично подходит для пирогов, печенья, гранолы, каш и десертов.\nQ: Нужно ли дополнительно обжаривать?\nA: Не обязательно. Орех можно есть в сыром виде, а лёгкая обжарка лишь усилит аромат.",
+      "seo_title": "Пекан очищенный сырой 500 г | Global Basket",
+      "seo_description": "Очищенный пекан 500 г без обжарки и добавок. Мягкий сливочный вкус, подходит для перекуса, выпечки, каш и десертов.",
+      "keywords": "пекан очищенный, пекан сырой 500 г, орех пекан купить, пекан для выпечки",
+      "cover_image": "media/products/pekan-ochishchennyy-syroy-500-g-cover.png",
+      "detail_image": "media/products/pekan-ochishchennyy-syroy-500-g-detail.png",
+      "variant_type": "Вес",
+      "default_variant": "500 г"
+    },
+    {
+      "category": "Премиальные орехи",
+      "product_title": "Грецкий орех половинки",
+      "product_slug": "gretskiy-oreh-ochishchennyy-polovinki-1-kg",
+      "product_url": "/catalog/gretskiy-oreh-ochishchennyy-polovinki-1-kg/",
+      "h1": "Грецкий орех очищенный половинки 1 кг",
+      "annotation": "Грецкий орех очищенный, половинки, сырой, 1 кг. Натуральный продукт для перекуса, салатов, каш, выпечки и домашней кухни.",
+      "short_description": "Очищенный грецкий орех половинки 1 кг - удобный формат для дома, кондитерских задач и регулярного использования на кухне. Светлые половинки ореха подходят для перекуса, салатов, каш, выпечки, десертов и соусов.",
+      "full_description": "Грецкий орех очищенный половинки 1 кг - это натуральный продукт без скорлупы и без лишних добавок, удобный для ежедневного использования в домашней кухне. Формат «половинки» особенно подходит для выпечки, украшения десертов, добавления в салаты, каши, гранолу и соусы.",
+      "benefit_title": "Польза грецкого ореха",
+      "benefit_subtitle": "Формат половинок делает продукт удобным для перекуса, выпечки, подачи и повседневного использования на кухне.",
+      "specifications": "Тип продукта: Орехи\nВид орехов: Грецкий\nФорма: Очищенный, половинки\nСпособ обработки: Сырые\nВес: 1000 г\nСостав: Ядро грецкого ореха 100%\nСрок годности: 180 дней\nТемпература хранения: от 3 до 25 °C\nСтрана изготовления: Россия",
+      "faq": "Q: Это половинки или крошка?\nA: Карточка рассчитана на формат «половинки», при этом небольшое количество естественного лома допустимо для натурального продукта.\nQ: Где использовать грецкий орех?\nA: Для перекуса, салатов, каш, выпечки, десертов, соусов и домашней гранолы.\nQ: Как хранить после вскрытия?\nA: В плотно закрытой упаковке, в сухом месте, вдали от источников тепла и прямого света.",
+      "seo_title": "Грецкий орех очищенный половинки 1 кг | Global Basket",
+      "seo_description": "Очищенный грецкий орех половинки, сырой, 1 кг. Для перекуса, выпечки, салатов и домашней кухни.",
+      "keywords": "грецкий орех очищенный половинки, грецкий орех 1 кг, грецкий орех сырой",
+      "cover_image": "media/products/gretskiy-oreh-ochishchennyy-polovinki-1-kg-cover.png",
+      "detail_image": "media/products/gretskiy-oreh-ochishchennyy-polovinki-1-kg-detail.png",
+      "variant_type": "Вес",
+      "default_variant": "1 кг"
+    },
+    {
+      "category": "Премиальные орехи",
+      "product_title": "Кешью сырой сушеный",
+      "product_slug": "keshyu-syroy-sushenyy-1-kg",
+      "product_url": "/catalog/keshyu-syroy-sushenyy-1-kg/",
+      "h1": "Кешью сырой сушеный 1 кг",
+      "annotation": "Кешью сырой сушеный 1 кг. Цельные светлые ядра с мягким сливочным вкусом. Подходит для перекуса, блюд, десертов, кремов, соусов и растительного молока.",
+      "short_description": "Кешью сырой сушеный 1 кг - универсальный продукт для перекуса и кухни. Светлые цельные ядра с мягким сливочным вкусом подходят для азиатских блюд, десертов, соусов, кремов, растительного молока, гранолы и домашней выпечки.",
+      "full_description": "Кешью сырой сушеный 1 кг - это натуральный продукт без обжарки и лишних добавок, удобный как для повседневного перекуса, так и для активного использования в рецептах. У ореха мягкий сливочный вкус и деликатная текстура, поэтому он хорошо подходит для азиатских блюд, салатов, десертов, кремов, соусов, гранолы, домашней выпечки и орехового молока.",
+      "benefit_title": "Польза кешью",
+      "benefit_subtitle": "Мягкий сливочный вкус и универсальность делают кешью удобным продуктом и для перекуса, и для активной кухни.",
+      "specifications": "Тип продукта: Орехи\nВид орехов: Кешью\nФорма: Очищенный\nСпособ обработки: Сырые\nДополнительная обработка: Сушеный\nВес: 1000 г\nСостав: Кешью 100%\nУпаковка: Пластиковый пакет\nСрок годности: 270 дней\nТемпература хранения: от +5 до +25 °C\nСтрана изготовления: Россия\nСтрана сырья: Вьетнам",
+      "faq": "Q: Можно ли использовать для растительного молока?\nA: Да, сырой кешью хорошо подходит для орехового молока, кремов, соусов и десертов.\nQ: Подходит ли для жарки?\nA: Да, кешью можно слегка обжарить на сухой сковороде или в духовке, если нужен более яркий вкус.\nQ: Как хранить после вскрытия?\nA: В плотно закрытой упаковке, в сухом и прохладном месте, вдали от влаги и прямого солнца.",
+      "seo_title": "Кешью сырой сушеный 1 кг | Global Basket",
+      "seo_description": "Кешью сырой сушеный 1 кг. Натуральный продукт без обжарки и добавок для перекуса, блюд, десертов, кремов и растительного молока.",
+      "keywords": "кешью сырой сушеный, кешью 1 кг, кешью сырой, кешью купить",
+      "cover_image": "media/products/keshyu-syroy-sushenyy-1-kg-cover.png",
+      "detail_image": "media/products/keshyu-syroy-sushenyy-1-kg-detail.png",
+      "variant_type": "Вес",
+      "default_variant": "1 кг"
+    },
+    {
+      "category": "Сухофрукты",
+      "product_title": "Курага монетка",
+      "product_slug": "kuraga-monetka-bez-sahara-150-g",
+      "product_url": "/catalog/kuraga-monetka-bez-sahara-150-g/",
+      "h1": "Курага монетка кисло-сладкая без сахара 150 г",
+      "annotation": "Курага «монетка» 150 г без сахара. Компактные слегка сплюснутые половинки абрикоса с мягкой кисло-сладкой подачей.",
+      "short_description": "Курага «монетка» - это компактные, слегка сплюснутые половинки абрикоса, которые удобно использовать для перекуса и добавления в каши, выпечку, сырные тарелки и десерты.",
+      "full_description": "Формат «монетка» делает курагу визуально аккуратной и удобной для сервировки. У сухофрукта мягкий кисло-сладкий вкус без акцента на лишнюю сладость. Продукт подходит для ежедневного перекуса, домашних завтраков, выпечки и подарочных композиций.",
+      "benefit_title": "Польза кураги",
+      "benefit_subtitle": "Компактный формат и чистый состав без добавленного сахара делают курагу удобной для перекуса и домашней кухни.",
+      "specifications": "Тип продукта: Сухофрукты\nВид сухофруктов: Курага\nФорма: Монетка / компактные половинки\nВес: 150 г\nСостав: Курага 100%\nОсобенности: Без добавленного сахара",
+      "faq": "Q: Почему «монетка»?\nA: Так называют компактные слегка сплюснутые половинки абрикоса небольшого диаметра.\nQ: Подходит ли для каш и выпечки?\nA: Да, это удобный формат для завтраков, десертов и домашней выпечки.\nQ: Есть ли добавленный сахар?\nA: Нет, в позиции акцент сделан на формат без сахара.",
+      "seo_title": "Курага монетка без сахара 150 г | Global Basket",
+      "seo_description": "Кисло-сладкая курага монетка 150 г без сахара. Удобный формат для перекуса, каш и выпечки.",
+      "keywords": "курага монетка, курага без сахара, курага 150 г",
+      "cover_image": "media/products/kuraga-monetka-bez-sahara-150-g-cover.png",
+      "detail_image": "media/products/kuraga-monetka-bez-sahara-150-g-detail.png",
+      "variant_type": "Вес",
+      "default_variant": "150 г"
+    },
+    {
+      "category": "Сухофрукты",
+      "product_title": "Финики без сахара",
+      "product_slug": "finiki-bez-sahara-iran-1-kg",
+      "product_url": "/catalog/finiki-bez-sahara-iran-1-kg/",
+      "h1": "Финики без сахара 1 кг",
+      "annotation": "Финики без сахара 1 кг. Иран. Сушёные плоды с косточкой и естественной сладостью для перекуса, чаепития и десертов.",
+      "short_description": "Финики без сахара 1 кг - мягкий сухофрукт с естественной сладостью. Подходят для перекуса, чаепития, десертов, подарочных наборов и домашней кухни.",
+      "full_description": "Иранские финики без сахара - это крупный удобный формат 1 кг для семейного запаса, оптовых запросов и подарочных композиций. Плоды идут с косточкой, сохраняют натуральную сладость и подходят для перекуса, сервировки и добавления в десерты.",
+      "benefit_title": "Польза фиников",
+      "benefit_subtitle": "Естественная сладость без добавленного сахара делает финики удобной позицией для перекуса и десертной подачи.",
+      "specifications": "Тип продукта: Сухофрукты\nВид сухофруктов: Финики\nВид обработки: Сушёные\nС косточкой: Да\nВес: 1000 г\nОсобенности: Без сахара, без ГМО, вегетарианский / халяльный продукт\nСрок годности: 365 дней\nТемпература хранения: от +5 до +25 °C\nПроисхождение: Иран",
+      "faq": "Q: Есть ли добавленный сахар?\nA: Нет, в карточке акцент сделан на финики без сахара.\nQ: Финики с косточкой?\nA: Да, для этой позиции в данных указан формат с косточкой.\nQ: Как хранить?\nA: Хранить при температуре от +5 до +25 °C и относительной влажности воздуха не более 70%.",
+      "seo_title": "Финики без сахара 1 кг | Global Basket",
+      "seo_description": "Финики без сахара 1 кг из Ирана. Сушёные плоды с косточкой и естественной сладостью для перекуса и десертов.",
+      "keywords": "финики без сахара, финики 1 кг, финики иран",
+      "cover_image": "media/products/finiki-bez-sahara-iran-1-kg-cover.png",
+      "detail_image": "media/products/finiki-bez-sahara-iran-1-kg-detail.png",
+      "variant_type": "Вес",
+      "default_variant": "1 кг"
+    },
+    {
+      "category": "Сухофрукты",
+      "product_title": "Клюква сушеная",
+      "product_slug": "klyukva-sushenaya-150-g",
+      "product_url": "/catalog/klyukva-sushenaya-150-g/",
+      "h1": "Клюква сушеная 150 г",
+      "annotation": "Клюква сушеная 150 г. Мягкие плотные ягоды с характерной кислинкой для завтраков, выпечки и десертов.",
+      "short_description": "Сушёная клюква - удобный ягодный акцент для гранолы, каш, выпечки, сырных тарелок и подарочных композиций. Ягоды мягкие, плотные и приятно жуются.",
+      "full_description": "Клюква сушёная 150 г - компактный формат для домашнего использования и подарочной подачи. Яркий вкус с характерной ягодной кислинкой хорошо работает в выпечке, завтраках, граноле, салатах и десертах.",
+      "benefit_title": "Польза сушёной клюквы",
+      "benefit_subtitle": "Яркая ягодная кислинка делает сушёную клюкву универсальным дополнением к завтракам, выпечке и подарочным наборам.",
+      "specifications": "Тип продукта: Сухофрукты\nВид сухофруктов: Клюква\nВес: 150 г\nСрок годности: 90 дней\nУпаковка: Пакет",
+      "faq": "Q: Для чего подходит сушёная клюква?\nA: Для гранолы, каш, выпечки, десертов и салатов.\nQ: Какой вкус у продукта?\nA: Яркий, с характерной ягодной кислинкой.\nQ: Какой формат упаковки?\nA: Компактный пакет 150 г.",
+      "seo_title": "Клюква сушеная 150 г | Global Basket",
+      "seo_description": "Сушёная клюква 150 г с яркой ягодной кислинкой. Для гранолы, каш, выпечки и десертов.",
+      "keywords": "клюква сушеная, клюква 150 г, сушеная клюква купить",
+      "cover_image": "media/products/klyukva-sushenaya-150-g-cover.png",
+      "detail_image": "media/products/klyukva-sushenaya-150-g-detail.png",
+      "variant_type": "Вес",
+      "default_variant": "150 г"
+    },
+    {
+      "category": "Сухофрукты",
+      "product_title": "Манго сушеное",
+      "product_slug": "mango-sushenoe-naturalnoe-200-g",
+      "product_url": "/catalog/mango-sushenoe-naturalnoe-200-g/",
+      "h1": "Манго сушеное натуральное 200 г",
+      "annotation": "Манго сушеное 200 г. Тонкие пластинки спелого манго без добавленного сахара и консервантов.",
+      "short_description": "Натуральное сушёное манго - это удобный сладкий акцент для перекуса, чаепития, десертов и подарочных наборов. Формат пластинок хорошо смотрится и в сервировке.",
+      "full_description": "Тонкие ярко-оранжевые пластинки манго высушены естественным способом без добавленного сахара и консервантов. Формат 200 г подходит для аккуратной премиальной подачи, перекуса, чаепития и десертного ассортимента.",
+      "benefit_title": "Польза сушёного манго",
+      "benefit_subtitle": "Натуральная сладость и пластинки удобного формата делают продукт сильной позицией для перекуса и подарочных композиций.",
+      "specifications": "Тип продукта: Сухофрукты\nВид сухофруктов: Манго\nФорма: Пластинки\nВес: 200 г\nОсобенности: Без добавленного сахара и консервантов",
+      "faq": "Q: Есть ли добавленный сахар?\nA: Нет, в описании акцент сделан на натуральный продукт без добавленного сахара.\nQ: Какой формат у манго?\nA: Тонкие пластинки, удобные для перекуса и сервировки.\nQ: Для чего подходит?\nA: Для перекуса, чаепития, десертов и подарочных наборов.",
+      "seo_title": "Манго сушеное натуральное 200 г | Global Basket",
+      "seo_description": "Сушёное манго 200 г без сахара и консервантов. Натуральные пластинки для перекуса и десертной подачи.",
+      "keywords": "манго сушеное, манго без сахара, манго 200 г",
+      "cover_image": "media/products/mango-sushenoe-naturalnoe-200-g-cover.png",
+      "detail_image": "media/products/mango-sushenoe-naturalnoe-200-g-detail.png",
+      "variant_type": "Вес",
+      "default_variant": "200 г"
+    },
+    {
+      "category": "Ореховые смеси",
+      "product_title": "Ореховая смесь с изюмом",
+      "product_slug": "orehovaya-smes-s-izyumom-1-kg",
+      "product_url": "/catalog/orehovaya-smes-s-izyumom-1-kg/",
+      "h1": "Ореховая смесь с изюмом 1 кг",
+      "annotation": "Ореховая смесь с изюмом 1 кг. Грецкий орех, кешью, миндаль, фундук, светлый и тёмный изюм в удобном подарочном формате.",
+      "short_description": "Ореховая смесь с изюмом - универсальная позиция для дома, офиса, подарка и общей подачи. Баланс орехов и сухофруктов делает её удобной для перекуса и сервировки.",
+      "full_description": "В составе смеси объединены грецкий орех, кешью, миндаль, фундук, светлый и тёмный изюм. Формат 1 кг подходит для семейного запаса, офисной кухни, подарочной подачи и сервировки на компанию. Смесь уже обработана и упакована в герметичный формат.",
+      "benefit_title": "Польза ореховой смеси",
+      "benefit_subtitle": "Сбалансированное сочетание орехов и изюма делает смесь удобной для повседневного перекуса и подарочных сценариев.",
+      "specifications": "Тип продукта: Смесь орехов и сухофруктов\nВид орехов: Грецкий, кешью, миндаль, фундук\nВид сухофруктов: Изюм светлый, изюм тёмный\nВес: 1000 г\nУпаковка: Герметичная",
+      "faq": "Q: Нужно ли промывать смесь?\nA: В карточке-источнике указано, что смесь уже обработана и упакована герметично, поэтому дополнительная промывка не требуется.\nQ: Для чего подходит смесь?\nA: Для перекуса, офиса, совместных чаепитий и подарочной подачи.\nQ: Какие орехи в составе?\nA: Грецкий орех, кешью, миндаль и фундук, дополненные светлым и тёмным изюмом.",
+      "seo_title": "Ореховая смесь с изюмом 1 кг | Global Basket",
+      "seo_description": "Ореховая смесь с изюмом 1 кг: грецкий орех, кешью, миндаль, фундук и два вида изюма в подарочном формате.",
+      "keywords": "ореховая смесь с изюмом, смесь орехов 1 кг, орехи и изюм",
+      "cover_image": "media/products/orehovaya-smes-s-izyumom-1-kg-cover.png",
+      "detail_image": "media/products/orehovaya-smes-s-izyumom-1-kg-detail.png",
+      "variant_type": "Вес",
+      "default_variant": "1 кг"
+    },
+    {
+      "category": "Подарочные наборы",
+      "product_title": "Подарочный набор орехов",
+      "product_slug": "podarochnyy-nabor-orehov",
+      "product_url": "/catalog/podarochnyy-nabor-orehov/",
+      "h1": "Подарочный набор орехов",
+      "annotation": "Подарочный набор орехов в премиальной подаче. Формат для подарка, праздничного стола и корпоративных запросов.",
+      "short_description": "Подарочный набор орехов - это аккуратная премиальная позиция для сезонной витрины, корпоративных подарков и личных заказов. Упор сделан на тёплую натуральную подачу бренда.",
+      "full_description": "Подарочный набор орехов собирается как премиальная композиция для подарка, праздничной подачи и корпоративных запросов. В индексируемых данных карточки упоминаются миндаль, фисташка, кешью и макадамия. На сайте лучше подать набор как формат с несколькими конфигурациями и уточнением состава по выбранному варианту.",
+      "benefit_title": "Подарочный формат Global Basket",
+      "benefit_subtitle": "Набор решает сразу две задачи: аккуратная премиальная подача и понятный продукт для подарка или сезонной витрины.",
+      "specifications": "Тип продукта: Смесь орехов и сухофруктов / подарочный набор\nБазовый состав: Миндаль, фисташка, кешью, макадамия\nОсобенности: Премиальная подача, подарочный сценарий, корпоративные запросы\nПримечание: Точный состав зависит от выбранного формата",
+      "faq": "Q: Это фиксированный состав?\nA: Лучше заложить на сайте формат с несколькими конфигурациями и уточнением состава по выбранному набору.\nQ: Для чего подходит набор?\nA: Для подарка, корпоративного заказа, праздничной подачи и сезонной витрины.\nQ: Можно ли сделать несколько форматов?\nA: Да, в пакете добавлен план вариантов набора S / M / L.",
+      "seo_title": "Подарочный набор орехов | Global Basket",
+      "seo_description": "Подарочный набор орехов в премиальной подаче для подарка, праздничного стола и корпоративных запросов.",
+      "keywords": "подарочный набор орехов, набор орехов подарок, премиальный набор орехов",
+      "cover_image": "media/products/podarochnyy-nabor-orehov-cover.png",
+      "detail_image": "media/products/podarochnyy-nabor-orehov-detail.png",
+      "variant_type": "Формат",
+      "default_variant": "S"
+    }
+  ],
+  "variants": [
+    {
+      "product_title": "Очищенная макадамия",
+      "product_slug": "macadamia",
+      "product_url": "/catalog/macadamia/",
+      "variant_type": "Вес",
+      "variant_label": "250 г",
+      "variant_value": "250",
+      "is_default": "yes",
+      "variant_status": "active",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "macadamia::250 г"
+    },
+    {
+      "product_title": "Очищенная макадамия",
+      "product_slug": "macadamia",
+      "product_url": "/catalog/macadamia/",
+      "variant_type": "Вес",
+      "variant_label": "500 г",
+      "variant_value": "500",
+      "is_default": "no",
+      "variant_status": "request",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "macadamia::500 г"
+    },
+    {
+      "product_title": "Очищенная макадамия",
+      "product_slug": "macadamia",
+      "product_url": "/catalog/macadamia/",
+      "variant_type": "Вес",
+      "variant_label": "1 кг",
+      "variant_value": "1000",
+      "is_default": "no",
+      "variant_status": "request",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "macadamia::1 кг"
+    },
+    {
+      "product_title": "Макадамия в скорлупе с ключом",
+      "product_slug": "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg",
+      "product_url": "/catalog/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg/",
+      "variant_type": "Вес",
+      "variant_label": "500 г",
+      "variant_value": "500",
+      "is_default": "no",
+      "variant_status": "request",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg::500 г"
+    },
+    {
+      "product_title": "Макадамия в скорлупе с ключом",
+      "product_slug": "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg",
+      "product_url": "/catalog/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg/",
+      "variant_type": "Вес",
+      "variant_label": "1 кг",
+      "variant_value": "1000",
+      "is_default": "yes",
+      "variant_status": "active",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg::1 кг"
+    },
+    {
+      "product_title": "Пекан очищенный",
+      "product_slug": "pekan-ochishchennyy-syroy-500-g",
+      "product_url": "/catalog/pekan-ochishchennyy-syroy-500-g/",
+      "variant_type": "Вес",
+      "variant_label": "250 г",
+      "variant_value": "250",
+      "is_default": "no",
+      "variant_status": "request",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "pekan-ochishchennyy-syroy-500-g::250 г"
+    },
+    {
+      "product_title": "Пекан очищенный",
+      "product_slug": "pekan-ochishchennyy-syroy-500-g",
+      "product_url": "/catalog/pekan-ochishchennyy-syroy-500-g/",
+      "variant_type": "Вес",
+      "variant_label": "500 г",
+      "variant_value": "500",
+      "is_default": "yes",
+      "variant_status": "active",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "pekan-ochishchennyy-syroy-500-g::500 г"
+    },
+    {
+      "product_title": "Пекан очищенный",
+      "product_slug": "pekan-ochishchennyy-syroy-500-g",
+      "product_url": "/catalog/pekan-ochishchennyy-syroy-500-g/",
+      "variant_type": "Вес",
+      "variant_label": "1 кг",
+      "variant_value": "1000",
+      "is_default": "no",
+      "variant_status": "request",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "pekan-ochishchennyy-syroy-500-g::1 кг"
+    },
+    {
+      "product_title": "Грецкий орех половинки",
+      "product_slug": "gretskiy-oreh-ochishchennyy-polovinki-1-kg",
+      "product_url": "/catalog/gretskiy-oreh-ochishchennyy-polovinki-1-kg/",
+      "variant_type": "Вес",
+      "variant_label": "250 г",
+      "variant_value": "250",
+      "is_default": "no",
+      "variant_status": "request",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "gretskiy-oreh-ochishchennyy-polovinki-1-kg::250 г"
+    },
+    {
+      "product_title": "Грецкий орех половинки",
+      "product_slug": "gretskiy-oreh-ochishchennyy-polovinki-1-kg",
+      "product_url": "/catalog/gretskiy-oreh-ochishchennyy-polovinki-1-kg/",
+      "variant_type": "Вес",
+      "variant_label": "500 г",
+      "variant_value": "500",
+      "is_default": "no",
+      "variant_status": "request",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "gretskiy-oreh-ochishchennyy-polovinki-1-kg::500 г"
+    },
+    {
+      "product_title": "Грецкий орех половинки",
+      "product_slug": "gretskiy-oreh-ochishchennyy-polovinki-1-kg",
+      "product_url": "/catalog/gretskiy-oreh-ochishchennyy-polovinki-1-kg/",
+      "variant_type": "Вес",
+      "variant_label": "1 кг",
+      "variant_value": "1000",
+      "is_default": "yes",
+      "variant_status": "active",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "gretskiy-oreh-ochishchennyy-polovinki-1-kg::1 кг"
+    },
+    {
+      "product_title": "Кешью сырой сушеный",
+      "product_slug": "keshyu-syroy-sushenyy-1-kg",
+      "product_url": "/catalog/keshyu-syroy-sushenyy-1-kg/",
+      "variant_type": "Вес",
+      "variant_label": "250 г",
+      "variant_value": "250",
+      "is_default": "no",
+      "variant_status": "request",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "keshyu-syroy-sushenyy-1-kg::250 г"
+    },
+    {
+      "product_title": "Кешью сырой сушеный",
+      "product_slug": "keshyu-syroy-sushenyy-1-kg",
+      "product_url": "/catalog/keshyu-syroy-sushenyy-1-kg/",
+      "variant_type": "Вес",
+      "variant_label": "500 г",
+      "variant_value": "500",
+      "is_default": "no",
+      "variant_status": "request",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "keshyu-syroy-sushenyy-1-kg::500 г"
+    },
+    {
+      "product_title": "Кешью сырой сушеный",
+      "product_slug": "keshyu-syroy-sushenyy-1-kg",
+      "product_url": "/catalog/keshyu-syroy-sushenyy-1-kg/",
+      "variant_type": "Вес",
+      "variant_label": "1 кг",
+      "variant_value": "1000",
+      "is_default": "yes",
+      "variant_status": "active",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "keshyu-syroy-sushenyy-1-kg::1 кг"
+    },
+    {
+      "product_title": "Курага монетка",
+      "product_slug": "kuraga-monetka-bez-sahara-150-g",
+      "product_url": "/catalog/kuraga-monetka-bez-sahara-150-g/",
+      "variant_type": "Вес",
+      "variant_label": "150 г",
+      "variant_value": "150",
+      "is_default": "yes",
+      "variant_status": "active",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "kuraga-monetka-bez-sahara-150-g::150 г"
+    },
+    {
+      "product_title": "Курага монетка",
+      "product_slug": "kuraga-monetka-bez-sahara-150-g",
+      "product_url": "/catalog/kuraga-monetka-bez-sahara-150-g/",
+      "variant_type": "Вес",
+      "variant_label": "300 г",
+      "variant_value": "300",
+      "is_default": "no",
+      "variant_status": "request",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "kuraga-monetka-bez-sahara-150-g::300 г"
+    },
+    {
+      "product_title": "Курага монетка",
+      "product_slug": "kuraga-monetka-bez-sahara-150-g",
+      "product_url": "/catalog/kuraga-monetka-bez-sahara-150-g/",
+      "variant_type": "Вес",
+      "variant_label": "500 г",
+      "variant_value": "500",
+      "is_default": "no",
+      "variant_status": "request",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "kuraga-monetka-bez-sahara-150-g::500 г"
+    },
+    {
+      "product_title": "Финики без сахара",
+      "product_slug": "finiki-bez-sahara-iran-1-kg",
+      "product_url": "/catalog/finiki-bez-sahara-iran-1-kg/",
+      "variant_type": "Вес",
+      "variant_label": "500 г",
+      "variant_value": "500",
+      "is_default": "no",
+      "variant_status": "request",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "finiki-bez-sahara-iran-1-kg::500 г"
+    },
+    {
+      "product_title": "Финики без сахара",
+      "product_slug": "finiki-bez-sahara-iran-1-kg",
+      "product_url": "/catalog/finiki-bez-sahara-iran-1-kg/",
+      "variant_type": "Вес",
+      "variant_label": "1 кг",
+      "variant_value": "1000",
+      "is_default": "yes",
+      "variant_status": "active",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "finiki-bez-sahara-iran-1-kg::1 кг"
+    },
+    {
+      "product_title": "Клюква сушеная",
+      "product_slug": "klyukva-sushenaya-150-g",
+      "product_url": "/catalog/klyukva-sushenaya-150-g/",
+      "variant_type": "Вес",
+      "variant_label": "150 г",
+      "variant_value": "150",
+      "is_default": "yes",
+      "variant_status": "active",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "klyukva-sushenaya-150-g::150 г"
+    },
+    {
+      "product_title": "Клюква сушеная",
+      "product_slug": "klyukva-sushenaya-150-g",
+      "product_url": "/catalog/klyukva-sushenaya-150-g/",
+      "variant_type": "Вес",
+      "variant_label": "300 г",
+      "variant_value": "300",
+      "is_default": "no",
+      "variant_status": "request",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "klyukva-sushenaya-150-g::300 г"
+    },
+    {
+      "product_title": "Клюква сушеная",
+      "product_slug": "klyukva-sushenaya-150-g",
+      "product_url": "/catalog/klyukva-sushenaya-150-g/",
+      "variant_type": "Вес",
+      "variant_label": "500 г",
+      "variant_value": "500",
+      "is_default": "no",
+      "variant_status": "request",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "klyukva-sushenaya-150-g::500 г"
+    },
+    {
+      "product_title": "Манго сушеное",
+      "product_slug": "mango-sushenoe-naturalnoe-200-g",
+      "product_url": "/catalog/mango-sushenoe-naturalnoe-200-g/",
+      "variant_type": "Вес",
+      "variant_label": "200 г",
+      "variant_value": "200",
+      "is_default": "yes",
+      "variant_status": "active",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "mango-sushenoe-naturalnoe-200-g::200 г"
+    },
+    {
+      "product_title": "Манго сушеное",
+      "product_slug": "mango-sushenoe-naturalnoe-200-g",
+      "product_url": "/catalog/mango-sushenoe-naturalnoe-200-g/",
+      "variant_type": "Вес",
+      "variant_label": "500 г",
+      "variant_value": "500",
+      "is_default": "no",
+      "variant_status": "request",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "mango-sushenoe-naturalnoe-200-g::500 г"
+    },
+    {
+      "product_title": "Ореховая смесь с изюмом",
+      "product_slug": "orehovaya-smes-s-izyumom-1-kg",
+      "product_url": "/catalog/orehovaya-smes-s-izyumom-1-kg/",
+      "variant_type": "Вес",
+      "variant_label": "250 г",
+      "variant_value": "250",
+      "is_default": "no",
+      "variant_status": "request",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "orehovaya-smes-s-izyumom-1-kg::250 г"
+    },
+    {
+      "product_title": "Ореховая смесь с изюмом",
+      "product_slug": "orehovaya-smes-s-izyumom-1-kg",
+      "product_url": "/catalog/orehovaya-smes-s-izyumom-1-kg/",
+      "variant_type": "Вес",
+      "variant_label": "500 г",
+      "variant_value": "500",
+      "is_default": "no",
+      "variant_status": "request",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "orehovaya-smes-s-izyumom-1-kg::500 г"
+    },
+    {
+      "product_title": "Ореховая смесь с изюмом",
+      "product_slug": "orehovaya-smes-s-izyumom-1-kg",
+      "product_url": "/catalog/orehovaya-smes-s-izyumom-1-kg/",
+      "variant_type": "Вес",
+      "variant_label": "1 кг",
+      "variant_value": "1000",
+      "is_default": "yes",
+      "variant_status": "active",
+      "recommended_ui_text": "Доступные фасовки",
+      "cta_param_example": "orehovaya-smes-s-izyumom-1-kg::1 кг"
+    },
+    {
+      "product_title": "Подарочный набор орехов",
+      "product_slug": "podarochnyy-nabor-orehov",
+      "product_url": "/catalog/podarochnyy-nabor-orehov/",
+      "variant_type": "Формат",
+      "variant_label": "S",
+      "variant_value": "S",
+      "is_default": "yes",
+      "variant_status": "active",
+      "recommended_ui_text": "Формат набора",
+      "cta_param_example": "podarochnyy-nabor-orehov::S"
+    },
+    {
+      "product_title": "Подарочный набор орехов",
+      "product_slug": "podarochnyy-nabor-orehov",
+      "product_url": "/catalog/podarochnyy-nabor-orehov/",
+      "variant_type": "Формат",
+      "variant_label": "M",
+      "variant_value": "M",
+      "is_default": "no",
+      "variant_status": "request",
+      "recommended_ui_text": "Формат набора",
+      "cta_param_example": "podarochnyy-nabor-orehov::M"
+    },
+    {
+      "product_title": "Подарочный набор орехов",
+      "product_slug": "podarochnyy-nabor-orehov",
+      "product_url": "/catalog/podarochnyy-nabor-orehov/",
+      "variant_type": "Формат",
+      "variant_label": "L",
+      "variant_value": "L",
+      "is_default": "no",
+      "variant_status": "request",
+      "recommended_ui_text": "Формат набора",
+      "cta_param_example": "podarochnyy-nabor-orehov::L"
+    }
+  ],
+  "media": [
+    {
+      "entity_slug": "macadamia",
+      "entity_title": "Очищенная макадамия",
+      "media_kind": "product_cover",
+      "relative_path": "media/products/macadamia-cover.png",
+      "source_type": "safe-generated",
+      "note": "основное изображение карточки"
+    },
+    {
+      "entity_slug": "macadamia",
+      "entity_title": "Очищенная макадамия",
+      "media_kind": "product_detail",
+      "relative_path": "media/products/macadamia-detail.png",
+      "source_type": "safe-generated",
+      "note": "дополнительное изображение детали/страницы"
+    },
+    {
+      "entity_slug": "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg",
+      "entity_title": "Макадамия в скорлупе с ключом",
+      "media_kind": "product_cover",
+      "relative_path": "media/products/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg-cover.png",
+      "source_type": "safe-generated",
+      "note": "основное изображение карточки"
+    },
+    {
+      "entity_slug": "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg",
+      "entity_title": "Макадамия в скорлупе с ключом",
+      "media_kind": "product_detail",
+      "relative_path": "media/products/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg-detail.png",
+      "source_type": "safe-generated",
+      "note": "дополнительное изображение детали/страницы"
+    },
+    {
+      "entity_slug": "pekan-ochishchennyy-syroy-500-g",
+      "entity_title": "Пекан очищенный",
+      "media_kind": "product_cover",
+      "relative_path": "media/products/pekan-ochishchennyy-syroy-500-g-cover.png",
+      "source_type": "safe-generated",
+      "note": "основное изображение карточки"
+    },
+    {
+      "entity_slug": "pekan-ochishchennyy-syroy-500-g",
+      "entity_title": "Пекан очищенный",
+      "media_kind": "product_detail",
+      "relative_path": "media/products/pekan-ochishchennyy-syroy-500-g-detail.png",
+      "source_type": "safe-generated",
+      "note": "дополнительное изображение детали/страницы"
+    },
+    {
+      "entity_slug": "gretskiy-oreh-ochishchennyy-polovinki-1-kg",
+      "entity_title": "Грецкий орех половинки",
+      "media_kind": "product_cover",
+      "relative_path": "media/products/gretskiy-oreh-ochishchennyy-polovinki-1-kg-cover.png",
+      "source_type": "safe-generated",
+      "note": "основное изображение карточки"
+    },
+    {
+      "entity_slug": "gretskiy-oreh-ochishchennyy-polovinki-1-kg",
+      "entity_title": "Грецкий орех половинки",
+      "media_kind": "product_detail",
+      "relative_path": "media/products/gretskiy-oreh-ochishchennyy-polovinki-1-kg-detail.png",
+      "source_type": "safe-generated",
+      "note": "дополнительное изображение детали/страницы"
+    },
+    {
+      "entity_slug": "keshyu-syroy-sushenyy-1-kg",
+      "entity_title": "Кешью сырой сушеный",
+      "media_kind": "product_cover",
+      "relative_path": "media/products/keshyu-syroy-sushenyy-1-kg-cover.png",
+      "source_type": "safe-generated",
+      "note": "основное изображение карточки"
+    },
+    {
+      "entity_slug": "keshyu-syroy-sushenyy-1-kg",
+      "entity_title": "Кешью сырой сушеный",
+      "media_kind": "product_detail",
+      "relative_path": "media/products/keshyu-syroy-sushenyy-1-kg-detail.png",
+      "source_type": "safe-generated",
+      "note": "дополнительное изображение детали/страницы"
+    },
+    {
+      "entity_slug": "kuraga-monetka-bez-sahara-150-g",
+      "entity_title": "Курага монетка",
+      "media_kind": "product_cover",
+      "relative_path": "media/products/kuraga-monetka-bez-sahara-150-g-cover.png",
+      "source_type": "safe-generated",
+      "note": "основное изображение карточки"
+    },
+    {
+      "entity_slug": "kuraga-monetka-bez-sahara-150-g",
+      "entity_title": "Курага монетка",
+      "media_kind": "product_detail",
+      "relative_path": "media/products/kuraga-monetka-bez-sahara-150-g-detail.png",
+      "source_type": "safe-generated",
+      "note": "дополнительное изображение детали/страницы"
+    },
+    {
+      "entity_slug": "finiki-bez-sahara-iran-1-kg",
+      "entity_title": "Финики без сахара",
+      "media_kind": "product_cover",
+      "relative_path": "media/products/finiki-bez-sahara-iran-1-kg-cover.png",
+      "source_type": "safe-generated",
+      "note": "основное изображение карточки"
+    },
+    {
+      "entity_slug": "finiki-bez-sahara-iran-1-kg",
+      "entity_title": "Финики без сахара",
+      "media_kind": "product_detail",
+      "relative_path": "media/products/finiki-bez-sahara-iran-1-kg-detail.png",
+      "source_type": "safe-generated",
+      "note": "дополнительное изображение детали/страницы"
+    },
+    {
+      "entity_slug": "klyukva-sushenaya-150-g",
+      "entity_title": "Клюква сушеная",
+      "media_kind": "product_cover",
+      "relative_path": "media/products/klyukva-sushenaya-150-g-cover.png",
+      "source_type": "safe-generated",
+      "note": "основное изображение карточки"
+    },
+    {
+      "entity_slug": "klyukva-sushenaya-150-g",
+      "entity_title": "Клюква сушеная",
+      "media_kind": "product_detail",
+      "relative_path": "media/products/klyukva-sushenaya-150-g-detail.png",
+      "source_type": "safe-generated",
+      "note": "дополнительное изображение детали/страницы"
+    },
+    {
+      "entity_slug": "mango-sushenoe-naturalnoe-200-g",
+      "entity_title": "Манго сушеное",
+      "media_kind": "product_cover",
+      "relative_path": "media/products/mango-sushenoe-naturalnoe-200-g-cover.png",
+      "source_type": "safe-generated",
+      "note": "основное изображение карточки"
+    },
+    {
+      "entity_slug": "mango-sushenoe-naturalnoe-200-g",
+      "entity_title": "Манго сушеное",
+      "media_kind": "product_detail",
+      "relative_path": "media/products/mango-sushenoe-naturalnoe-200-g-detail.png",
+      "source_type": "safe-generated",
+      "note": "дополнительное изображение детали/страницы"
+    },
+    {
+      "entity_slug": "orehovaya-smes-s-izyumom-1-kg",
+      "entity_title": "Ореховая смесь с изюмом",
+      "media_kind": "product_cover",
+      "relative_path": "media/products/orehovaya-smes-s-izyumom-1-kg-cover.png",
+      "source_type": "safe-generated",
+      "note": "основное изображение карточки"
+    },
+    {
+      "entity_slug": "orehovaya-smes-s-izyumom-1-kg",
+      "entity_title": "Ореховая смесь с изюмом",
+      "media_kind": "product_detail",
+      "relative_path": "media/products/orehovaya-smes-s-izyumom-1-kg-detail.png",
+      "source_type": "safe-generated",
+      "note": "дополнительное изображение детали/страницы"
+    },
+    {
+      "entity_slug": "podarochnyy-nabor-orehov",
+      "entity_title": "Подарочный набор орехов",
+      "media_kind": "product_cover",
+      "relative_path": "media/products/podarochnyy-nabor-orehov-cover.png",
+      "source_type": "safe-generated",
+      "note": "основное изображение карточки"
+    },
+    {
+      "entity_slug": "podarochnyy-nabor-orehov",
+      "entity_title": "Подарочный набор орехов",
+      "media_kind": "product_detail",
+      "relative_path": "media/products/podarochnyy-nabor-orehov-detail.png",
+      "source_type": "safe-generated",
+      "note": "дополнительное изображение детали/страницы"
+    },
+    {
+      "entity_slug": "premium-nuts",
+      "entity_title": "Премиальные орехи",
+      "media_kind": "category_cover",
+      "relative_path": "media/categories/premium-nuts-cover.png",
+      "source_type": "safe-generated",
+      "note": "обложка раздела"
+    },
+    {
+      "entity_slug": "dried-fruits",
+      "entity_title": "Сухофрукты",
+      "media_kind": "category_cover",
+      "relative_path": "media/categories/dried-fruits-cover.png",
+      "source_type": "safe-generated",
+      "note": "обложка раздела"
+    },
+    {
+      "entity_slug": "nut-mixes",
+      "entity_title": "Ореховые смеси",
+      "media_kind": "category_cover",
+      "relative_path": "media/categories/nut-mixes-cover.png",
+      "source_type": "safe-generated",
+      "note": "обложка раздела"
+    },
+    {
+      "entity_slug": "gift-sets",
+      "entity_title": "Подарочные наборы",
+      "media_kind": "category_cover",
+      "relative_path": "media/categories/gift-sets-cover.png",
+      "source_type": "safe-generated",
+      "note": "обложка раздела"
+    },
+    {
+      "entity_slug": "reference",
+      "entity_title": "Скриншот текущего состояния",
+      "media_kind": "reference_screenshot",
+      "relative_path": "screenshots/Снимок экрана 2026-04-11 в 20.59.50.png",
+      "source_type": "user-shared",
+      "note": "использовать только для сверки проблем текущей версии"
+    },
+    {
+      "entity_slug": "reference",
+      "entity_title": "Скриншот текущего состояния",
+      "media_kind": "reference_screenshot",
+      "relative_path": "screenshots/Снимок экрана 2026-04-11 в 21.01.50.png",
+      "source_type": "user-shared",
+      "note": "использовать только для сверки проблем текущей версии"
+    },
+    {
+      "entity_slug": "reference",
+      "entity_title": "Скриншот текущего состояния",
+      "media_kind": "reference_screenshot",
+      "relative_path": "screenshots/Снимок экрана 2026-04-11 в 21.02.13.png",
+      "source_type": "user-shared",
+      "note": "использовать только для сверки проблем текущей версии"
+    }
+  ],
+  "sources": [
+    {
+      "product_title": "Очищенная макадамия",
+      "product_slug": "macadamia",
+      "source_url": "https://skill-deploy-2a56p7cobi-codex-agent-deploys.vercel.app/catalog/macadamia/",
+      "source_type": "user-provided or reference source",
+      "usage_note": "использовать как справочный источник по ассортименту и базовым данным; не переносить чужие брендированные фото"
+    },
+    {
+      "product_title": "Макадамия в скорлупе с ключом",
+      "product_slug": "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg",
+      "source_url": "https://www.ozon.ru/product/oreh-makadamiya-v-skorlupe-s-klyuchom-1000gr-1-kg-maryzain-3532941680/",
+      "source_type": "user-provided or reference source",
+      "usage_note": "использовать как справочный источник по ассортименту и базовым данным; не переносить чужие брендированные фото"
+    },
+    {
+      "product_title": "Пекан очищенный",
+      "product_slug": "pekan-ochishchennyy-syroy-500-g",
+      "source_url": "https://www.ozon.ru/product/pekan-ochishchennyy-0-5-kg-3137192535/",
+      "source_type": "user-provided or reference source",
+      "usage_note": "использовать как справочный источник по ассортименту и базовым данным; не переносить чужие брендированные фото"
+    },
+    {
+      "product_title": "Грецкий орех половинки",
+      "product_slug": "gretskiy-oreh-ochishchennyy-polovinki-1-kg",
+      "source_url": "https://www.ozon.ru/product/gretskiy-oreh-ochishchennyy-polovinka-1000-gr-3473561881/",
+      "source_type": "user-provided or reference source",
+      "usage_note": "использовать как справочный источник по ассортименту и базовым данным; не переносить чужие брендированные фото"
+    },
+    {
+      "product_title": "Кешью сырой сушеный",
+      "product_slug": "keshyu-syroy-sushenyy-1-kg",
+      "source_url": "https://www.ozon.ru/product/keshyu-syroy-sushenyy-zelenyy-slon-1-kg-267072346/",
+      "source_type": "user-provided or reference source",
+      "usage_note": "использовать как справочный источник по ассортименту и базовым данным; не переносить чужие брендированные фото"
+    },
+    {
+      "product_title": "Курага монетка",
+      "product_slug": "kuraga-monetka-bez-sahara-150-g",
+      "source_url": "https://www.ozon.ru/product/kuraga-monetka-kislo-sladkaya-bez-sahara-150-g-1294063264/",
+      "source_type": "user-provided or reference source",
+      "usage_note": "использовать как справочный источник по ассортименту и базовым данным; не переносить чужие брендированные фото"
+    },
+    {
+      "product_title": "Финики без сахара",
+      "product_slug": "finiki-bez-sahara-iran-1-kg",
+      "source_url": "https://www.ozon.ru/product/finiki-bez-sahara-1-kg-iran-890403623/",
+      "source_type": "user-provided or reference source",
+      "usage_note": "использовать как справочный источник по ассортименту и базовым данным; не переносить чужие брендированные фото"
+    },
+    {
+      "product_title": "Клюква сушеная",
+      "product_slug": "klyukva-sushenaya-150-g",
+      "source_url": "https://www.ozon.ru/product/klyukva-sushenaya-bogatyy-kray-150-g-1467875984/",
+      "source_type": "user-provided or reference source",
+      "usage_note": "использовать как справочный источник по ассортименту и базовым данным; не переносить чужие брендированные фото"
+    },
+    {
+      "product_title": "Манго сушеное",
+      "product_slug": "mango-sushenoe-naturalnoe-200-g",
+      "source_url": "https://www.ozon.ru/product/mango-sushenoe-lepestki-solntsa-naturalnoe-200-g-1294063611/",
+      "source_type": "user-provided or reference source",
+      "usage_note": "использовать как справочный источник по ассортименту и базовым данным; не переносить чужие брендированные фото"
+    },
+    {
+      "product_title": "Ореховая смесь с изюмом",
+      "product_slug": "orehovaya-smes-s-izyumom-1-kg",
+      "source_url": "https://www.ozon.ru/product/orehovaya-smes-s-izyumom-podarochnaya-upakovka-dattie-1-kg-1432592325/",
+      "source_type": "user-provided or reference source",
+      "usage_note": "использовать как справочный источник по ассортименту и базовым данным; не переносить чужие брендированные фото"
+    },
+    {
+      "product_title": "Подарочный набор орехов",
+      "product_slug": "podarochnyy-nabor-orehov",
+      "source_url": "https://www.ozon.ru/product/nabor-orehov-podarochnyy-2674123426/",
+      "source_type": "user-provided or reference source",
+      "usage_note": "использовать как справочный источник по ассортименту и базовым данным; не переносить чужие брендированные фото"
+    }
+  ]
 };
 
-const macadamiaShellGallery = buildGallerySet({
-  shape: shellNut,
-  palette: { bgStart: "#f8efde", bgEnd: "#efddc1", shadow: "#d7bc90" },
-  extras: `${keyTool(904, 646, 1.08)}${shellNut(708, 344, 0.76, 18, true)}${shellNut(870, 370, 0.72, -12, true)}`,
+const mapCatalogMediaPath = (relativePath = "") =>
+  relativePath ? `/${String(relativePath).replace(/^media\//, "assets/catalog/")}` : "";
+
+const cleanText = (value = "") => String(value || "").trim();
+
+const parseSpecs = (value = "") =>
+  cleanText(value)
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [label, ...rest] = line.split(":");
+      return { label: cleanText(label), value: cleanText(rest.join(":")) };
+    })
+    .filter((item) => item.label && item.value);
+
+const parseFaq = (value = "") => {
+  const rows = cleanText(value)
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const items = [];
+  for (let index = 0; index < rows.length; index += 2) {
+    const questionRow = rows[index] || "";
+    const answerRow = rows[index + 1] || "";
+    items.push({
+      question: questionRow.replace(/^Q:\s*/i, ""),
+      answer: answerRow.replace(/^A:\s*/i, ""),
+    });
+  }
+  return items.filter((item) => item.question && item.answer);
+};
+
+const findSpecValue = (specs = [], label = "") =>
+  specs.find((item) => item.label.toLowerCase() === label.toLowerCase())?.value || "";
+
+const categoryTone = (slug = "") =>
+  slug === "gift-sets" ? "editorial" : slug === "nut-mixes" ? "service" : "active";
+
+const buildSubtitleForVariant = (baseSubtitle = "", defaultLabel = "", variantLabel = "") => {
+  const base = cleanText(baseSubtitle);
+  const selected = cleanText(variantLabel);
+  if (!base) return selected;
+  if (!selected) return base;
+  if (defaultLabel && base.includes(defaultLabel)) return base.replace(defaultLabel, selected);
+  if (base.includes(selected)) return base;
+  return `${base} / ${selected}`;
+};
+
+const buildPills = (card, specs, defaultVariant) => {
+  const parts = cleanText(card.card_subtitle)
+    .split("/")
+    .map((item) => cleanText(item))
+    .filter(Boolean);
+  const extra = [
+    findSpecValue(specs, "Упаковка"),
+    findSpecValue(specs, "Происхождение"),
+    findSpecValue(specs, "Особенности"),
+    defaultVariant?.variant_label,
+  ]
+    .map(cleanText)
+    .filter(Boolean);
+
+  return [...new Set([...parts, ...extra])].slice(0, 4);
+};
+
+const pickFactSpecs = (specs = [], defaultVariant, variantType = "") => {
+  const preferred = [
+    variantType || "Вес",
+    "Форма",
+    "Упаковка",
+    "Происхождение",
+    "Состав",
+    "Особенности",
+    "Вид орехов",
+    "Вид сухофруктов",
+    "Базовый состав",
+  ];
+
+  const selected = [];
+  preferred.forEach((label) => {
+    const found = specs.find((item) => item.label.toLowerCase() === String(label).toLowerCase());
+    if (found && !selected.some((item) => item.label === found.label)) selected.push(found);
+  });
+
+  specs.forEach((item) => {
+    if (selected.length < 4 && !selected.some((entry) => entry.label === item.label)) selected.push(item);
+  });
+
+  if (defaultVariant && !selected.some((item) => item.label === (variantType || "Вес"))) {
+    selected.unshift({ label: variantType || "Вес", value: defaultVariant.variant_label });
+  }
+
+  return selected.slice(0, 4);
+};
+
+const specIcon = (label = "") => {
+  const normalized = label.toLowerCase();
+  if (normalized.includes("вес") || normalized.includes("формат")) return "scale";
+  if (normalized.includes("упаков") || normalized.includes("форма")) return "package";
+  if (normalized.includes("происх") || normalized.includes("страна")) return "globe";
+  return "dot";
+};
+
+const buildFactCards = (specs = [], defaultVariant, variantType = "") =>
+  pickFactSpecs(specs, defaultVariant, variantType).map((item) => ({
+    icon: specIcon(item.label),
+    title: item.label,
+    text: item.value,
+  }));
+
+const buildBenefitCards = (factCards = [], card = null, page = null) => {
+  const seeds = factCards.slice(0, 4).map((item, index) => ({
+    code: String(index + 1).padStart(2, "0"),
+    title: item.title,
+    text: item.text,
+  }));
+
+  if (seeds.length >= 4) return seeds;
+
+  const fallbacks = [
+    card?.card_description,
+    page?.short_description,
+    page?.full_description,
+  ]
+    .map(cleanText)
+    .filter(Boolean)
+    .map((text, index) => ({
+      code: String(seeds.length + index + 1).padStart(2, "0"),
+      title: index === 0 ? "Подача" : index === 1 ? "Сценарий" : "Состав",
+      text: text.split(/(?<=[.!?])\s+/)[0] || text,
+    }));
+
+  return [...seeds, ...fallbacks].slice(0, 4);
+};
+
+const variantsBySlug = new Map();
+catalogPayload.variants.forEach((variant) => {
+  const list = variantsBySlug.get(variant.product_slug) || [];
+  list.push({
+    type: cleanText(variant.variant_type),
+    label: cleanText(variant.variant_label),
+    value: cleanText(variant.variant_value),
+    isDefault: cleanText(variant.is_default).toLowerCase() === "yes",
+    status: cleanText(variant.variant_status) || "request",
+    uiText: cleanText(variant.recommended_ui_text) || "Доступные фасовки",
+    ctaParam: cleanText(variant.cta_param_example),
+  });
+  variantsBySlug.set(variant.product_slug, list);
 });
 
-const pecanGallery = buildGallerySet({
-  shape: pecanNut,
-  palette: { bgStart: "#f8ecdd", bgEnd: "#efd8c4", shadow: "#cfa77f" },
-});
-
-const walnutGallery = buildGallerySet({
-  shape: walnutNut,
-  palette: { bgStart: "#f8ecdd", bgEnd: "#eedbc4", shadow: "#d2af88" },
-});
-
-const cashewGallery = buildGallerySet({
-  shape: cashewNut,
-  palette: { bgStart: "#fbf0df", bgEnd: "#f1e0c4", shadow: "#dcc19a" },
-});
-
-const createInternalCtaCards = (slug, productName, descriptor) => [
-  {
-    name: "Уточнить наличие",
-    badge: "Следующий шаг",
-    tone: "service",
-    bullets: [
-      descriptor,
-      "Подскажем по наличию партии и текущему формату поставки.",
-      "Ответим через форму заявки и прямой контакт с менеджером.",
-    ],
-    cta: "Уточнить наличие",
-    href: `/contacts/?source=pdp-availability&product=${encodeURIComponent(slug)}`,
-  },
-  {
-    name: "Оставить запрос",
-    badge: "Запрос",
-    tone: "service",
-    bullets: [
-      `Добавьте ${productName.toLowerCase()} в заявку на закупку или витрину.`,
-      "Уточним объём, фасовку и следующий шаг без лишней переписки.",
-      "Форма запроса остаётся основным сценарием для B2B и корпоративных обращений.",
-    ],
-    cta: "Оставить запрос",
-    href: `/contacts/?source=pdp-request&product=${encodeURIComponent(slug)}`,
-  },
-  {
-    name: "Telegram",
-    badge: "Резервный канал",
-    tone: "editorial",
-    bullets: [
-      "Если вопрос срочный, можно написать напрямую в Telegram-бот Global Basket.",
-      "Этот сценарий остаётся запасным и не заменяет запрос через форму.",
-    ],
-    cta: "Написать в Telegram",
-    href: gb.contact.telegramHref,
-  },
-];
-
-Object.assign(gb.product, {
-  slug: "macadamia",
-  status: "active",
-  shortName: "Очищенная макадамия",
-  h1: "Очищенная макадамия 250 г",
-  catalogDescription:
-    "Натуральный продукт без соли и сахара в тёплой премиальной подаче Global Basket.",
-  annotation:
-    "Очищенная макадамия 250 г в вакуумной упаковке. Чистый состав, мягкий сливочный вкус и понятный путь к заказу без лишнего визуального шума.",
-  shortDescription:
-    "Очищенная макадамия 250 г - аккуратная премиальная позиция с чистым составом, мягким вкусом и удобным форматом для каталога, перекуса и спокойной витрины.",
-  fullDescription:
-    "Очищенная макадамия 250 г - это натуральный продукт без соли, сахара и лишних добавок, который хорошо работает и как сильная самостоятельная позиция, и как часть компактного премиального ассортимента. Вакуумная упаковка помогает сохранить аккуратную подачу, а чистый состав делает карточку товара понятной с первого экрана. Такой формат подходит для деликатесной витрины, спокойной журнальной подачи, корпоративного запроса и личного заказа без ощущения перегруженного каталога.",
-  seoTitle: "Очищенная макадамия 250 г",
-  seoDescription:
-    "Очищенная макадамия 250 г в вакуумной упаковке. Натуральный продукт без соли и сахара для спокойной премиальной витрины и аккуратной подачи.",
-  seoKeywords:
-    "очищенная макадамия, макадамия 250 г, макадамия Global Basket, натуральная макадамия, макадамия купить",
-  benefitSectionEyebrow: "Польза макадамии",
-  benefitSectionTitle:
-    "Ключевые микроэлементы и спокойная подача делают продукт сильной премиальной позицией для каталога и запроса.",
-  actionsSectionEyebrow: "Где купить",
-  actionsSectionTitle: "Маркетплейсы дают дополнительный канал доверия и покупки.",
-  detailsEyebrow: "О продукте",
-  detailsTitle: "Описание и характеристики",
-  quickLinksLabel: "Где купить",
-  specs: [
-    { label: "Тип продукта", value: "Орехи" },
-    { label: "Вид орехов", value: "Макадамия" },
-    { label: "Форма", value: "Очищенный" },
-    { label: "Способ обработки", value: "Сырые" },
-    { label: "Вес", value: "250 г" },
-    { label: "Единиц в упаковке", value: "1" },
-    { label: "Состав", value: "Очищенная макадамия 100%" },
-    { label: "Упаковка", value: "Вакуумный пакет" },
-    { label: "Происхождение", value: "Кения" },
-    {
-      label: "Условия хранения",
-      value: "Хранить в сухом месте, вдали от прямых солнечных лучей, в плотно закрытой упаковке после вскрытия",
-    },
-  ],
-});
-
-const extraProducts = [
-  {
-    id: "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg",
-    slug: "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg",
-    status: "active",
-    shortName: "Макадамия в скорлупе с ключом",
-    fullName: "Макадамия в скорлупе с ключом 1 кг",
-    h1: "Орех макадамия в скорлупе с ключом 1 кг",
-    href: "/catalog/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg/",
-    badge: "В наличии",
-    badgeTone: "active",
-    category: "Премиальные орехи",
-    subtitle: "В скорлупе / 1 кг",
-    price: "Цена по запросу",
-    requestText: "Оставить запрос",
-    priceNote: "Стоимость уточняем после обсуждения объёма, формата поставки и текущего наличия партии.",
-    availability: "В наличии",
-    weight: "1 кг",
-    packaging: "Надпиленная скорлупа, ключ в комплекте",
-    composition: "Орех макадамия в скорлупе 100%",
-    catalogDescription:
-      "Натуральная макадамия в скорлупе с мягким сладковатым вкусом. Скорлупа надпилена, ключ в комплекте для удобного раскрытия.",
-    annotation:
-      "Макадамия в скорлупе с ключом, сырой орех 1 кг. Натуральный продукт с мягким сладковатым вкусом. Скорлупа надпилена, ключ в комплекте для удобного раскрытия.",
-    shortDescription:
-      "Орех макадамия в скорлупе с ключом, 1 кг. Натуральный сырой продукт с мягким сладковатым вкусом и приятной хрустящей текстурой ядра. Скорлупа надпилена, поэтому орех удобно открывать ключом из комплекта. Подходит для перекуса, красивой подачи, подарочных наборов и домашней кухни.",
-    fullDescription:
-      "Орех макадамия в скорлупе с ключом - это удобный формат для тех, кто любит натуральный продукт без сложной обработки и ценит эффектную подачу. Скорлупа предварительно надпилена, поэтому орех удобно раскрывать специальным ключом из комплекта. Внутри находится светлое ядро с мягким сливочно-сладковатым вкусом и деликатной хрустящей текстурой. Фасовка 1 кг подходит как для личного потребления, так и для семейного запаса, подарочных наборов, сырных тарелок, десертов и красивой сервировки. Это натуральный продукт без добавления соли, сахара, консервантов и ароматизаторов.",
-    images: {
-      main: macadamiaShellGallery.main,
-      packshot: macadamiaShellGallery.main,
-      lifestyle: macadamiaShellGallery.bowl,
-    },
-    gallery: [
-      {
-        src: macadamiaShellGallery.main,
-        alt: "Орех макадамия в скорлупе с ключом, часть орехов раскрыта, белый фон",
-      },
-      {
-        src: macadamiaShellGallery.macro,
-        alt: "Крупный план раскрытого ореха макадамии с кремовым ядром",
-      },
-      {
-        src: macadamiaShellGallery.bowl,
-        alt: "Макадамия в скорлупе в небольшой керамической миске на светлом фоне",
-      },
-      {
-        src: macadamiaShellGallery.context,
-        alt: "Надпиленные орехи макадамии и ключ крупным планом",
-      },
-    ],
-    pills: ["В скорлупе", "1 кг", "Ключ в комплекте", "Надпиленная скорлупа"],
-    factCards: [
-      { icon: "dot", title: "Форма", text: "В скорлупе" },
-      { icon: "package", title: "Формат", text: "1 кг" },
-      { icon: "scale", title: "Особенности", text: "Надпил и ключ" },
-      { icon: "globe", title: "Состав", text: "100% макадамия" },
-    ],
-    benefitSectionEyebrow: "Польза макадамии в скорлупе",
-    benefitSectionTitle:
-      "Натуральный орех с мягким сливочным вкусом и эффектной подачей для перекуса, сервировки и десертов.",
-    benefitCards: [
-      { code: "01", title: "Эффектная подача", text: "Скорлупа с ключом делает продукт выразительным для витрины и подарочного сценария." },
-      { code: "02", title: "Натуральный формат", text: "Орех остаётся в естественной форме и хорошо подходит для спокойной премиальной подачи." },
-      { code: "03", title: "Удобное раскрытие", text: "Надпил на скорлупе помогает открыть орех без лишних усилий." },
-      { code: "04", title: "Универсальное использование", text: "Подходит для перекуса, сырной тарелки, десертов и домашней сервировки." },
-    ],
-    detailsEyebrow: "О продукте",
-    detailsTitle: "Описание и характеристики",
-    actionsSectionEyebrow: "Следующий шаг",
-    actionsSectionTitle: "Для этой позиции удобнее сразу уточнить наличие, формат поставки и условия запроса.",
-    actionCards: createInternalCtaCards(
-      "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg",
-      "Макадамия в скорлупе с ключом",
-      "Макадамия в скорлупе / 1 кг / ключ в комплекте",
-    ),
-    quickLinksLabel: "Следующий шаг",
-    specs: [
-      { label: "Тип продукта", value: "Орехи" },
-      { label: "Вид орехов", value: "Макадамия" },
-      { label: "Форма", value: "В скорлупе" },
-      { label: "Способ обработки", value: "Сырые" },
-      { label: "Вес", value: "1000 г" },
-      { label: "Единиц в упаковке", value: "1" },
-      { label: "Состав", value: "Орех макадамия в скорлупе 100%" },
-      { label: "Особенности", value: "Надпиленная скорлупа, ключ в комплекте" },
-      {
-        label: "Условия хранения",
-        value: "Хранить в сухом месте, вдали от прямых солнечных лучей, в плотно закрытой упаковке после вскрытия",
-      },
-    ],
-    faq: [
-      {
-        question: "Как открыть орех?",
-        answer: "Используйте ключ из комплекта: вставьте его в надпил на скорлупе и аккуратно поверните.",
-      },
-      {
-        question: "Для чего подходит макадамия в скорлупе?",
-        answer: "Для перекуса, подарочных наборов, сырных тарелок, десертов и красивой сервировки.",
-      },
-      {
-        question: "Как хранить после вскрытия?",
-        answer: "Держите орехи в плотно закрытой упаковке, в сухом и прохладном месте без прямого солнечного света.",
-      },
-    ],
-    seoTitle: "Орех макадамия в скорлупе с ключом 1 кг",
-    seoDescription:
-      "Макадамия в скорлупе с ключом, сырой орех 1 кг. Натуральный продукт без добавок для перекуса, сервировки и десертов.",
-    seoKeywords:
-      "макадамия в скорлупе, макадамия с ключом, орех макадамия 1 кг, макадамия сырой, макадамия купить",
-  },
-  {
-    id: "pekan-ochishchennyy-syroy-500-g",
-    slug: "pekan-ochishchennyy-syroy-500-g",
-    status: "active",
-    shortName: "Пекан очищенный",
-    fullName: "Пекан очищенный 500 г",
-    h1: "Пекан очищенный сырой 500 г",
-    href: "/catalog/pekan-ochishchennyy-syroy-500-g/",
-    badge: "В наличии",
-    badgeTone: "active",
-    category: "Премиальные орехи",
-    subtitle: "Сырой / 500 г",
-    price: "Цена по запросу",
-    requestText: "Оставить запрос",
-    priceNote: "Стоимость и формат поставки уточняем после короткого запроса по нужному объёму.",
-    availability: "В наличии",
-    weight: "500 г",
-    packaging: "Очищенный пекан",
-    composition: "Орех пекан очищенный 100%",
-    catalogDescription:
-      "Очищенный сырой пекан с мягким сливочным вкусом и естественной сладостью. Подходит для перекуса, выпечки, каш и десертов.",
-    annotation:
-      "Пекан очищенный, сырой, 500 г. Мягкий сливочный вкус с естественной сладостью. Подходит для перекуса, выпечки, каш, гранолы, салатов и десертов.",
-    shortDescription:
-      "Очищенный сырой пекан 500 г - удобный формат для домашней кухни, перекуса и выпечки. У пекана мягкий сливочный вкус и естественная сладость, поэтому он отлично подходит для пирогов, печенья, гранолы, каш, салатов и десертов.",
-    fullDescription:
-      "Пекан очищенный 500 г - это натуральный орех без скорлупы и без лишних добавок, который удобно использовать сразу после открытия упаковки. Пекан ценят за мягкий сливочный вкус, деликатную сладость и красивую форму ядра. Он хорошо подходит для перекуса, выпечки, домашней гранолы, каш, салатов, мороженого и десертов. Фасовка 500 г удобна для регулярного домашнего использования и небольших кондитерских задач. Это сырой очищенный пекан без соли, сахара, ароматизаторов и консервантов.",
-    images: {
-      main: pecanGallery.main,
-      packshot: pecanGallery.main,
-      lifestyle: pecanGallery.bowl,
-    },
-    gallery: [
-      { src: pecanGallery.main, alt: "Очищенные орехи пекан крупным планом на белом фоне" },
-      { src: pecanGallery.macro, alt: "Макро нескольких целых половинок пекана" },
-      { src: pecanGallery.bowl, alt: "Пекан в небольшой деревянной миске на светлой поверхности" },
-      { src: pecanGallery.context, alt: "Пекан рядом с гранолой или ингредиентами для выпечки" },
-    ],
-    pills: ["Сырой", "500 г", "Очищенный", "Без добавок"],
-    factCards: [
-      { icon: "dot", title: "Форма", text: "Очищенный" },
-      { icon: "package", title: "Формат", text: "500 г" },
-      { icon: "scale", title: "Вкус", text: "Сливочный и мягкий" },
-      { icon: "globe", title: "Состав", text: "100% пекан" },
-    ],
-    benefitSectionEyebrow: "Польза пекана",
-    benefitSectionTitle:
-      "Мягкий сливочный вкус и деликатная естественная сладость делают пекан сильной позицией для перекуса и выпечки.",
-    benefitCards: [
-      { code: "01", title: "Мягкий вкус", text: "Пекан легко воспринимается в спокойной премиальной витрине и домашней кухне." },
-      { code: "02", title: "Естественная сладость", text: "Орех хорошо работает в десертах и выпечке без лишней агрессии во вкусе." },
-      { code: "03", title: "Готов к использованию", text: "Очищенный формат позволяет использовать продукт сразу после открытия упаковки." },
-      { code: "04", title: "Универсальный сценарий", text: "Подходит для перекуса, каш, гранолы, салатов и десертной подачи." },
-    ],
-    detailsEyebrow: "О продукте",
-    detailsTitle: "Описание и характеристики",
-    actionsSectionEyebrow: "Следующий шаг",
-    actionsSectionTitle: "По пекану удобнее сразу уточнить наличие, формат поставки и условия закупки.",
-    actionCards: createInternalCtaCards(
-      "pekan-ochishchennyy-syroy-500-g",
-      "Пекан очищенный",
-      "Пекан очищенный / сырой / 500 г",
-    ),
-    quickLinksLabel: "Следующий шаг",
-    specs: [
-      { label: "Тип продукта", value: "Орехи" },
-      { label: "Вид орехов", value: "Пекан" },
-      { label: "Форма", value: "Очищенный" },
-      { label: "Способ обработки", value: "Сырые" },
-      { label: "Вес", value: "500 г" },
-      { label: "Единиц в упаковке", value: "1" },
-      { label: "Состав", value: "Орех пекан очищенный 100%" },
-      { label: "Особенности", value: "Мягкий сливочный вкус, подходит для десертов и выпечки" },
-      {
-        label: "Условия хранения",
-        value: "Хранить в сухом прохладном месте, в плотно закрытой упаковке после вскрытия",
-      },
-    ],
-    faq: [
-      {
-        question: "Чем пекан отличается от грецкого ореха?",
-        answer: "У пекана более мягкий сливочный вкус и выраженная естественная сладость.",
-      },
-      {
-        question: "Подходит ли для выпечки?",
-        answer: "Да, пекан отлично подходит для пирогов, печенья, гранолы, каш и десертов.",
-      },
-      {
-        question: "Нужно ли дополнительно обжаривать?",
-        answer: "Не обязательно. Орех можно есть в сыром виде, а лёгкая обжарка лишь усилит аромат.",
-      },
-    ],
-    seoTitle: "Пекан очищенный сырой 500 г",
-    seoDescription:
-      "Очищенный пекан 500 г без обжарки и добавок. Мягкий сливочный вкус, подходит для перекуса, выпечки, каш и десертов.",
-    seoKeywords:
-      "пекан очищенный, пекан сырой 500 г, орех пекан купить, пекан для выпечки, пекан без скорлупы",
-  },
-  {
-    id: "gretskiy-oreh-ochishchennyy-polovinki-1-kg",
-    slug: "gretskiy-oreh-ochishchennyy-polovinki-1-kg",
-    status: "active",
-    shortName: "Грецкий орех половинки",
-    fullName: "Грецкий орех половинки 1 кг",
-    h1: "Грецкий орех очищенный половинки 1 кг",
-    href: "/catalog/gretskiy-oreh-ochishchennyy-polovinki-1-kg/",
-    badge: "В наличии",
-    badgeTone: "active",
-    category: "Премиальные орехи",
-    subtitle: "Половинки / 1 кг",
-    price: "Цена по запросу",
-    requestText: "Оставить запрос",
-    priceNote: "Условия поставки и формат закупки подтверждаем после короткого запроса.",
-    availability: "В наличии",
-    weight: "1 кг",
-    packaging: "Половинки",
-    composition: "Ядро грецкого ореха 100%",
-    catalogDescription:
-      "Очищенные половинки грецкого ореха для перекуса, салатов, каш, выпечки и домашней кухни.",
-    annotation:
-      "Грецкий орех очищенный, половинки, сырой, 1 кг. Натуральный продукт для перекуса, салатов, каш, выпечки и домашней кухни.",
-    shortDescription:
-      "Очищенный грецкий орех половинки 1 кг - удобный формат для дома, кондитерских задач и регулярного использования на кухне. Светлые половинки ореха подходят для перекуса, салатов, каш, выпечки, десертов и соусов.",
-    fullDescription:
-      "Грецкий орех очищенный половинки 1 кг - это натуральный продукт без скорлупы и без лишних добавок, удобный для ежедневного использования в домашней кухне. Формат «половинки» особенно подходит для выпечки, украшения десертов, добавления в салаты, каши, гранолу и соусы. Фасовка 1 кг удобна для семейного запаса, регулярного приготовления и небольшого пищевого производства. Это сырой очищенный грецкий орех без соли, сахара, консервантов и ароматизаторов.",
-    images: {
-      main: walnutGallery.main,
-      packshot: walnutGallery.main,
-      lifestyle: walnutGallery.bowl,
-    },
-    gallery: [
-      { src: walnutGallery.main, alt: "Грецкий орех очищенный половинки на белом фоне" },
-      { src: walnutGallery.macro, alt: "Макро нескольких половинок грецкого ореха" },
-      { src: walnutGallery.bowl, alt: "Небольшая миска с грецким орехом на светлой поверхности" },
-      { src: walnutGallery.context, alt: "Грецкий орех рядом с кашей, салатом или выпечкой" },
-    ],
-    pills: ["Половинки", "1 кг", "Сырой", "Без добавок"],
-    factCards: [
-      { icon: "dot", title: "Форма", text: "Половинки" },
-      { icon: "package", title: "Формат", text: "1 кг" },
-      { icon: "scale", title: "Сценарий", text: "Кухня и выпечка" },
-      { icon: "globe", title: "Состав", text: "100% грецкий орех" },
-    ],
-    benefitSectionEyebrow: "Польза грецкого ореха",
-    benefitSectionTitle:
-      "Формат половинок делает продукт удобным для перекуса, выпечки, подачи и повседневного использования на кухне.",
-    benefitCards: [
-      { code: "01", title: "Формат половинок", text: "Продукт хорошо смотрится в подаче и подходит для аккуратного использования в рецептах." },
-      { code: "02", title: "Повседневная кухня", text: "Удобен для салатов, каш, выпечки, гранолы и соусов без лишней подготовки." },
-      { code: "03", title: "Семейный запас", text: "Фасовка 1 кг рассчитана на регулярное использование дома или в небольшом производстве." },
-      { code: "04", title: "Натуральный состав", text: "Без соли, сахара и ароматизаторов — только очищенный орех в понятном формате." },
-    ],
-    detailsEyebrow: "О продукте",
-    detailsTitle: "Описание и характеристики",
-    actionsSectionEyebrow: "Следующий шаг",
-    actionsSectionTitle: "Для этой позиции удобно сразу обсудить объём, формат поставки и наличие партии.",
-    actionCards: createInternalCtaCards(
-      "gretskiy-oreh-ochishchennyy-polovinki-1-kg",
-      "Грецкий орех половинки",
-      "Грецкий орех / половинки / 1 кг",
-    ),
-    quickLinksLabel: "Следующий шаг",
-    specs: [
-      { label: "Тип продукта", value: "Орехи" },
-      { label: "Вид орехов", value: "Грецкий" },
-      { label: "Форма", value: "Очищенный, половинки" },
-      { label: "Способ обработки", value: "Сырые" },
-      { label: "Вес", value: "1000 г" },
-      { label: "Единиц в упаковке", value: "1" },
-      { label: "Состав", value: "Ядро грецкого ореха 100%" },
-      { label: "Особенности", value: "Формат половинок для перекуса, выпечки и украшения блюд" },
-      { label: "Срок годности", value: "180 дней" },
-      { label: "Температура хранения", value: "от 3 до 25 °C" },
-      { label: "Страна изготовления", value: "Россия" },
-      {
-        label: "Условия хранения",
-        value: "После вскрытия хранить в плотно закрытой упаковке, в сухом месте, вдали от источников тепла и прямого света",
-      },
-    ],
-    faq: [
-      {
-        question: "Это половинки или крошка?",
-        answer: "Карточка рассчитана на формат «половинки», при этом небольшое количество естественного лома допустимо для натурального продукта.",
-      },
-      {
-        question: "Где использовать грецкий орех?",
-        answer: "Для перекуса, салатов, каш, выпечки, десертов, соусов и домашней гранолы.",
-      },
-      {
-        question: "Как хранить после вскрытия?",
-        answer: "В плотно закрытой упаковке, в сухом месте, вдали от источников тепла и прямого света.",
-      },
-    ],
-    seoTitle: "Грецкий орех очищенный половинки 1 кг",
-    seoDescription:
-      "Очищенный грецкий орех половинки, сырой, 1 кг. Для перекуса, выпечки, салатов и домашней кухни.",
-    seoKeywords:
-      "грецкий орех очищенный половинки, грецкий орех 1 кг, грецкий орех сырой, грецкий орех купить, половинки грецкого ореха",
-  },
-  {
-    id: "keshyu-syroy-sushenyy-1-kg",
-    slug: "keshyu-syroy-sushenyy-1-kg",
-    status: "active",
-    shortName: "Кешью сырой сушеный",
-    fullName: "Кешью сырой сушеный 1 кг",
-    h1: "Кешью сырой сушеный 1 кг",
-    href: "/catalog/keshyu-syroy-sushenyy-1-kg/",
-    badge: "В наличии",
-    badgeTone: "active",
-    category: "Премиальные орехи",
-    subtitle: "Сырой сушеный / 1 кг",
-    price: "Цена по запросу",
-    requestText: "Оставить запрос",
-    priceNote: "Стоимость и формат поставки уточняем после обсуждения объёма и условий закупки.",
-    availability: "В наличии",
-    weight: "1 кг",
-    packaging: "Очищенный",
-    composition: "Кешью 100%",
-    catalogDescription:
-      "Цельные светлые ядра с мягким сливочным вкусом. Подходят для перекуса, блюд, десертов, кремов, соусов и растительного молока.",
-    annotation:
-      "Кешью сырой сушеный 1 кг. Цельные светлые ядра с мягким сливочным вкусом. Подходит для перекуса, блюд, десертов, кремов, соусов и растительного молока.",
-    shortDescription:
-      "Кешью сырой сушеный 1 кг - универсальный продукт для перекуса и кухни. Светлые цельные ядра с мягким сливочным вкусом подходят для азиатских блюд, десертов, соусов, кремов, растительного молока, гранолы и домашней выпечки.",
-    fullDescription:
-      "Кешью сырой сушеный 1 кг - это натуральный продукт без обжарки и лишних добавок, удобный как для повседневного перекуса, так и для активного использования в рецептах. У ореха мягкий сливочный вкус и деликатная текстура, поэтому он хорошо подходит для азиатских блюд, салатов, десертов, кремов, соусов, гранолы, домашней выпечки и орехового молока. Фасовка 1 кг удобна для семьи, регулярного использования и небольших производственных задач.",
-    images: {
-      main: cashewGallery.main,
-      packshot: cashewGallery.main,
-      lifestyle: cashewGallery.bowl,
-    },
-    gallery: [
-      { src: cashewGallery.main, alt: "Сырой сушеный кешью россыпью на белом фоне" },
-      { src: cashewGallery.macro, alt: "Макро нескольких орехов кешью" },
-      { src: cashewGallery.bowl, alt: "Кешью в простой миске на светлом фоне" },
-      { src: cashewGallery.context, alt: "Кешью рядом с ингредиентами для соуса или растительного молока" },
-    ],
-    pills: ["Сырой сушеный", "1 кг", "Цельные ядра", "Без обжарки"],
-    factCards: [
-      { icon: "dot", title: "Форма", text: "Очищенный" },
-      { icon: "package", title: "Формат", text: "1 кг" },
-      { icon: "scale", title: "Текстура", text: "Мягкая и сливочная" },
-      { icon: "globe", title: "Состав", text: "100% кешью" },
-    ],
-    benefitSectionEyebrow: "Польза кешью",
-    benefitSectionTitle:
-      "Мягкий сливочный вкус и универсальность делают кешью удобным продуктом и для перекуса, и для активной кухни.",
-    benefitCards: [
-      { code: "01", title: "Универсальный орех", text: "Кешью одинаково уместен в десертах, соусах, кремах и повседневном перекусе." },
-      { code: "02", title: "Мягкий вкус", text: "Светлые цельные ядра легко вписываются в спокойную премиальную витрину." },
-      { code: "03", title: "Подходит для напитков", text: "Сырой формат особенно удобен для растительного молока и кремовых текстур." },
-      { code: "04", title: "Большой объём", text: "Фасовка 1 кг подходит для семьи, кухни и регулярного использования." },
-    ],
-    detailsEyebrow: "О продукте",
-    detailsTitle: "Описание и характеристики",
-    actionsSectionEyebrow: "Следующий шаг",
-    actionsSectionTitle: "По кешью лучше сразу уточнить наличие, формат закупки и подходящий сценарий поставки.",
-    actionCards: createInternalCtaCards(
-      "keshyu-syroy-sushenyy-1-kg",
-      "Кешью сырой сушеный",
-      "Кешью / сырой сушеный / 1 кг",
-    ),
-    quickLinksLabel: "Следующий шаг",
-    specs: [
-      { label: "Тип продукта", value: "Орехи" },
-      { label: "Вид орехов", value: "Кешью" },
-      { label: "Форма", value: "Очищенный" },
-      { label: "Способ обработки", value: "Сырые" },
-      { label: "Дополнительная обработка", value: "Сушеный" },
-      { label: "Вес", value: "1000 г" },
-      { label: "Единиц в упаковке", value: "1" },
-      { label: "Состав", value: "Кешью 100%" },
-      { label: "Упаковка", value: "Пластиковый пакет" },
-      { label: "Срок годности", value: "270 дней" },
-      { label: "Температура хранения", value: "от +5 до +25 °C" },
-      { label: "Страна изготовления", value: "Россия" },
-      { label: "Страна сырья", value: "Вьетнам" },
-      {
-        label: "Условия хранения",
-        value: "После вскрытия хранить в плотно закрытой упаковке, в сухом и прохладном месте, вдали от влаги и прямого солнца",
-      },
-    ],
-    faq: [
-      {
-        question: "Можно ли использовать для растительного молока?",
-        answer: "Да, сырой кешью хорошо подходит для орехового молока, кремов, соусов и десертов.",
-      },
-      {
-        question: "Подходит ли для жарки?",
-        answer: "Да, кешью можно слегка обжарить на сухой сковороде или в духовке, если нужен более яркий вкус.",
-      },
-      {
-        question: "Как хранить после вскрытия?",
-        answer: "В плотно закрытой упаковке, в сухом и прохладном месте, вдали от влаги и прямого солнца.",
-      },
-    ],
-    seoTitle: "Кешью сырой сушеный 1 кг",
-    seoDescription:
-      "Кешью сырой сушеный 1 кг. Натуральный продукт без обжарки и добавок для перекуса, блюд, десертов, кремов и растительного молока.",
-    seoKeywords:
-      "кешью сырой сушеный, кешью 1 кг, кешью сырой, кешью для растительного молока, кешью купить",
-  },
-];
-
-gb.products = [gb.product, ...extraProducts];
-gb.categories = gb.categories.map((item) =>
-  item.name === "Премиальные орехи"
-    ? {
-        ...item,
-        description: "Основной раздел каталога с макадамией, пеканом, грецким орехом и кешью.",
-      }
-    : item,
+const pagesBySlug = new Map(
+  catalogPayload.product_pages.map((item) => [item.product_slug, item]),
 );
+
+const productsFromPack = catalogPayload.products_cards
+  .slice()
+  .sort((a, b) => Number(a.catalog_order) - Number(b.catalog_order))
+  .map((card) => {
+    const page = pagesBySlug.get(card.product_slug) || {};
+    const specs = parseSpecs(page.specifications);
+    const faq = parseFaq(page.faq);
+    const variants = (variantsBySlug.get(card.product_slug) || []).slice();
+    const defaultVariant = variants.find((item) => item.isDefault) || variants[0] || null;
+    const variantType = cleanText(page.variant_type) || defaultVariant?.type || "Вес";
+    const images = {
+      hero: mapCatalogMediaPath(page.cover_image || card.cover_image),
+      packshot: mapCatalogMediaPath(card.cover_image),
+      main: mapCatalogMediaPath(page.cover_image || card.cover_image),
+      lifestyle:
+        card.product_slug === "macadamia"
+          ? "/assets/lifestyle.jpg"
+          : mapCatalogMediaPath(page.detail_image || card.detail_image),
+      poster: "/assets/brand-poster.jpg",
+    };
+    const factCards = buildFactCards(specs, defaultVariant, variantType);
+
+    return {
+      id: cleanText(card.product_slug),
+      slug: cleanText(card.product_slug),
+      status: cleanText(card.status) === "В наличии" ? "active" : "request",
+      shortName: cleanText(card.product_title),
+      fullName: cleanText(page.h1) || cleanText(card.product_title),
+      h1: cleanText(page.h1) || cleanText(card.product_title),
+      href: cleanText(card.product_url),
+      badge: cleanText(card.status) || "В наличии",
+      badgeTone: cleanText(card.status) === "В наличии" ? "active" : "service",
+      category: cleanText(card.category),
+      categorySlug: cleanText(card.category_slug),
+      categoryHref: cleanText(card.category_url),
+      subtitle: cleanText(card.card_subtitle),
+      baseSubtitle: cleanText(card.card_subtitle),
+      defaultVariantLabel: cleanText(page.default_variant) || defaultVariant?.label || "",
+      variantType,
+      variantUiText: defaultVariant?.uiText || "Доступные фасовки",
+      variants,
+      price: "Цена по запросу",
+      requestText: "Уточнить условия",
+      priceNote:
+        "Менеджер уточнит наличие, выбранную фасовку и формат поставки после короткого запроса.",
+      availability: cleanText(card.status) || "В наличии",
+      weight: defaultVariant?.label || findSpecValue(specs, "Вес") || "",
+      packaging: findSpecValue(specs, "Упаковка") || findSpecValue(specs, "Форма") || "",
+      composition: findSpecValue(specs, "Состав") || "",
+      origin: findSpecValue(specs, "Происхождение") || findSpecValue(specs, "Страна сырья") || "",
+      lead: cleanText(card.card_description),
+      catalogDescription: cleanText(card.card_description),
+      annotation: cleanText(page.annotation),
+      shortDescription: cleanText(page.short_description),
+      fullDescription: cleanText(page.full_description),
+      seoTitle: cleanText(page.seo_title) || cleanText(page.h1) || cleanText(card.product_title),
+      seoDescription: cleanText(page.seo_description) || cleanText(card.card_description),
+      seoKeywords: cleanText(page.keywords),
+      detailsEyebrow: "О продукте",
+      detailsTitle: "Описание и характеристики",
+      benefitSectionEyebrow: cleanText(page.benefit_title) || "Польза продукта",
+      benefitSectionTitle:
+        cleanText(page.benefit_subtitle) || cleanText(page.short_description) || cleanText(card.card_description),
+      actionsSectionEyebrow:
+        card.product_slug === "macadamia" ? "Где купить" : "Следующий шаг",
+      actionsSectionTitle:
+        card.product_slug === "macadamia"
+          ? "Маркетплейсы дают дополнительный канал доверия и покупки."
+          : "Уточните наличие, фасовку и следующий шаг по выбранному варианту.",
+      quickLinksLabel: card.product_slug === "macadamia" ? "Где купить" : "Следующий шаг",
+      actionMode: card.product_slug === "macadamia" ? "marketplace-default" : "request",
+      images,
+      gallery: [
+        {
+          src: mapCatalogMediaPath(card.cover_image),
+          alt: `${cleanText(card.product_title)} — основное изображение товара Global Basket`,
+        },
+        {
+          src: mapCatalogMediaPath(page.detail_image || card.detail_image),
+          alt: `${cleanText(card.product_title)} — дополнительный вид товара Global Basket`,
+        },
+      ],
+      pills: buildPills(card, specs, defaultVariant),
+      factCards,
+      benefitCards: buildBenefitCards(factCards, card, page),
+      specs,
+      faq,
+    };
+  });
+
+const productCountByCategory = new Map();
+productsFromPack.forEach((item) => {
+  productCountByCategory.set(item.categorySlug, (productCountByCategory.get(item.categorySlug) || 0) + 1);
+});
+
+const categoriesFromPack = catalogPayload.categories
+  .slice()
+  .sort((a, b) => Number(a.catalog_order) - Number(b.catalog_order))
+  .map((item) => ({
+    id: cleanText(item.category_slug),
+    name: cleanText(item.category_title),
+    title: cleanText(item.category_title),
+    description: cleanText(item.card_description),
+    intro: cleanText(item.page_intro),
+    href: cleanText(item.category_url),
+    status: cleanText(item.status) === "В наличии" ? "active" : "request",
+    statusLabel: cleanText(item.status) || "В наличии",
+    badge: "Раздел",
+    tone: categoryTone(item.category_slug),
+    image: mapCatalogMediaPath(item.cover_image),
+    productCount: productCountByCategory.get(item.category_slug) || 0,
+  }));
+
+const primaryProduct = productsFromPack.find((item) => item.slug === "macadamia") || productsFromPack[0];
+if (primaryProduct) {
+  gb.product = { ...gb.product, ...primaryProduct };
+}
+
+gb.products = productsFromPack;
+gb.categories = categoriesFromPack;
 gb.catalogPage.intro =
-  "В каталоге собраны товары в наличии и ближайшие направления бренда, чтобы путь от выбора к запросу оставался простым и понятным.";
+  "В каталоге собраны 11 товарных позиций и 4 реальные категории с понятным переходом к детальным страницам и запросу условий.";
+gb.catalogPage.sorts = [
+  { value: "featured", label: "Сначала по каталогу" },
+  { value: "available", label: "Сначала товары" },
+  { value: "sections", label: "Сначала разделы" },
+];

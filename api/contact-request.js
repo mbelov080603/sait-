@@ -247,6 +247,7 @@ const buildTelegramMessage = (payload, requestId) => {
     "<b>Товар и контекст</b>",
     line("Товар", product.name),
     line("Категория", product.category),
+    line("Вариант", product.variant),
     line("Landing URL", context.landingUrl),
     line("Referrer", context.referrer),
     line("Session ID", context.sessionId),

@@ -3,6 +3,7 @@ const products =
   Array.isArray(store.products) && store.products.length
     ? store.products
     : [store.product].filter(Boolean);
+const categories = Array.isArray(store.categories) ? store.categories : [];
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -20,7 +21,12 @@ const isProductActive = (item) =>
   Boolean(item) &&
   (item.status === "active" || item.availability === "В наличии" || item.badgeTone === "active");
 
+const isCategoryActive = (item) =>
+  Boolean(item) && (item.status === "active" || item.statusLabel === "В наличии");
+
 const featuredProduct = products.find(isProductActive) || products[0] || store.product;
+const activeProducts = products.filter(isProductActive);
+const activeCategories = categories.filter(isCategoryActive);
 
 const productIndex = new Map();
 products.forEach((item) => {
@@ -31,6 +37,7 @@ products.forEach((item) => {
 });
 
 const normalizeProductKey = (value = "") => String(value).trim().replace(/^\/+|\/+$/g, "");
+const normalizeLookupValue = (value = "") => String(value).trim().replace(/^\/+|\/+$/g, "");
 
 const findProduct = (value = "") => {
   const normalized = normalizeProductKey(value);
@@ -61,21 +68,216 @@ const resolveProductFromLocation = () => {
 };
 
 const product = resolveProductFromLocation();
-const activeProducts = products.filter(isProductActive);
+const categoryIndex = new Map();
+categories.forEach((item) => {
+  if (!item) return;
+  [item.id, item.slug, item.href].filter(Boolean).forEach((key) => {
+    categoryIndex.set(String(key), item);
+  });
+});
 
-const buildContactHref = (productItem, source = "catalog-card") => {
+const findCategory = (value = "") => {
+  const normalized = normalizeLookupValue(value);
+  if (!normalized) return null;
+  return (
+    categoryIndex.get(normalized) ||
+    categoryIndex.get(`/${normalized}/`) ||
+    categoryIndex.get(`/categories/${normalized}/`) ||
+    null
+  );
+};
+
+const resolveCategoryFromLocation = () => {
+  const bodyCategory = document.body.dataset.category;
+  if (bodyCategory) {
+    const bodyMatch = findCategory(bodyCategory);
+    if (bodyMatch) return bodyMatch;
+  }
+
+  if (document.body.dataset.page === "category") {
+    const segments = window.location.pathname.split("/").filter(Boolean);
+    const slug = segments[segments[0] === "categories" ? 1 : segments.length - 1];
+    const pathMatch = findCategory(slug);
+    if (pathMatch) return pathMatch;
+  }
+
+  return categories[0] || null;
+};
+
+const currentCategory = resolveCategoryFromLocation();
+
+const buildContactHref = (productItem, source = "catalog-card", variant = null) => {
   const params = new URLSearchParams();
   params.set("source", source);
   if (productItem?.slug || productItem?.id) {
     params.set("product", productItem.slug || productItem.id);
   }
+  const variantLabel =
+    typeof variant === "string"
+      ? variant
+      : variant?.label || variant?.value || "";
+  if (variantLabel) {
+    params.set("variant", variantLabel);
+  }
   return `/contacts/?${params.toString()}`;
 };
 
-const productCtaCards = (productItem) => productItem.actionCards || store.marketplaces;
+const buildCategoryContactHref = (categoryItem, source = "category-page") => {
+  const params = new URLSearchParams();
+  params.set("source", source);
+  if (categoryItem?.id) params.set("category", categoryItem.id);
+  return `/contacts/?${params.toString()}`;
+};
 
-const productQuickLinks = (productItem) =>
-  productCtaCards(productItem).map((item) => ({
+const normalizeVariantText = (value = "") => String(value).trim().toLowerCase();
+
+const resolveProductVariant = (productItem, preferredVariant = "") => {
+  const variants = Array.isArray(productItem?.variants) ? productItem.variants : [];
+  if (!variants.length) return null;
+
+  const queryValue = normalizeVariantText(preferredVariant);
+  if (queryValue) {
+    const matchedVariant = variants.find((item) =>
+      [item.label, item.value, item.ctaParam]
+        .filter(Boolean)
+        .some((candidate) => normalizeVariantText(candidate) === queryValue),
+    );
+    if (matchedVariant) return matchedVariant;
+  }
+
+  return variants.find((item) => item.isDefault) || variants[0] || null;
+};
+
+const buildVariantSubtitle = (productItem, variant) => {
+  if (!variant) return productItem.subtitle;
+
+  const base = String(productItem.baseSubtitle || productItem.subtitle || "").trim();
+  const defaultLabel = String(productItem.defaultVariantLabel || "").trim();
+  const label = String(variant.label || "").trim();
+
+  if (!base) return label;
+  if (!label) return base;
+  if (defaultLabel && base.includes(defaultLabel)) return base.replace(defaultLabel, label);
+  if (base.includes(label)) return base;
+  return `${base} / ${label}`;
+};
+
+const updatePillsForVariant = (productItem, variant) => {
+  const pills = Array.isArray(productItem.pills) ? [...productItem.pills] : [];
+  if (!variant || !pills.length) return pills;
+
+  const defaultLabel = String(productItem.defaultVariantLabel || "").trim();
+  const label = String(variant.label || "").trim();
+  if (!label) return pills;
+
+  return pills.map((item, index) => {
+    if (defaultLabel && item === defaultLabel) return label;
+    if (!defaultLabel && index === 0 && productItem.variantType) return label;
+    return item;
+  });
+};
+
+const updateFactCardsForVariant = (productItem, variant) => {
+  const cards = Array.isArray(productItem.factCards) ? productItem.factCards : [];
+  if (!variant || !cards.length) return cards;
+
+  return cards.map((item, index) =>
+    index === 0 &&
+    item.title &&
+    productItem.variantType &&
+    normalizeVariantText(item.title) === normalizeVariantText(productItem.variantType)
+      ? { ...item, text: variant.label }
+      : item,
+  );
+};
+
+const renderVariantPicker = (productItem, selectedVariant) => {
+  const variants = Array.isArray(productItem?.variants) ? productItem.variants : [];
+  if (variants.length < 2) return "";
+
+  return `
+    <div class="variant-picker" data-variant-picker>
+      <div class="variant-picker__head">
+        <span class="variant-picker__label">${productItem.variantUiText || productItem.variantType || "Доступные фасовки"}</span>
+        <span class="variant-picker__current">${selectedVariant?.label || productItem.defaultVariantLabel || ""}</span>
+      </div>
+      <div class="variant-picker__chips" role="listbox" aria-label="${productItem.variantUiText || productItem.variantType || "Варианты"}">
+        ${variants
+          .map(
+            (variant) => `
+              <button
+                type="button"
+                class="variant-chip ${selectedVariant?.label === variant.label ? "is-active" : ""} ${variant.status === "request" ? "is-request" : ""}"
+                data-variant-choice
+                data-variant-label="${escapeAttribute(variant.label)}"
+                aria-pressed="${selectedVariant?.label === variant.label ? "true" : "false"}"
+              >
+                <span>${variant.label}</span>
+                ${variant.status === "request" ? '<small>под запрос</small>' : ""}
+              </button>
+            `,
+          )
+          .join("")}
+      </div>
+    </div>
+  `;
+};
+
+const createRequestActionCards = (productItem, selectedVariant) => {
+  const descriptor = buildVariantSubtitle(productItem, selectedVariant);
+  return [
+    {
+      name: "Уточнить наличие",
+      badge: "Следующий шаг",
+      tone: "service",
+      bullets: [
+        descriptor,
+        "Подскажем по текущему наличию и подтверждённой фасовке.",
+        "Менеджер уточнит объём, формат поставки и следующий шаг по запросу.",
+      ],
+      cta: "Уточнить наличие",
+      href: buildContactHref(productItem, "pdp-availability", selectedVariant),
+    },
+    {
+      name: "Оставить запрос",
+      badge: "Запрос",
+      tone: "service",
+      bullets: [
+        `Добавьте ${productItem.shortName.toLowerCase()} в заявку с нужной фасовкой.`,
+        "Подтвердим условия по выбранному варианту и формату поставки.",
+        "Telegram остаётся резервным каналом, основная логика остаётся в форме запроса.",
+      ],
+      cta: "Оставить запрос",
+      href: buildContactHref(productItem, "pdp-request", selectedVariant),
+    },
+    {
+      name: "Telegram",
+      badge: "Резервный канал",
+      tone: "editorial",
+      bullets: [
+        "Если вопрос срочный, можно написать напрямую в Telegram-бот Global Basket.",
+        "Этот сценарий остаётся запасным и не заменяет запрос через форму.",
+      ],
+      cta: "Написать в Telegram",
+      href: store.contact.telegramHref,
+    },
+  ];
+};
+
+const productCtaCards = (productItem, selectedVariant = null) => {
+  if (productItem.actionMode === "marketplace-default") {
+    const defaultVariant = resolveProductVariant(productItem);
+    if (selectedVariant?.label && defaultVariant?.label !== selectedVariant.label) {
+      return createRequestActionCards(productItem, selectedVariant);
+    }
+    return store.marketplaces;
+  }
+
+  return createRequestActionCards(productItem, selectedVariant || resolveProductVariant(productItem));
+};
+
+const productQuickLinks = (productItem, selectedVariant = null) =>
+  productCtaCards(productItem, selectedVariant).map((item) => ({
     label: item.name,
     href: item.href,
   }));
@@ -332,6 +534,11 @@ const renderTrustCard = (item) => `
 
 const renderCategoryCard = (item) => `
   <article class="category-card ${item.status === "coming" ? "category-card--coming" : ""}">
+    ${
+      item.image
+        ? `<a class="category-card__media" href="${item.href || "#"}"><img src="${item.image}" alt="${item.name}" loading="lazy" decoding="async" /></a>`
+        : ""
+    }
     ${renderBadge(item.statusLabel, item.status)}
     <h3>${item.href ? `<a href="${item.href}">${item.name}</a>` : item.name}</h3>
     <p>${item.description}</p>
@@ -352,6 +559,11 @@ const renderAdvantageCard = (item) => `
 
 const renderSectionCard = (item) => `
   <article class="section-card ${item.status === "coming" ? "section-card--muted" : ""}">
+    ${
+      item.image
+        ? `<a class="section-card__media" href="${item.href || "#"}"><img src="${item.image}" alt="${item.title || item.name}" loading="lazy" decoding="async" /></a>`
+        : ""
+    }
     ${renderBadge(item.badge || item.statusLabel, item.tone || item.status || "service")}
     <h3>${item.href ? `<a href="${item.href}">${item.title || item.name}</a>` : item.title || item.name}</h3>
     <p>${item.description}</p>
@@ -390,8 +602,8 @@ const formatCatalogCount = (count) => {
   return `${count} позиций`;
 };
 
-const renderEnterpriseProductCard = (productItem = product, featured = false) => `
-  <article class="product-card ${featured ? "product-card--featured" : ""}">
+const renderEnterpriseProductCard = (productItem = product) => `
+  <article class="product-card">
     <div class="product-card__top">
       ${renderBadge(productItem.badge, productItem.badgeTone)}
     </div>
@@ -434,6 +646,7 @@ const renderLeadRequestForm = (config, context = {}) => {
     product_id: context.productId || product.id,
     product_name: context.productName || product.fullName,
     product_category: context.productCategory || product.category,
+    product_variant: context.productVariant || "",
     lead_channel_origin: "site",
     marketplace_interest: context.marketplaceInterest || "",
     crm_status_seed: "new",
@@ -630,6 +843,7 @@ const renderContactQuoteForm = (config, context = {}) => {
     product_id: context.productId || product.id,
     product_name: context.productName || product.fullName,
     product_category: context.productCategory || product.category,
+    product_variant: context.productVariant || "",
     lead_channel_origin: "site",
     marketplace_interest: context.marketplaceInterest || "",
     crm_status_seed: "new",
@@ -918,9 +1132,8 @@ const renderHome = () => {
 };
 
 const buildCatalogItems = () => {
-  const upcoming = store.categories.filter((item) => item.status === "coming");
   return [
-    ...activeProducts.map((item, index) => ({
+    ...activeProducts.map((item) => ({
       type: "product",
       title: item.shortName,
       keywords: [
@@ -941,15 +1154,15 @@ const buildCatalogItems = () => {
       ]
         .filter(Boolean)
         .join(" "),
-      html: renderEnterpriseProductCard(item, index === 0),
+      html: renderEnterpriseProductCard(item),
       status: "active",
     })),
-    ...upcoming.map((item) => ({
+    ...activeCategories.map((item) => ({
       type: "section",
       title: item.name,
-      keywords: `${item.name} ${item.description} ${item.statusLabel}`,
+      keywords: `${item.name} ${item.description} ${item.intro || ""} ${item.statusLabel}`,
       html: renderSectionCard(item),
-      status: "coming",
+      status: "active",
     })),
   ];
 };
@@ -1047,6 +1260,9 @@ const renderProductPage = () => {
   const productItem = product;
   if (!productItem) return;
 
+  const params = new URLSearchParams(window.location.search);
+  let selectedVariant = resolveProductVariant(productItem, params.get("variant") || "");
+
   document.title = `Global Basket | ${productItem.seoTitle || productItem.h1 || productItem.shortName}`;
   ensureMetaTag("description").setAttribute(
     "content",
@@ -1080,17 +1296,52 @@ const renderProductPage = () => {
   }
 
   const summary = $("#product-summary");
-  if (summary) {
-    summary.innerHTML = `
+  const actionsEyebrow = $("#product-actions-eyebrow");
+  const actionsTitle = $("#product-actions-title");
+  const marketplaces = $("#product-marketplaces");
+
+  const updateActionSection = (variant) => {
+    const useMarketplaceMode =
+      productItem.actionMode === "marketplace-default" &&
+      (!variant || variant.label === resolveProductVariant(productItem)?.label);
+
+    if (actionsEyebrow) {
+      actionsEyebrow.textContent = useMarketplaceMode
+        ? productItem.actionsSectionEyebrow || "Где купить"
+        : "Следующий шаг";
+    }
+
+    if (actionsTitle) {
+      actionsTitle.textContent = useMarketplaceMode
+        ? productItem.actionsSectionTitle || "Маркетплейсы дают дополнительный канал доверия и покупки."
+        : "Уточните наличие, фасовку и следующий шаг по выбранному варианту.";
+    }
+
+    if (marketplaces) {
+      marketplaces.innerHTML = productCtaCards(productItem, variant).map(renderMarketplaceCard).join("");
+    }
+  };
+
+  const renderSummary = (variant) => {
+    const subtitle = buildVariantSubtitle(productItem, variant);
+    const pills = updatePillsForVariant(productItem, variant);
+    const factCards = updateFactCardsForVariant(productItem, variant);
+    const variantNote =
+      variant && variant.status === "request"
+        ? `Фасовка ${variant.label} доступна по запросу. Менеджер подтвердит наличие и формат поставки.`
+        : productItem.priceNote;
+
+    return `
       ${renderBadge(productItem.badge, productItem.badgeTone)}
       <h1>${productItem.h1 || productItem.shortName}</h1>
-      <p class="product-summary__subtitle">${productItem.subtitle}</p>
+      <p class="product-summary__subtitle">${subtitle}</p>
       <p class="product-page__lead">${productItem.annotation || productItem.lead}</p>
+      ${renderVariantPicker(productItem, variant)}
       <ul class="hero-product__pills hero-product__pills--summary">
-        ${productItem.pills.map((item) => `<li>${item}</li>`).join("")}
+        ${pills.map((item) => `<li>${item}</li>`).join("")}
       </ul>
       <dl class="summary-facts">
-        ${productItem.factCards
+        ${factCards
           .map(
             (item) => `
               <div>
@@ -1105,20 +1356,43 @@ const renderProductPage = () => {
         <div>
           <span class="purchase-panel__label">Стоимость</span>
           <strong>${productItem.price}</strong>
-          <p>${productItem.priceNote}</p>
+          <p>${variantNote}</p>
         </div>
         <div class="purchase-panel__actions">
-          <a class="button" href="${buildContactHref(productItem, "pdp")}">Уточнить условия</a>
+          <a class="button" href="${buildContactHref(productItem, "pdp", variant)}">Уточнить условия</a>
           <a class="text-link text-link--inline" href="/catalog/">Вернуться в каталог</a>
         </div>
       </div>
       <div class="market-links market-links--summary">
-        <span>${productItem.quickLinksLabel || "Где купить"}:</span>
-        ${productQuickLinks(productItem)
+        <span>${productItem.actionMode === "marketplace-default" && (!variant || variant.label === resolveProductVariant(productItem)?.label) ? productItem.quickLinksLabel || "Где купить" : "Следующий шаг"}:</span>
+        ${productQuickLinks(productItem, variant)
           .map((item) => `<a href="${item.href}"${externalAttrs(item.href)}>${item.label}</a>`)
           .join("")}
       </div>
     `;
+  };
+
+  const bindVariantChoices = () => {
+    $$("[data-variant-choice]", summary).forEach((button) => {
+      button.addEventListener("click", () => {
+        const nextVariant = resolveProductVariant(productItem, button.dataset.variantLabel);
+        if (!nextVariant) return;
+        selectedVariant = nextVariant;
+        const nextUrl = new URL(window.location.href);
+        nextUrl.searchParams.set("variant", nextVariant.label);
+        window.history.replaceState(null, "", nextUrl);
+        if (summary) {
+          summary.innerHTML = renderSummary(selectedVariant);
+          bindVariantChoices();
+        }
+        updateActionSection(selectedVariant);
+      });
+    });
+  };
+
+  if (summary) {
+    summary.innerHTML = renderSummary(selectedVariant);
+    bindVariantChoices();
   }
 
   const details = $("#product-details");
@@ -1161,22 +1435,7 @@ const renderProductPage = () => {
     benefits.innerHTML = productItem.benefitCards.map(renderBenefitCard).join("");
   }
 
-  const actionsEyebrow = $("#product-actions-eyebrow");
-  if (actionsEyebrow) {
-    actionsEyebrow.textContent = productItem.actionsSectionEyebrow || "Следующий шаг";
-  }
-
-  const actionsTitle = $("#product-actions-title");
-  if (actionsTitle) {
-    actionsTitle.textContent =
-      productItem.actionsSectionTitle ||
-      "Уточните наличие, формат поставки и следующий шаг по этой позиции.";
-  }
-
-  const marketplaces = $("#product-marketplaces");
-  if (marketplaces) {
-    marketplaces.innerHTML = productCtaCards(productItem).map(renderMarketplaceCard).join("");
-  }
+  updateActionSection(selectedVariant);
 
   const faq = $("#product-faq");
   if (faq) {
@@ -1199,6 +1458,10 @@ const renderProductPage = () => {
 const renderContactsPage = () => {
   const params = new URLSearchParams(window.location.search);
   const requestedSource = params.get("source") || "contacts-page";
+  const requestedProduct = findProduct(params.get("product") || "");
+  const requestedVariant = requestedProduct
+    ? resolveProductVariant(requestedProduct, params.get("variant") || "")
+    : null;
   const [retailCard, wholesaleCard, marketplacesCard, telegramCard] = store.contactsPage.leftCards;
   const intro = $("#contacts-intro");
   if (intro) {
@@ -1312,6 +1575,10 @@ const renderContactsPage = () => {
         ${renderContactQuoteForm(store.contactsPage.quoteForm, {
           source: requestedSource,
           page: "contacts",
+          productId: requestedProduct?.id || product.id,
+          productName: requestedProduct?.fullName || product.fullName,
+          productCategory: requestedProduct?.category || product.category,
+          productVariant: requestedVariant?.label || "",
         })}
         <details class="request-panel request-panel--compact request-panel--secondary contact-fallback-panel">
           <summary class="contact-fallback-panel__summary">
@@ -1910,10 +2177,35 @@ const renderDeliveryPage = () => {
 };
 
 const renderCategoryPage = () => {
+  const category = currentCategory;
+  if (!category) return;
+
+  document.title = `Global Basket | ${category.title || category.name}`;
+  ensureMetaTag("description").setAttribute(
+    "content",
+    category.intro || category.description || "",
+  );
+
+  const breadcrumbCurrent = $("#category-breadcrumb-current");
+  if (breadcrumbCurrent) {
+    breadcrumbCurrent.textContent = category.title || category.name;
+  }
+
+  const title = $("#category-title");
+  if (title) {
+    title.textContent = category.title || category.name;
+  }
+
+  const description = $("#category-description");
+  if (description) {
+    description.textContent = category.intro || category.description || "";
+  }
+
   const intro = $("#category-intro-cards");
   if (intro) {
     intro.innerHTML = `
-      ${store.categories
+      ${categories
+        .filter((item) => item.id !== category.id)
         .map((item) =>
           item.href ? renderSectionCard(item) : renderSectionCard(item),
         )
@@ -1923,16 +2215,35 @@ const renderCategoryPage = () => {
 
   const shelf = $("#category-shelf");
   if (shelf) {
-    shelf.innerHTML = renderEnterpriseProductCard(featuredProduct, true);
+    shelf.innerHTML = `
+      <article class="category-spotlight">
+        <div class="category-spotlight__media">
+          <img src="${category.image}" alt="${category.title || category.name}" loading="lazy" decoding="async" />
+        </div>
+        <div class="category-spotlight__body">
+          <p class="eyebrow">Раздел каталога</p>
+          <h2>${category.title || category.name}</h2>
+          <p>${category.intro || category.description || ""}</p>
+          <div class="market-links">
+            <span>В разделе:</span>
+            <span>${formatCatalogCount(category.productCount || 0)}</span>
+          </div>
+          <div class="hero-stage__actions">
+            <a class="button" href="${buildCategoryContactHref(category, "category-page")}">Уточнить условия</a>
+            <a class="text-link text-link--inline" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>Написать в Telegram</a>
+          </div>
+        </div>
+      </article>
+    `;
   }
 
   const related = $("#category-related");
   if (related) {
-    const relatedProducts = activeProducts.filter((item) => item.slug !== featuredProduct.slug);
+    const relatedProducts = activeProducts.filter((item) => item.categorySlug === category.id);
     related.innerHTML = `
       <div class="section-head">
         <p class="eyebrow">В наличии</p>
-        <h2>Ещё товары раздела «Премиальные орехи».</h2>
+        <h2>Товары раздела «${category.title || category.name}».</h2>
       </div>
       <div class="catalog-grid">
         ${relatedProducts.map((item) => renderEnterpriseProductCard(item)).join("")}
@@ -2142,14 +2453,14 @@ const applyCatalogToolbarState = () => {
       if (!query) return true;
       return matchesCatalogSearch(entry, query, scope);
     });
-    if (filter === "active") items = items.filter((item) => item.status === "active");
+    if (filter === "active") items = items.filter((item) => item.type === "product");
     if (filter === "sections") items = items.filter((item) => item.type === "section");
 
     if (sort === "available") {
       items = items.sort((a, b) => (a.status === "active" ? -1 : 1) - (b.status === "active" ? -1 : 1));
     }
-    if (sort === "coming") {
-      items = items.sort((a, b) => (a.status === "coming" ? -1 : 1) - (b.status === "coming" ? -1 : 1));
+    if (sort === "sections") {
+      items = items.sort((a, b) => (a.type === "section" ? -1 : 1) - (b.type === "section" ? -1 : 1));
     }
 
     grid.innerHTML = items.length
@@ -2367,6 +2678,7 @@ const buildLeadPayload = (form) => {
       id: (data.get("product_id") || "").toString().trim(),
       name: (data.get("product_name") || "").toString().trim(),
       category: (data.get("product_category") || "").toString().trim(),
+      variant: (data.get("product_variant") || "").toString().trim(),
       marketplaceInterest: (data.get("marketplace_interest") || "").toString().trim(),
     },
     order: {
@@ -2447,6 +2759,7 @@ const buildLeadMailto = (payload) => {
     `URL: ${payload.context.landingUrl}`,
     `Продукт: ${payload.product.name}`,
     `Категория: ${payload.product.category}`,
+    payload.product?.variant ? `Вариант: ${payload.product.variant}` : "",
     `Session ID: ${payload.context.sessionId}`,
     payload.utm.source ? `UTM Source: ${payload.utm.source}` : "",
     payload.utm.medium ? `UTM Medium: ${payload.utm.medium}` : "",
