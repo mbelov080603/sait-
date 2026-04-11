@@ -1,4 +1,5 @@
 const { callTelegram, escapeHtml } = require("./_lib/telegram");
+const { resolveDistanceFromMoscow } = require("./_lib/geocode");
 
 let localRuntimeConfig = {};
 try {
@@ -8,6 +9,7 @@ try {
 }
 
 const MAX_MESSAGE_LENGTH = 3900;
+const CONTACT_BASE_PRICE_PER_KG = 700;
 
 const json = (res, status, payload) => {
   res.statusCode = status;
@@ -38,6 +40,51 @@ const normalizePositiveNumber = (value) => {
   const parsed = Number.parseFloat(String(value ?? "").replace(",", "."));
   if (!Number.isFinite(parsed) || parsed < 0) return 0;
   return parsed;
+};
+
+const getDiscountRate = (quantityKg) => {
+  if (quantityKg >= 1000) return 0.2;
+  if (quantityKg >= 500) return 0.15;
+  if (quantityKg >= 100) return 0.1;
+  return 0;
+};
+
+const getDistanceBlocks = (distanceKm) => Math.floor(normalizePositiveNumber(distanceKm) / 1000);
+
+const calculateContactQuote = ({
+  quantityKg,
+  distanceKm,
+  basePricePerKg = CONTACT_BASE_PRICE_PER_KG,
+}) => {
+  const normalizedQuantity = normalizePositiveNumber(quantityKg);
+  const normalizedDistance = normalizePositiveNumber(distanceKm);
+  const discountRate = getDiscountRate(normalizedQuantity);
+  const distanceBlocks1000 = getDistanceBlocks(normalizedDistance);
+  const distanceMarkupRate = distanceBlocks1000 * 0.05;
+  const subtotalBase = normalizedQuantity * basePricePerKg;
+  const subtotalAfterDiscount = subtotalBase * (1 - discountRate);
+  const totalEstimate = subtotalAfterDiscount * (1 + distanceMarkupRate);
+  const estimatedPricePerKg = normalizedQuantity ? totalEstimate / normalizedQuantity : 0;
+
+  return {
+    quantityKg: normalizedQuantity,
+    distanceKm: normalizedDistance,
+    basePricePerKg,
+    discountRate,
+    distanceBlocks1000,
+    distanceMarkupRate,
+    subtotalBase,
+    subtotalAfterDiscount,
+    totalEstimate,
+    estimatedPricePerKg,
+  };
+};
+
+const resolvePreferredContactKey = (value = "") => {
+  const normalized = String(value).trim().toLowerCase();
+  if (normalized === "email") return "email";
+  if (normalized === "telegram") return "telegram";
+  return "phone";
 };
 
 const formatRub = (value = 0) =>
@@ -83,9 +130,28 @@ const validatePayload = (payload = {}) => {
   const delivery = payload.delivery || {};
   const order = payload.order || {};
 
+  const preferredContact = resolvePreferredContactKey(lead.preferredContact);
+  const hasPhone = Boolean(String(lead.phone || "").trim());
+  const hasEmail = Boolean(String(lead.email || "").trim());
+  const hasTelegram = Boolean(String(lead.telegramUsername || "").trim());
+
   if (!lead.name) errors.push("Укажите имя");
-  if (!lead.phone) errors.push("Укажите телефон");
   if (!lead.consent) errors.push("Нужно согласие на обработку данных");
+  if (!hasPhone && !hasEmail && !hasTelegram) {
+    errors.push("Укажите хотя бы один контактный канал");
+  }
+
+  if (preferredContact === "email" && !hasEmail) {
+    errors.push("Укажите email");
+  }
+
+  if (preferredContact === "telegram" && !hasTelegram) {
+    errors.push("Укажите Telegram username");
+  }
+
+  if (preferredContact === "phone" && !hasPhone) {
+    errors.push("Укажите телефон");
+  }
 
   const isQuoteRequest =
     payload.context?.page === "contacts" ||
@@ -207,6 +273,43 @@ module.exports = async (req, res) => {
 
   try {
     const payload = parseJsonBody(req);
+    const delivery = payload.delivery || {};
+    const order = payload.order || {};
+    const pricing = payload.pricing || {};
+
+    if (delivery.address) {
+      try {
+        const resolvedDistance = await resolveDistanceFromMoscow(delivery.address);
+        if (resolvedDistance && Number.isFinite(resolvedDistance.distanceKm)) {
+          delivery.distanceKm = resolvedDistance.distanceKm;
+          delivery.distanceBlocks1000 = getDistanceBlocks(resolvedDistance.distanceKm);
+          delivery.resolvedAddress = resolvedDistance.displayName;
+
+          const recalculatedQuote = calculateContactQuote({
+            quantityKg: order.quantityKg,
+            distanceKm: resolvedDistance.distanceKm,
+            basePricePerKg: pricing.basePricePerKg || CONTACT_BASE_PRICE_PER_KG,
+          });
+
+          payload.pricing = {
+            ...pricing,
+            basePricePerKg: recalculatedQuote.basePricePerKg,
+            discountRate: recalculatedQuote.discountRate,
+            discountTier: `${Math.round(recalculatedQuote.discountRate * 100)}%`,
+            distanceMarkupRate: recalculatedQuote.distanceMarkupRate,
+            subtotalBase: recalculatedQuote.subtotalBase,
+            subtotalAfterDiscount: recalculatedQuote.subtotalAfterDiscount,
+            totalEstimate: recalculatedQuote.totalEstimate,
+            estimatedPricePerKg: recalculatedQuote.estimatedPricePerKg,
+            currency: pricing.currency || "RUB",
+            isEstimate: true,
+          };
+        }
+      } catch (error) {
+        console.error("contact-request distance resolve failed", error);
+      }
+    }
+
     const errors = validatePayload(payload);
 
     if (errors.length) {

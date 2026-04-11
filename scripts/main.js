@@ -435,6 +435,8 @@ const renderLeadRequestForm = (config, context = {}) => {
 };
 
 const CONTACT_BASE_PRICE_PER_KG = 700;
+const DISTANCE_LOOKUP_DEBOUNCE_MS = 550;
+const distanceLookupCache = new Map();
 
 const formatRub = (value = 0) =>
   new Intl.NumberFormat("ru-RU", {
@@ -447,6 +449,48 @@ const normalizePositiveNumber = (value) => {
   const parsed = Number.parseFloat(String(value ?? "").replace(",", "."));
   if (!Number.isFinite(parsed) || parsed < 0) return 0;
   return parsed;
+};
+
+const parseOptionalPositiveNumber = (value) => {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  const parsed = Number.parseFloat(raw.replace(",", "."));
+  if (!Number.isFinite(parsed) || parsed < 0) return null;
+  return parsed;
+};
+
+const requestDistanceFromMoscow = async (address) => {
+  const query = String(address || "").trim();
+  if (!query) return null;
+
+  const cacheKey = query.toLowerCase();
+  if (distanceLookupCache.has(cacheKey)) {
+    return distanceLookupCache.get(cacheKey);
+  }
+
+  const request = fetch(`/api/distance-from-moscow?address=${encodeURIComponent(query)}`, {
+    headers: {
+      accept: "application/json",
+    },
+  }).then(async (response) => {
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.ok) {
+      throw new Error(
+        data.message || "Не удалось определить расстояние автоматически. Менеджер уточнит его вручную.",
+      );
+    }
+
+    return data;
+  });
+
+  distanceLookupCache.set(cacheKey, request);
+
+  try {
+    return await request;
+  } catch (error) {
+    distanceLookupCache.delete(cacheKey);
+    throw error;
+  }
 };
 
 const getDiscountRate = (quantityKg) => {
@@ -605,15 +649,17 @@ const renderContactQuoteForm = (config, context = {}) => {
             <span>Сколько килограммов нужно</span>
             <input type="number" name="quantity_kg" min="1" step="1" value="1" inputmode="numeric" required data-quote-quantity />
           </label>
-          <label>
-            <span>Расстояние от Москвы, км</span>
-            <input type="number" name="distance_km" min="0" step="1" value="0" inputmode="numeric" required data-quote-distance />
-          </label>
+          <article class="request-form__distance-card" data-distance-card data-distance-state="idle" aria-live="polite">
+            <span class="request-form__distance-label">Расстояние от Москвы</span>
+            <strong data-distance-value>Определим автоматически</strong>
+            <p data-distance-helper>Введите адрес доставки, и система посчитает расстояние по нему автоматически.</p>
+          </article>
         </div>
         <label>
           <span>Адрес доставки</span>
-          <input type="text" name="delivery_address" autocomplete="street-address" placeholder="Город, улица, склад или точка доставки" required />
+          <input type="text" name="delivery_address" autocomplete="street-address" placeholder="Город, улица, склад или точка доставки" required data-distance-source />
         </label>
+        <input type="hidden" name="distance_km" value="" data-quote-distance />
         <label>
           <span>Комментарий</span>
           <textarea name="message" placeholder="Например: нужен ежемесячный объём, тестовая партия или особые условия доставки."></textarea>
@@ -1931,7 +1977,7 @@ const buildLeadPayload = (form) => {
   const hasQuantity = data.has("quantity_kg");
   const hasDistance = data.has("distance_km");
   const quantityKg = hasQuantity ? normalizePositiveNumber(data.get("quantity_kg")) : null;
-  const distanceKm = hasDistance ? normalizePositiveNumber(data.get("distance_km")) : null;
+  const distanceKm = hasDistance ? parseOptionalPositiveNumber(data.get("distance_km")) : null;
   return {
     lead: {
       name: (data.get("name") || "").toString().trim(),
@@ -2099,6 +2145,93 @@ const updateQuoteSummary = (form) => {
   });
 };
 
+const setDistanceLookupState = (form, state, options = {}) => {
+  const card = form.querySelector("[data-distance-card]");
+  const valueNode = form.querySelector("[data-distance-value]");
+  const helperNode = form.querySelector("[data-distance-helper]");
+  const distanceField = form.elements.namedItem("distance_km");
+
+  if (card) {
+    card.dataset.distanceState = state;
+  }
+
+  if (state === "idle") {
+    if (distanceField) distanceField.value = "";
+    if (valueNode) valueNode.textContent = "Определим автоматически";
+    if (helperNode) {
+      helperNode.textContent = "Введите адрес доставки, и система посчитает расстояние по нему автоматически.";
+    }
+    updateQuoteSummary(form);
+    return;
+  }
+
+  if (state === "loading") {
+    if (distanceField) distanceField.value = "";
+    if (valueNode) valueNode.textContent = "Определяем...";
+    if (helperNode) {
+      helperNode.textContent = "Проверяем расстояние от Москвы по указанному адресу.";
+    }
+    updateQuoteSummary(form);
+    return;
+  }
+
+  if (state === "success") {
+    const distanceKm = normalizePositiveNumber(options.distanceKm);
+    if (distanceField) distanceField.value = String(distanceKm);
+    if (valueNode) valueNode.textContent = `${distanceKm} км`;
+    if (helperNode) {
+      helperNode.textContent = "Расстояние рассчитано автоматически по введённому адресу доставки.";
+    }
+    updateQuoteSummary(form);
+    return;
+  }
+
+  if (distanceField) distanceField.value = "";
+  if (valueNode) valueNode.textContent = "Уточним вручную";
+  if (helperNode) {
+    helperNode.textContent =
+      options.message || "Не удалось определить расстояние автоматически. Менеджер уточнит его после заявки.";
+  }
+  updateQuoteSummary(form);
+};
+
+const resolveAutoDistance = async (form, { force = false } = {}) => {
+  const addressField = form.elements.namedItem("delivery_address");
+  if (!(addressField instanceof HTMLInputElement)) return;
+
+  const address = addressField.value.trim();
+  if (!address || (!force && address.length < 3)) {
+    form.dataset.distanceResolvedFor = "";
+    setDistanceLookupState(form, "idle");
+    return;
+  }
+
+  const normalizedAddress = address.toLowerCase();
+  if (!force && form.dataset.distanceResolvedFor === normalizedAddress) {
+    return;
+  }
+
+  const requestId = String(Number(form.dataset.distanceRequestId || "0") + 1);
+  form.dataset.distanceRequestId = requestId;
+  setDistanceLookupState(form, "loading");
+
+  try {
+    const result = await requestDistanceFromMoscow(address);
+    if (form.dataset.distanceRequestId !== requestId) return;
+    form.dataset.distanceResolvedFor = normalizedAddress;
+    setDistanceLookupState(form, "success", {
+      distanceKm: result.distanceKm,
+      displayName: result.displayName,
+    });
+  } catch (error) {
+    if (form.dataset.distanceRequestId !== requestId) return;
+    form.dataset.distanceResolvedFor = "";
+    setDistanceLookupState(form, "error", {
+      message: error.message,
+    });
+  }
+};
+
 const setFormSubmittingState = (form, isSubmitting) => {
   const submitButton = form.querySelector('button[type="submit"]');
   if (!submitButton) return;
@@ -2163,9 +2296,45 @@ const syncPreferredContactField = (form) => {
 const bindQuoteCalculators = () => {
   $$("[data-quote-form]").forEach((form) => {
     const refresh = () => updateQuoteSummary(form);
+    const addressField = form.elements.namedItem("delivery_address");
+    let distanceTimer = null;
+
+    const queueDistanceLookup = (force = false) => {
+      if (distanceTimer) {
+        window.clearTimeout(distanceTimer);
+        distanceTimer = null;
+      }
+
+      if (force) {
+        void resolveAutoDistance(form, { force: true });
+        return;
+      }
+
+      distanceTimer = window.setTimeout(() => {
+        void resolveAutoDistance(form);
+      }, DISTANCE_LOOKUP_DEBOUNCE_MS);
+    };
+
     form.addEventListener("input", refresh);
     form.addEventListener("change", refresh);
     refresh();
+
+    if (addressField instanceof HTMLInputElement) {
+      addressField.addEventListener("input", () => {
+        form.dataset.distanceResolvedFor = "";
+        setDistanceLookupState(form, addressField.value.trim() ? "loading" : "idle");
+        queueDistanceLookup(false);
+      });
+      addressField.addEventListener("change", () => {
+        queueDistanceLookup(true);
+      });
+      addressField.addEventListener("blur", () => {
+        queueDistanceLookup(true);
+      });
+      void resolveAutoDistance(form, { force: Boolean(addressField.value.trim()) });
+    } else {
+      setDistanceLookupState(form, "idle");
+    }
   });
 };
 
