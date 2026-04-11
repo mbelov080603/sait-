@@ -1031,45 +1031,44 @@ const renderContactsPage = () => {
   const [retailCard, wholesaleCard, marketplacesCard, telegramCard] = store.contactsPage.leftCards;
   const intro = $("#contacts-intro");
   if (intro) {
-    intro.innerHTML = `
-      <div class="hero-copy contacts-copy">
-        <p class="eyebrow">Контакты</p>
-        <h1>Связаться с Global Basket</h1>
-        <p>${store.contactsPage.intro}</p>
-      </div>
-      <div class="contacts-focus-grid">
-        ${[retailCard, wholesaleCard]
-          .filter(Boolean)
-          .map(
-            (item) => `
-              <article class="fact-card fact-card--vertical contact-focus-card">
-                <div>
-                  <strong>${item.title}</strong>
-                  <p>${item.text}</p>
-                </div>
-              </article>
-            `,
-          )
-          .join("")}
-      </div>
-      <div class="contacts-support-grid">
-        <article class="contact-direct contact-direct--primary">
-          <div class="contact-block__head">
-            <strong>Контакты</strong>
-            <p>Форма справа — основной сценарий для запроса на поставку. Телефон, email и Telegram остаются резервными каналами.</p>
+    const contactDisclosures = [
+      {
+        title: retailCard.title,
+        meta: "Подскажем по товару, наличию и каналу покупки",
+        body: `
+          <p>${retailCard.text}</p>
+          <div class="contact-disclosure__links">
+            <a class="text-link text-link--inline" href="/catalog/">Перейти в каталог</a>
+            <a class="text-link text-link--inline" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>Написать в Telegram</a>
           </div>
+        `,
+      },
+      {
+        title: wholesaleCard.title,
+        meta: "Поставка для магазина, офиса или постоянных закупок",
+        body: `
+          <p>${wholesaleCard.text}</p>
+          <p>Форма справа остаётся основным сценарием для запроса на поставку и следующего шага по условиям.</p>
+        `,
+      },
+      {
+        title: "Контакты",
+        meta: "Телефон, email, Telegram и часы работы",
+        body: `
+          <p>Форма справа — основной сценарий для запроса на поставку. Телефон, email и Telegram остаются резервными каналами.</p>
           <div class="contact-direct__list">
             <p><a href="${store.contact.phoneHref}">${store.contact.phone}</a></p>
             <p><a href="${store.contact.emailHref}">${store.contact.email}</a></p>
             <p><a href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>${store.contact.telegram}</a></p>
             <p>${store.contact.hours}</p>
           </div>
-        </article>
-        <article class="contact-marketplaces">
-          <div class="contact-block__head">
-            <strong>Где купить</strong>
-            <p>${marketplacesCard.text}</p>
-          </div>
+        `,
+      },
+      {
+        title: "Где купить",
+        meta: "Ozon, Wildberries и Яндекс.Маркет",
+        body: `
+          <p>${marketplacesCard.text}</p>
           <div class="contact-marketplaces__links">
             ${store.marketplaces
               .map(
@@ -1078,9 +1077,34 @@ const renderContactsPage = () => {
               )
               .join("")}
           </div>
-        </article>
+        `,
+      },
+    ];
+
+    intro.innerHTML = `
+      <div class="hero-copy contacts-copy">
+        <p class="eyebrow">Контакты</p>
+        <h1>Связаться с Global Basket</h1>
+        <p>${store.contactsPage.intro}</p>
       </div>
-      <div class="contacts-disclosures">
+      <div class="contacts-disclosures contacts-disclosures--lead">
+        ${contactDisclosures
+          .map(
+            (item) => `
+              <details class="contact-disclosure contact-disclosure--lead">
+                <summary>
+                  <span class="contact-disclosure__title">${item.title}</span>
+                  <span class="contact-disclosure__meta">${item.meta}</span>
+                </summary>
+                <div class="contact-disclosure__body">
+                  ${item.body}
+                </div>
+              </details>
+            `,
+          )
+          .join("")}
+      </div>
+      <div class="contacts-disclosures contacts-disclosures--secondary">
         <details class="contact-disclosure">
           <summary>
             <span class="contact-disclosure__title">Telegram и быстрые сообщения</span>

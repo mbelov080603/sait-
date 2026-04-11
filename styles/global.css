@@ -2127,6 +2127,22 @@ textarea {
   gap: var(--space-3);
 }
 
+.contacts-disclosures--lead {
+  margin-top: var(--space-4);
+}
+
+.contacts-disclosures--lead .contact-disclosure {
+  background: rgba(255, 252, 247, 0.82);
+}
+
+.contacts-disclosures--lead .contact-disclosure summary {
+  padding-block: 18px;
+}
+
+.contacts-disclosures--lead .contact-disclosure__body {
+  padding-top: 2px;
+}
+
 .contact-disclosure,
 .quote-summary__details,
 .contact-fallback-panel {
@@ -2168,6 +2184,7 @@ textarea {
   font-size: 0.86rem;
   font-family: "Manrope", sans-serif;
   text-align: right;
+  max-width: 34ch;
 }
 
 .contact-disclosure__body,
