@@ -1805,6 +1805,16 @@ textarea {
   align-items: start;
 }
 
+.catalog-grid > .product-card,
+.catalog-grid > .section-card {
+  width: 100%;
+  min-width: 0;
+}
+
+.catalog-grid > .section-card--catalog-start {
+  grid-column: 1;
+}
+
 .product-card {
   display: flex;
   flex-direction: column;
@@ -1845,6 +1855,15 @@ textarea {
   max-width: 360px;
   aspect-ratio: 1 / 1;
   object-fit: contain;
+  transition: transform 180ms ease;
+}
+
+.product-card__media--illustration img {
+  transform: scale(1.08);
+}
+
+.product-card__media--photo img {
+  filter: drop-shadow(0 22px 32px rgba(111, 84, 55, 0.1));
 }
 
 .product-card__body {
@@ -1947,6 +1966,11 @@ textarea {
   width: 100%;
   height: 520px;
   object-fit: contain;
+  transition: transform 180ms ease;
+}
+
+.product-gallery__main--illustration img {
+  transform: scale(1.05);
 }
 
 .product-gallery__thumbs {
@@ -1955,18 +1979,48 @@ textarea {
   gap: var(--space-3);
 }
 
-.product-gallery__thumbs figure {
+.product-gallery__thumb {
   margin: 0;
   padding: var(--space-3);
+  width: 100%;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: rgba(255, 252, 247, 0.94);
+  display: grid;
+  place-items: center;
+  appearance: none;
+  cursor: pointer;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
 }
 
-.product-gallery__thumbs img {
+.product-gallery__thumb:hover,
+.product-gallery__thumb:focus-visible {
+  border-color: rgba(201, 122, 43, 0.36);
+  box-shadow: 0 12px 30px rgba(117, 86, 57, 0.12);
+  transform: translateY(-1px);
+}
+
+.product-gallery__thumb.is-active {
+  border-color: rgba(201, 122, 43, 0.42);
+  box-shadow: inset 0 0 0 1px rgba(201, 122, 43, 0.18);
+}
+
+.product-gallery__thumb img {
   width: 100%;
   height: 96px;
   object-fit: contain;
+  transition: transform 180ms ease;
+}
+
+.product-gallery__thumb--illustration img {
+  transform: scale(1.04);
+}
+
+.product-gallery__thumb--photo img {
+  filter: drop-shadow(0 18px 28px rgba(111, 84, 55, 0.1));
 }
 
 .product-summary {

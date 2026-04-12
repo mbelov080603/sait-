@@ -558,7 +558,7 @@ const renderAdvantageCard = (item) => `
 `;
 
 const renderSectionCard = (item) => `
-  <article class="section-card ${item.status === "coming" ? "section-card--muted" : ""}">
+  <article class="section-card ${item.status === "coming" ? "section-card--muted" : ""} ${item.className || ""}">
     ${
       item.image
         ? `<a class="section-card__media" href="${item.href || "#"}"><img src="${item.image}" alt="${item.title || item.name}" loading="lazy" decoding="async" /></a>`
@@ -608,7 +608,7 @@ const renderEnterpriseProductCard = (productItem = product) => `
       ${renderBadge(productItem.badge, productItem.badgeTone)}
     </div>
     <div class="product-card__content">
-      <a class="product-card__media" href="${productItem.href}">
+      <a class="product-card__media product-card__media--${productItem.imageKind || "illustration"}" href="${productItem.href}">
         <img src="${productItem.images.packshot}" alt="${productItem.fullName}" loading="lazy" decoding="async" />
       </a>
       <div class="product-card__body">
@@ -639,24 +639,72 @@ const renderProductSpecs = (items = []) => `
   </dl>
 `;
 
+const buildDocumentTitle = (value = "") => {
+  const normalized = String(value || "").trim();
+  if (!normalized) return "Global Basket";
+  return /global basket/i.test(normalized) ? normalized : `Global Basket | ${normalized}`;
+};
+
+const resolveFormProductContext = (context = {}) => {
+  const hasExplicitProduct =
+    Object.prototype.hasOwnProperty.call(context, "productId") ||
+    Object.prototype.hasOwnProperty.call(context, "productName") ||
+    Object.prototype.hasOwnProperty.call(context, "productCategory") ||
+    Object.prototype.hasOwnProperty.call(context, "productVariant");
+
+  if (hasExplicitProduct) {
+    return {
+      productId: context.productId || "",
+      productName: context.productName || "",
+      productCategory: context.productCategory || "",
+      productVariant: context.productVariant || "",
+    };
+  }
+
+  if (context.page === "product" || document.body.dataset.page === "product") {
+    return {
+      productId: product?.id || "",
+      productName: product?.fullName || "",
+      productCategory: product?.category || "",
+      productVariant: "",
+    };
+  }
+
+  return {
+    productId: "",
+    productName: "",
+    productCategory: context.productCategory || "",
+    productVariant: "",
+  };
+};
+
+const resolveInitialFormMeta = (context = {}) => ({
+  sessionId: context.sessionId || "",
+  landingUrl: context.landingUrl || window.location.href || "",
+  pageTitle: context.pageTitle || document.title || "",
+  referrer: context.referrer || "",
+});
+
 const renderLeadRequestForm = (config, context = {}) => {
+  const productContext = resolveFormProductContext(context);
+  const initialMeta = resolveInitialFormMeta(context);
   const hiddenFields = {
     source: context.source || "home-hero",
     page: context.page || document.body.dataset.page || "home",
-    product_id: context.productId || product.id,
-    product_name: context.productName || product.fullName,
-    product_category: context.productCategory || product.category,
-    product_variant: context.productVariant || "",
+    product_id: productContext.productId,
+    product_name: productContext.productName,
+    product_category: productContext.productCategory,
+    product_variant: productContext.productVariant,
     lead_channel_origin: "site",
     marketplace_interest: context.marketplaceInterest || "",
     crm_status_seed: "new",
     crm_pipeline_seed: "site_request",
     integration_targets: "bitrix24,1c",
     payload_version: "v1",
-    session_id: "",
-    landing_url: "",
-    page_title: "",
-    referrer: "",
+    session_id: initialMeta.sessionId,
+    landing_url: initialMeta.landingUrl,
+    page_title: initialMeta.pageTitle,
+    referrer: initialMeta.referrer,
     submitted_at: "",
     utm_source: "",
     utm_medium: "",
@@ -837,23 +885,25 @@ const calculateContactQuote = ({
 };
 
 const renderContactQuoteForm = (config, context = {}) => {
+  const productContext = resolveFormProductContext(context);
+  const initialMeta = resolveInitialFormMeta(context);
   const hiddenFields = {
     source: context.source || "contacts",
     page: context.page || document.body.dataset.page || "contacts",
-    product_id: context.productId || product.id,
-    product_name: context.productName || product.fullName,
-    product_category: context.productCategory || product.category,
-    product_variant: context.productVariant || "",
+    product_id: productContext.productId,
+    product_name: productContext.productName,
+    product_category: productContext.productCategory,
+    product_variant: productContext.productVariant,
     lead_channel_origin: "site",
     marketplace_interest: context.marketplaceInterest || "",
     crm_status_seed: "new",
     crm_pipeline_seed: "site_request",
     integration_targets: "bitrix24,1c",
     payload_version: "v1",
-    session_id: "",
-    landing_url: "",
-    page_title: "",
-    referrer: "",
+    session_id: initialMeta.sessionId,
+    landing_url: initialMeta.landingUrl,
+    page_title: initialMeta.pageTitle,
+    referrer: initialMeta.referrer,
     submitted_at: "",
     utm_source: "",
     utm_medium: "",
@@ -1108,6 +1158,7 @@ const renderHome = () => {
           ${renderLeadRequestForm(store.home.leadForm, {
             source: "home-featured",
             page: "home",
+            pageTitle: buildDocumentTitle("Главная"),
           })}
         </div>
       </article>
@@ -1157,11 +1208,14 @@ const buildCatalogItems = () => {
       html: renderEnterpriseProductCard(item),
       status: "active",
     })),
-    ...activeCategories.map((item) => ({
+    ...activeCategories.map((item, index) => ({
       type: "section",
       title: item.name,
       keywords: `${item.name} ${item.description} ${item.intro || ""} ${item.statusLabel}`,
-      html: renderSectionCard(item),
+      html: renderSectionCard({
+        ...item,
+        className: index === 0 ? "section-card--catalog-start" : "",
+      }),
       status: "active",
     })),
   ];
@@ -1263,7 +1317,7 @@ const renderProductPage = () => {
   const params = new URLSearchParams(window.location.search);
   let selectedVariant = resolveProductVariant(productItem, params.get("variant") || "");
 
-  document.title = `Global Basket | ${productItem.seoTitle || productItem.h1 || productItem.shortName}`;
+  document.title = buildDocumentTitle(productItem.seoTitle || productItem.h1 || productItem.shortName);
   ensureMetaTag("description").setAttribute(
     "content",
     productItem.seoDescription || productItem.annotation || productItem.catalogDescription || "",
@@ -1278,21 +1332,47 @@ const renderProductPage = () => {
   const gallery = $("#product-gallery");
   if (gallery) {
     gallery.innerHTML = `
-      <div class="product-gallery__main">
-        <img src="${productItem.images.main}" alt="${productItem.gallery?.[0]?.alt || productItem.fullName}" />
+      <div class="product-gallery__main product-gallery__main--${productItem.imageKind || "illustration"}">
+        <img
+          src="${productItem.images.main}"
+          alt="${productItem.gallery?.[0]?.alt || productItem.fullName}"
+          data-gallery-main
+        />
       </div>
       <div class="product-gallery__thumbs">
         ${productItem.gallery
           .map(
-            (item) => `
-              <figure>
+            (item, index) => `
+              <button
+                class="product-gallery__thumb product-gallery__thumb--${productItem.imageKind || "illustration"} ${index === 0 ? "is-active" : ""}"
+                type="button"
+                data-gallery-thumb
+                data-src="${escapeAttribute(item.src)}"
+                data-alt="${escapeAttribute(item.alt)}"
+                aria-pressed="${index === 0 ? "true" : "false"}"
+              >
                 <img src="${item.src}" alt="${item.alt}" loading="lazy" decoding="async" />
-              </figure>
+              </button>
             `,
           )
           .join("")}
       </div>
     `;
+
+    const mainImage = $("[data-gallery-main]", gallery);
+    const thumbs = $$("[data-gallery-thumb]", gallery);
+    thumbs.forEach((thumb) => {
+      thumb.addEventListener("click", () => {
+        if (!mainImage) return;
+        mainImage.setAttribute("src", thumb.dataset.src || productItem.images.main);
+        mainImage.setAttribute("alt", thumb.dataset.alt || productItem.fullName);
+        thumbs.forEach((item) => {
+          const isActive = item === thumb;
+          item.classList.toggle("is-active", isActive);
+          item.setAttribute("aria-pressed", String(isActive));
+        });
+      });
+    });
   }
 
   const summary = $("#product-summary");
@@ -1459,6 +1539,7 @@ const renderContactsPage = () => {
   const params = new URLSearchParams(window.location.search);
   const requestedSource = params.get("source") || "contacts-page";
   const requestedProduct = findProduct(params.get("product") || "");
+  const requestedCategory = findCategory(params.get("category") || "");
   const requestedVariant = requestedProduct
     ? resolveProductVariant(requestedProduct, params.get("variant") || "")
     : null;
@@ -1575,9 +1656,10 @@ const renderContactsPage = () => {
         ${renderContactQuoteForm(store.contactsPage.quoteForm, {
           source: requestedSource,
           page: "contacts",
-          productId: requestedProduct?.id || product.id,
-          productName: requestedProduct?.fullName || product.fullName,
-          productCategory: requestedProduct?.category || product.category,
+          pageTitle: buildDocumentTitle("Контакты"),
+          productId: requestedProduct?.id || "",
+          productName: requestedProduct?.fullName || "",
+          productCategory: requestedProduct?.category || requestedCategory?.title || requestedCategory?.name || "",
           productVariant: requestedVariant?.label || "",
         })}
         <details class="request-panel request-panel--compact request-panel--secondary contact-fallback-panel">
@@ -2180,7 +2262,7 @@ const renderCategoryPage = () => {
   const category = currentCategory;
   if (!category) return;
 
-  document.title = `Global Basket | ${category.title || category.name}`;
+  document.title = buildDocumentTitle(category.title || category.name);
   ensureMetaTag("description").setAttribute(
     "content",
     category.intro || category.description || "",

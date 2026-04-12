@@ -1,6 +1,10 @@
 {
   "private": true,
   "scripts": {
+    "build": "node scripts/prerender.mjs && node scripts/smoke-html.mjs",
+    "start": "node scripts/serve-static.mjs",
+    "publish:pages": "node scripts/publish-github-pages.mjs",
+    "smoke:html": "node scripts/smoke-html.mjs",
     "telegram:setup": "node scripts/setup-telegram-bot.mjs",
     "telegram:post": "node scripts/post-channel-update.mjs"
   }

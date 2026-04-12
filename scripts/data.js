@@ -86,16 +86,25 @@ window.GlobalBasketData = {
     description:
       "Макадамия — центральный товар витрины Global Basket: спокойная подача, аккуратная упаковка и собранный интерфейс без визуального шума.",
     images: {
-      hero: "/assets/catalog-front-warm.jpg",
-      packshot: "/assets/product-front-warm.jpg",
-      main: "/assets/catalog-front-warm.jpg",
-      lifestyle: "/assets/lifestyle.jpg",
-      poster: "/assets/brand-poster.jpg",
+      hero: "/assets/catalog/products/macadamia-ozon-front.png",
+      packshot: "/assets/catalog/products/macadamia-ozon-packshot.png",
+      main: "/assets/catalog/products/macadamia-ozon-front.png",
+      lifestyle: "/assets/catalog/products/macadamia-ozon-lifestyle.png",
+      poster: "/assets/catalog/products/macadamia-ozon-front.png",
     },
     gallery: [
-      { src: "/assets/catalog-front-warm.jpg", alt: "Очищенная макадамия на теплом фирменном фоне" },
-      { src: "/assets/product-front-warm.jpg", alt: "Фронтальный вид упаковки на фирменном фоне" },
-      { src: "/assets/lifestyle.jpg", alt: "Макадамия Global Basket в спокойной домашней подаче" },
+      {
+        src: "/assets/catalog/products/macadamia-ozon-front.png",
+        alt: "Очищенная макадамия Global Basket в упаковке с россыпью орехов",
+      },
+      {
+        src: "/assets/catalog/products/macadamia-ozon-packshot.png",
+        alt: "Фронтальный packshot очищенной макадамии Global Basket",
+      },
+      {
+        src: "/assets/catalog/products/macadamia-ozon-lifestyle.png",
+        alt: "Очищенная макадамия Global Basket в домашней подаче",
+      },
     ],
     pills: ["Кения", "250 г", "Вакуумная упаковка", "Только очищенные ядра"],
     factCards: [
@@ -224,7 +233,7 @@ window.GlobalBasketData = {
       note:
         "Мы используем эти данные только для ответа по вашему запросу. Если удобнее, можно сразу написать нам в Telegram.",
       consent:
-        "Согласен(а) на обработку контактных данных для ответа по моему запросу.",
+        'Согласен(а) на обработку контактных данных для ответа по моему запросу. <a href="/privacy/">Политика обработки персональных данных</a>.',
       topics: [
         { value: "retail", label: "Купить" },
         { value: "price", label: "Узнать цену" },
@@ -339,7 +348,7 @@ window.GlobalBasketData = {
       pricingHint:
         "Базовая цена — 700 ₽/кг. От 100 кг действует скидка 10%, от 500 кг — 15%, от 1000 кг — 20%. За каждые полные 1000 км от Москвы добавляется 5% к сумме. Расстояние рассчитывается автоматически по адресу доставки и затем подтверждается менеджером.",
       consent:
-        "Согласен(а) на обработку контактных данных для связи по запросу и расчёту.",
+        'Согласен(а) на обработку контактных данных для связи по запросу и расчёту. <a href="/privacy/">Политика обработки персональных данных</a>.',
       topics: [
         { value: "Купить", label: "Купить" },
         { value: "Оптовый запрос", label: "Оптовый запрос" },
@@ -384,6 +393,12 @@ window.GlobalBasketData = {
       text: "Заказ оформляется через короткий запрос: сначала уточняем объём и условия, затем подтверждаем следующий шаг без лишней переписки.",
       primary: { label: "Добавить в запрос", href: "/contacts/?source=cart" },
       secondary: { label: "Смотреть товар", href: "/catalog/macadamia/" },
+    },
+    privacy: {
+      title: "Политика обработки персональных данных",
+      text: "Global Basket использует контактные данные из форм сайта только для ответа по запросу, уточнения условий поставки и сопровождения обращения. Если нужно изменить или удалить переданные данные, можно написать нам на hello@globalbasket.ru или через страницу контактов.",
+      primary: { label: "Связаться", href: "/contacts/?source=privacy" },
+      secondary: { label: "В каталог", href: "/catalog/" },
     },
   },
   aboutPage: {
@@ -654,7 +669,7 @@ window.GlobalBasketData = {
         title: "Как аккуратная упаковка усиливает впечатление от продукта",
         excerpt: "Почему визуально собранная подача работает на доверие ещё до первого обращения.",
         href: "/journal/packaging/",
-        image: "/assets/brand-poster.jpg",
+        image: "/assets/catalog/products/macadamia-ozon-packshot.png",
         lead:
           "Когда продукт подан спокойно и аккуратно, пользователь быстрее считывает его уровень и легче переходит к следующему действию.",
         sections: [
@@ -673,7 +688,7 @@ window.GlobalBasketData = {
         title: "Почему макадамия хорошо подходит для спокойной премиальной витрины",
         excerpt: "Один сильный товар может задать тон всему магазину, если вокруг него собрана понятная и аккуратная структура.",
         href: "/journal/macadamia-start/",
-        image: "/assets/catalog-front-warm.jpg",
+        image: "/assets/catalog/products/macadamia-ozon-front.png",
         lead:
           "Макадамия помогает запустить каталог без ощущения пустоты: продукт сам по себе выглядит цельно и даёт достаточно поводов для сильной первой витрины.",
         introParagraphs: [
@@ -824,7 +839,7 @@ window.GlobalBasketData = {
         title: "Как расширять ассортимент и сохранять аккуратную витрину",
         excerpt: "Как добавлять новые категории постепенно и при этом сохранять цельный, спокойный интерфейс магазина.",
         href: "/journal/catalog-growth/",
-        image: "/assets/lifestyle.jpg",
+        image: "/assets/catalog/products/macadamia-ozon-lifestyle.png",
         lead:
           "Рост ассортимента не должен превращать магазин в шумный набор блоков. Важно расширять каталог так, чтобы пользователь по-прежнему быстро понимал, где он находится и что делать дальше.",
         sections: [
@@ -2186,9 +2201,9 @@ const productsFromPack = catalogPayload.products_cards
       main: mapCatalogMediaPath(page.cover_image || card.cover_image),
       lifestyle:
         card.product_slug === "macadamia"
-          ? "/assets/lifestyle.jpg"
+          ? "/assets/catalog/products/macadamia-ozon-lifestyle.png"
           : mapCatalogMediaPath(page.detail_image || card.detail_image),
-      poster: "/assets/brand-poster.jpg",
+      poster: "/assets/catalog/products/macadamia-ozon-front.png",
     };
     const factCards = buildFactCards(specs, defaultVariant, variantType);
 
@@ -2241,6 +2256,7 @@ const productsFromPack = catalogPayload.products_cards
           : "Уточните наличие, фасовку и следующий шаг по выбранному варианту.",
       quickLinksLabel: card.product_slug === "macadamia" ? "Где купить" : "Следующий шаг",
       actionMode: card.product_slug === "macadamia" ? "marketplace-default" : "request",
+      imageKind: card.product_slug === "macadamia" ? "photo" : "illustration",
       images,
       gallery: [
         {
@@ -2258,7 +2274,41 @@ const productsFromPack = catalogPayload.products_cards
       specs,
       faq,
     };
-  });
+  })
+  .map((item) =>
+    item.slug !== "macadamia"
+      ? item
+      : {
+          ...item,
+          imageKind: "photo",
+          images: {
+            ...item.images,
+            hero: "/assets/catalog/products/macadamia-ozon-front.png",
+            packshot: "/assets/catalog/products/macadamia-ozon-packshot.png",
+            main: "/assets/catalog/products/macadamia-ozon-front.png",
+            lifestyle: "/assets/catalog/products/macadamia-ozon-lifestyle.png",
+            poster: "/assets/catalog/products/macadamia-ozon-front.png",
+          },
+          gallery: [
+            {
+              src: "/assets/catalog/products/macadamia-ozon-front.png",
+              alt: "Очищенная макадамия Global Basket в упаковке с россыпью орехов",
+            },
+            {
+              src: "/assets/catalog/products/macadamia-ozon-packshot.png",
+              alt: "Фронтальный packshot очищенной макадамии Global Basket",
+            },
+            {
+              src: "/assets/catalog/products/macadamia-ozon-kernels-pile.png",
+              alt: "Очищенные ядра макадамии крупным планом",
+            },
+            {
+              src: "/assets/catalog/products/macadamia-ozon-kernels-scatter.png",
+              alt: "Очищенные ядра макадамии на белом фоне",
+            },
+          ],
+        },
+  );
 
 const productCountByCategory = new Map();
 productsFromPack.forEach((item) => {
