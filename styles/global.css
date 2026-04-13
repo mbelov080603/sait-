@@ -642,7 +642,7 @@ textarea {
 .hero-stage--lead .hero-stage__media {
   display: block;
   justify-self: end;
-  width: min(100%, 460px);
+  width: min(100%, 420px);
 }
 
 .hero-stage__meta {
@@ -708,18 +708,14 @@ textarea {
 
 .media-stage--poster,
 .media-stage--lifestyle {
-  min-height: 100%;
-}
-
-.media-stage--lifestyle {
-  aspect-ratio: 19 / 12;
+  min-height: 0;
 }
 
 .media-stage--lifestyle img {
   display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  object-fit: contain;
   object-position: center;
 }
 
@@ -3155,7 +3151,7 @@ a:focus-visible {
 
   .hero-stage--lead .hero-stage__media {
     justify-self: center;
-    width: min(100%, 560px);
+    width: min(100%, 420px);
   }
 
   .about-brand-hero__visual {
@@ -3297,10 +3293,6 @@ a:focus-visible {
 
   .hero-stage--lead .hero-stage__media {
     width: 100%;
-  }
-
-  .media-stage--lifestyle {
-    aspect-ratio: 5 / 4;
   }
 
   .section-head h2,

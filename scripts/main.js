@@ -1120,7 +1120,13 @@ const renderHome = () => {
         </div>
         <div class="hero-stage__media">
           <article class="media-stage media-stage--lifestyle">
-            <img src="${product.images.lifestyle}" alt="Очищенная макадамия Global Basket в домашней подаче" loading="lazy" decoding="async" />
+            <img
+              src="${store.home.hero.image?.src || product.images.lifestyle}"
+              alt="${store.home.hero.image?.alt || "Очищенная макадамия Global Basket в домашней подаче"}"
+              loading="eager"
+              decoding="async"
+              fetchpriority="high"
+            />
           </article>
         </div>
       </article>
