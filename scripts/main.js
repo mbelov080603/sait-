@@ -351,26 +351,9 @@ const renderHeader = () => {
     )
     .join("");
 
-  const noticeItems = store.noticeBar.items
-    .map((item) =>
-      item.href
-        ? `<a href="${item.href}">${item.label}</a>`
-        : `<span>${item.label}</span>`,
-    )
-    .join("");
-
   mount.innerHTML = `
     <div class="page-noise" aria-hidden="true"></div>
     <header class="site-header">
-      <div class="top-notice-bar">
-        <div class="shell top-notice-bar__inner">
-          <div class="top-notice-bar__items">${noticeItems}</div>
-          <div class="top-notice-bar__meta">
-            <span>${store.contact.hours}</span>
-            <a href="${store.contact.phoneHref}">${store.contact.phone}</a>
-          </div>
-        </div>
-      </div>
       <div class="shell header-main">
         <a class="brand-mark" href="/sait-/" aria-label="На главную Global Basket">
           <img src="/sait-/assets/logo.jpg" alt="Логотип Global Basket" />
