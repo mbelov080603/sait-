@@ -673,7 +673,7 @@ window.GlobalBasketData = {
         title: "Как аккуратная упаковка усиливает впечатление от продукта",
         excerpt: "Почему визуально собранная подача работает на доверие ещё до первого обращения.",
         href: "/sait-/journal/packaging/",
-        image: "/sait-/assets/catalog/products/macadamia-ozon-packshot.png",
+        image: "/sait-/assets/journal/packaging-preview.png",
         lead:
           "Когда продукт подан спокойно и аккуратно, пользователь быстрее считывает его уровень и легче переходит к следующему действию.",
         sections: [
@@ -692,7 +692,7 @@ window.GlobalBasketData = {
         title: "Почему макадамия хорошо подходит для спокойной премиальной витрины",
         excerpt: "Один сильный товар может задать тон всему магазину, если вокруг него собрана понятная и аккуратная структура.",
         href: "/sait-/journal/macadamia-start/",
-        image: "/sait-/assets/catalog/products/macadamia-ozon-front.png",
+        image: "/sait-/assets/journal/macadamia-start-preview.png",
         lead:
           "Макадамия помогает запустить каталог без ощущения пустоты: продукт сам по себе выглядит цельно и даёт достаточно поводов для сильной первой витрины.",
         introParagraphs: [
@@ -843,7 +843,7 @@ window.GlobalBasketData = {
         title: "Как расширять ассортимент и сохранять аккуратную витрину",
         excerpt: "Как добавлять новые категории постепенно и при этом сохранять цельный, спокойный интерфейс магазина.",
         href: "/sait-/journal/catalog-growth/",
-        image: "/sait-/assets/catalog/products/macadamia-ozon-lifestyle.png",
+        image: "/sait-/assets/journal/catalog-growth-preview.png",
         lead:
           "Рост ассортимента не должен превращать магазин в шумный набор блоков. Важно расширять каталог так, чтобы пользователь по-прежнему быстро понимал, где он находится и что делать дальше.",
         sections: [

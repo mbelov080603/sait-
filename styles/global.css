@@ -1639,6 +1639,7 @@ textarea {
 .journal-card {
   display: grid;
   grid-template-columns: 180px minmax(0, 1fr);
+  align-items: start;
   overflow: hidden;
 }
 
@@ -1647,15 +1648,16 @@ textarea {
 }
 
 .journal-card__media {
-  min-height: 100%;
+  display: block;
+  align-self: start;
   background: rgba(245, 233, 216, 0.72);
 }
 
 .journal-card__media img {
   width: 100%;
-  height: 100%;
-  min-height: 220px;
-  object-fit: cover;
+  height: auto;
+  display: block;
+  object-fit: contain;
 }
 
 .journal-card__body {
