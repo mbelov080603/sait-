@@ -594,7 +594,7 @@ textarea {
 
 .hero-stage--lead {
   grid-template-columns: minmax(0, 1.06fr) minmax(340px, 460px);
-  align-items: start;
+  align-items: center;
   gap: var(--space-6);
 }
 
@@ -641,6 +641,8 @@ textarea {
 
 .hero-stage--lead .hero-stage__media {
   display: block;
+  justify-self: end;
+  width: min(100%, 460px);
 }
 
 .hero-stage__meta {
@@ -709,10 +711,16 @@ textarea {
   min-height: 100%;
 }
 
+.media-stage--lifestyle {
+  aspect-ratio: 19 / 12;
+}
+
 .media-stage--lifestyle img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
 }
 
 .media-stage--poster {
@@ -3145,6 +3153,11 @@ a:focus-visible {
     max-width: none;
   }
 
+  .hero-stage--lead .hero-stage__media {
+    justify-self: center;
+    width: min(100%, 560px);
+  }
+
   .about-brand-hero__visual {
     min-height: 460px;
   }
@@ -3280,6 +3293,14 @@ a:focus-visible {
 
   .hero-stage__copy h1 {
     font-size: 2.35rem;
+  }
+
+  .hero-stage--lead .hero-stage__media {
+    width: 100%;
+  }
+
+  .media-stage--lifestyle {
+    aspect-ratio: 5 / 4;
   }
 
   .section-head h2,
