@@ -527,7 +527,7 @@ const renderCategoryCard = (item) => `
     <p>${item.description}</p>
     ${
       item.href
-        ? `<a class="text-link text-link--inline" href="${item.href}">Смотреть раздел</a>`
+        ? `<a class="text-link text-link--inline category-card__cta" href="${item.href}">Смотреть раздел</a>`
         : `<span class="card-note">Скоро откроем.</span>`
     }
   </article>
@@ -552,7 +552,7 @@ const renderSectionCard = (item) => `
     <p>${item.description}</p>
     ${
       item.href
-        ? `<a class="text-link" href="${item.href}">Смотреть раздел</a>`
+        ? `<a class="text-link section-card__cta" href="${item.href}">Смотреть раздел</a>`
         : `<span class="card-note">Скоро откроем.</span>`
     }
   </article>
@@ -565,7 +565,7 @@ const renderJournalCard = (post, featured = false) => `
       ${renderBadge("Материал", "editorial")}
       <h3><a href="${post.href}">${post.title}</a></h3>
       <p>${featured ? post.lead : post.excerpt}</p>
-      <a class="text-link text-link--inline" href="${post.href}">Читать</a>
+      <a class="text-link text-link--inline journal-card__cta" href="${post.href}">Читать</a>
     </div>
   </article>
 `;
@@ -761,7 +761,7 @@ const renderLeadRequestForm = (config, context = {}) => {
         </label>
         <div class="request-form__actions">
           <button class="button" type="submit">${config.submitLabel}</button>
-          <a class="text-link text-link--inline" href="${config.secondaryCta.href}"${externalAttrs(config.secondaryCta.href)}>${config.secondaryCta.label}</a>
+          <a class="text-link text-link--inline request-form__action-link" href="${config.secondaryCta.href}"${externalAttrs(config.secondaryCta.href)}>${config.secondaryCta.label}</a>
         </div>
         <p class="request-form__note">${config.note}</p>
         <p class="request-form__status" data-request-status aria-live="polite"></p>
@@ -930,141 +930,146 @@ const renderContactQuoteForm = (config, context = {}) => {
             <li>Подтвердим условия и следующий шаг.</li>
           </ol>
         </div>
-        <fieldset class="request-form__section">
-          <legend>Контактные данные</legend>
-          <div class="request-form__grid request-form__grid--contact">
-            <label>
-              <span>Контактное лицо</span>
-              <input type="text" name="name" autocomplete="name" placeholder="Как к вам обращаться" required />
-            </label>
-            <div class="request-form__contact-slot" data-contact-slot data-active-contact="phone">
-              <label class="request-form__contact-panel is-active" data-contact-field="phone">
-                <span>Телефон</span>
-                <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" required />
+        <div class="request-form__frame">
+          <div class="request-form__main">
+            <fieldset class="request-form__section">
+              <legend>Контактные данные</legend>
+              <div class="request-form__grid request-form__grid--contact">
+                <label>
+                  <span>Контактное лицо</span>
+                  <input type="text" name="name" autocomplete="name" placeholder="Как к вам обращаться" required />
+                </label>
+                <div class="request-form__contact-slot" data-contact-slot data-active-contact="phone">
+                  <label class="request-form__contact-panel is-active" data-contact-field="phone">
+                    <span>Телефон</span>
+                    <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" required />
+                  </label>
+                  <label class="request-form__contact-panel" data-contact-field="email" aria-hidden="true">
+                    <span>Email</span>
+                    <input type="email" name="email" autocomplete="email" placeholder="name@example.com" disabled />
+                  </label>
+                  <label class="request-form__contact-panel" data-contact-field="telegram" aria-hidden="true">
+                    <span>Telegram</span>
+                    <input type="text" name="telegram_username" autocomplete="off" placeholder="@username" disabled />
+                  </label>
+                </div>
+              </div>
+              <div class="request-form__grid">
+                <label>
+                  <span>Как удобнее связаться</span>
+                  <select name="contact_preferred">
+                    ${config.preferredContacts
+                      .map((item) => `<option value="${item.value}">${item.label}</option>`)
+                      .join("")}
+                  </select>
+                </label>
+              </div>
+              <p class="request-form__hint" data-contact-helper>
+                Выберите основной канал связи. Поле для контакта переключится автоматически.
+              </p>
+            </fieldset>
+            <fieldset class="request-form__section">
+              <legend>Данные компании</legend>
+              <div class="request-form__grid">
+                <label>
+                  <span>Юридическое лицо / ИП</span>
+                  <input type="text" name="company_name" autocomplete="organization" placeholder="Название компании или ИП" required />
+                </label>
+                <label>
+                  <span>ИНН</span>
+                  <input type="text" name="company_inn" inputmode="numeric" placeholder="Если есть" />
+                </label>
+              </div>
+            </fieldset>
+            <fieldset class="request-form__section">
+              <legend>Параметры запроса</legend>
+              <div class="request-form__grid">
+                <label>
+                  <span>Что вас интересует</span>
+                  <select name="topic" required>
+                    ${config.topics
+                      .map((item) => `<option value="${item.value}">${item.label}</option>`)
+                      .join("")}
+                  </select>
+                </label>
+                <label>
+                  <span>Формат закупки</span>
+                  <select name="purchase_format">
+                    ${config.purchaseFormats
+                      .map((item) => `<option value="${item.value}">${item.label}</option>`)
+                      .join("")}
+                  </select>
+                </label>
+              </div>
+              <div class="request-form__grid">
+                <label>
+                  <span>Сколько килограммов нужно</span>
+                  <input type="number" name="quantity_kg" min="1" step="1" value="1" inputmode="numeric" required data-quote-quantity />
+                </label>
+                <article class="request-form__distance-card" data-distance-card data-distance-state="idle" aria-live="polite">
+                  <span class="request-form__distance-label">Расстояние от Москвы</span>
+                  <strong data-distance-value>Определим автоматически</strong>
+                  <p data-distance-helper>Введите адрес доставки, и система посчитает расстояние по нему автоматически.</p>
+                </article>
+              </div>
+            </fieldset>
+            <fieldset class="request-form__section">
+              <legend>Доставка</legend>
+              <label>
+                <span>Адрес доставки</span>
+                <input type="text" name="delivery_address" autocomplete="street-address" placeholder="Город, улица, склад или точка доставки" required data-distance-source />
               </label>
-              <label class="request-form__contact-panel" data-contact-field="email" aria-hidden="true">
-                <span>Email</span>
-                <input type="email" name="email" autocomplete="email" placeholder="name@example.com" disabled />
+            </fieldset>
+            <input type="hidden" name="distance_km" value="" data-quote-distance />
+            <fieldset class="request-form__section">
+              <legend>Комментарий</legend>
+              <label>
+                <span>Что важно учесть</span>
+                <textarea name="message" placeholder="Например: нужен ежемесячный объём, тестовая партия или особые условия доставки."></textarea>
               </label>
-              <label class="request-form__contact-panel" data-contact-field="telegram" aria-hidden="true">
-                <span>Telegram</span>
-                <input type="text" name="telegram_username" autocomplete="off" placeholder="@username" disabled />
-              </label>
-            </div>
+            </fieldset>
           </div>
-          <div class="request-form__grid">
-            <label>
-              <span>Как удобнее связаться</span>
-              <select name="contact_preferred">
-                ${config.preferredContacts
-                  .map((item) => `<option value="${item.value}">${item.label}</option>`)
-                  .join("")}
-              </select>
-            </label>
-          </div>
-          <p class="request-form__hint" data-contact-helper>
-            Выберите основной канал связи. Поле для контакта переключится автоматически.
-          </p>
-        </fieldset>
-        <fieldset class="request-form__section">
-          <legend>Данные компании</legend>
-          <div class="request-form__grid">
-            <label>
-              <span>Юридическое лицо / ИП</span>
-              <input type="text" name="company_name" autocomplete="organization" placeholder="Название компании или ИП" required />
-            </label>
-            <label>
-              <span>ИНН</span>
-              <input type="text" name="company_inn" inputmode="numeric" placeholder="Если есть" />
-            </label>
-          </div>
-        </fieldset>
-        <fieldset class="request-form__section">
-          <legend>Параметры запроса</legend>
-          <div class="request-form__grid">
-            <label>
-              <span>Что вас интересует</span>
-              <select name="topic" required>
-                ${config.topics
-                  .map((item) => `<option value="${item.value}">${item.label}</option>`)
-                  .join("")}
-              </select>
-            </label>
-            <label>
-              <span>Формат закупки</span>
-              <select name="purchase_format">
-                ${config.purchaseFormats
-                  .map((item) => `<option value="${item.value}">${item.label}</option>`)
-                  .join("")}
-              </select>
-            </label>
-          </div>
-          <div class="request-form__grid">
-            <label>
-              <span>Сколько килограммов нужно</span>
-              <input type="number" name="quantity_kg" min="1" step="1" value="1" inputmode="numeric" required data-quote-quantity />
-            </label>
-            <article class="request-form__distance-card" data-distance-card data-distance-state="idle" aria-live="polite">
-              <span class="request-form__distance-label">Расстояние от Москвы</span>
-              <strong data-distance-value>Определим автоматически</strong>
-              <p data-distance-helper>Введите адрес доставки, и система посчитает расстояние по нему автоматически.</p>
-            </article>
-          </div>
-        </fieldset>
-        <fieldset class="request-form__section">
-          <legend>Доставка</legend>
-          <label>
-            <span>Адрес доставки</span>
-            <input type="text" name="delivery_address" autocomplete="street-address" placeholder="Город, улица, склад или точка доставки" required data-distance-source />
-          </label>
-        </fieldset>
-        <input type="hidden" name="distance_km" value="" data-quote-distance />
-        <fieldset class="request-form__section">
-          <legend>Комментарий</legend>
-          <label>
-            <span>Комментарий</span>
-            <textarea name="message" placeholder="Например: нужен ежемесячный объём, тестовая партия или особые условия доставки."></textarea>
-          </label>
-        </fieldset>
-        <fieldset class="request-form__section request-form__section--summary">
-          <legend>Предварительный расчёт</legend>
-          <article class="quote-summary" data-quote-summary aria-live="polite">
-            <div class="quote-summary__head">
-              <strong>Предварительный расчёт</strong>
-              <p>Сводка по объёму и доставке обновляется автоматически по мере заполнения формы.</p>
-            </div>
-            <dl class="quote-summary__list">
-              <div class="quote-summary__row">
-                <dt>Базовая цена</dt>
-                <dd data-quote-base>${formatRub(CONTACT_BASE_PRICE_PER_KG)} / кг</dd>
+          <aside class="request-form__aside">
+            <section class="request-form__section request-form__section--summary">
+              <div class="quote-summary" data-quote-summary aria-live="polite">
+                <div class="quote-summary__head">
+                  <strong>Предварительный расчёт</strong>
+                  <p>Сводка по объёму и доставке обновляется автоматически по мере заполнения формы.</p>
+                </div>
+                <dl class="quote-summary__list">
+                  <div class="quote-summary__row">
+                    <dt>Базовая цена</dt>
+                    <dd data-quote-base>${formatRub(CONTACT_BASE_PRICE_PER_KG)} / кг</dd>
+                  </div>
+                  <div class="quote-summary__row">
+                    <dt>Объём</dt>
+                    <dd data-quote-weight>${initialQuote.quantityKg} кг</dd>
+                  </div>
+                  <div class="quote-summary__row">
+                    <dt>Скидка</dt>
+                    <dd data-quote-discount>0%</dd>
+                  </div>
+                  <div class="quote-summary__row">
+                    <dt>Надбавка за расстояние</dt>
+                    <dd data-quote-distance-markup>+0%</dd>
+                  </div>
+                  <div class="quote-summary__row">
+                    <dt>Цена за кг после расчёта</dt>
+                    <dd data-quote-price-per-kg>${formatRub(initialQuote.estimatedPricePerKg)} / кг</dd>
+                  </div>
+                  <div class="quote-summary__row quote-summary__row--total">
+                    <dt>Предварительная сумма</dt>
+                    <dd data-quote-total>${formatRub(initialQuote.totalEstimate)}</dd>
+                  </div>
+                </dl>
+                <details class="quote-summary__details">
+                  <summary>Как считается стоимость</summary>
+                  <p>${config.pricingHint}</p>
+                </details>
               </div>
-              <div class="quote-summary__row">
-                <dt>Объём</dt>
-                <dd data-quote-weight>${initialQuote.quantityKg} кг</dd>
-              </div>
-              <div class="quote-summary__row">
-                <dt>Скидка</dt>
-                <dd data-quote-discount>0%</dd>
-              </div>
-              <div class="quote-summary__row">
-                <dt>Надбавка за расстояние</dt>
-                <dd data-quote-distance-markup>+0%</dd>
-              </div>
-              <div class="quote-summary__row">
-                <dt>Цена за кг после расчёта</dt>
-                <dd data-quote-price-per-kg>${formatRub(initialQuote.estimatedPricePerKg)} / кг</dd>
-              </div>
-              <div class="quote-summary__row quote-summary__row--total">
-                <dt>Предварительная сумма</dt>
-                <dd data-quote-total>${formatRub(initialQuote.totalEstimate)}</dd>
-              </div>
-            </dl>
-            <details class="quote-summary__details">
-              <summary>Как считается стоимость</summary>
-              <p>${config.pricingHint}</p>
-            </details>
-          </article>
-        </fieldset>
+            </section>
+          </aside>
+        </div>
         <fieldset class="request-form__section request-form__section--actions">
           <legend>Согласие и отправка</legend>
           <label class="request-form__consent">
@@ -1073,7 +1078,7 @@ const renderContactQuoteForm = (config, context = {}) => {
           </label>
           <div class="request-form__actions">
             <button class="button" type="submit">${config.submitLabel}</button>
-            <a class="text-link text-link--inline" href="${config.quickContactHref}"${externalAttrs(config.quickContactHref)}>${config.quickContactLabel}</a>
+            <a class="text-link text-link--inline request-form__action-link" href="${config.quickContactHref}"${externalAttrs(config.quickContactHref)}>${config.quickContactLabel}</a>
           </div>
           <p class="request-form__note">${config.note}</p>
           <p class="request-form__status" data-request-status aria-live="polite"></p>
@@ -1513,8 +1518,8 @@ const renderProductPage = () => {
         (item, index) => `
           <article class="faq-item ${index === 0 ? "is-open" : ""}">
             <button type="button" aria-expanded="${index === 0 ? "true" : "false"}">
-              <span>${item.question}</span>
-              <span>${index === 0 ? "−" : "+"}</span>
+              <span class="faq-item__label">${item.question}</span>
+              <span class="faq-item__icon" data-faq-icon aria-hidden="true">${index === 0 ? "−" : "+"}</span>
             </button>
             <p>${item.answer}</p>
           </article>
@@ -1552,14 +1557,14 @@ const renderContactsPage = () => {
         meta: "Поставка для магазина, офиса или постоянных закупок",
         body: `
           <p>${wholesaleCard.text}</p>
-          <p>Форма справа остаётся основным сценарием для запроса на поставку и следующего шага по условиям.</p>
+          <p>Форма запроса помогает сразу передать объём, формат поставки и адрес доставки без лишней переписки.</p>
         `,
       },
       {
         title: "Контакты",
         meta: "Телефон, email, Telegram и часы работы",
         body: `
-          <p>Форма справа — основной сценарий для запроса на поставку. Телефон, email и Telegram остаются резервными каналами.</p>
+          <p>Телефон, email и Telegram остаются резервными каналами связи, если удобнее уточнить детали напрямую.</p>
           <div class="contact-direct__list">
             <p><a href="${store.contact.phoneHref}">${store.contact.phone}</a></p>
             <p><a href="${store.contact.emailHref}">${store.contact.email}</a></p>
@@ -2045,19 +2050,21 @@ const renderAboutPage = () => {
   const facts = $("#about-facts");
   if (facts) {
     facts.innerHTML = `
-      <div class="section-head about-section-head" data-reveal>
-        <p class="eyebrow">Факты о бренде</p>
-        <h2>${about.facts.title}</h2>
-        <p>${about.facts.text}</p>
-      </div>
       <section class="about-carousel" data-about-carousel aria-roledescription="carousel" aria-label="${about.facts.title}">
-        <div class="about-carousel__controls" data-reveal>
-          <button class="about-carousel__arrow about-carousel__arrow--prev" type="button" data-about-prev aria-label="Предыдущий факт">
-            <span aria-hidden="true">←</span>
-          </button>
-          <button class="about-carousel__arrow" type="button" data-about-next aria-label="Следующий факт">
-            <span aria-hidden="true">→</span>
-          </button>
+        <div class="about-carousel__top">
+          <div class="section-head about-section-head" data-reveal>
+            <p class="eyebrow">Факты о бренде</p>
+            <h2>${about.facts.title}</h2>
+            <p>${about.facts.text}</p>
+          </div>
+          <div class="about-carousel__controls" data-reveal>
+            <button class="about-carousel__arrow about-carousel__arrow--prev" type="button" data-about-prev aria-label="Предыдущий факт">
+              <span class="about-carousel__arrow-icon" aria-hidden="true">${renderIcon("arrow")}</span>
+            </button>
+            <button class="about-carousel__arrow" type="button" data-about-next aria-label="Следующий факт">
+              <span class="about-carousel__arrow-icon" aria-hidden="true">${renderIcon("arrow")}</span>
+            </button>
+          </div>
         </div>
         <div class="about-carousel__viewport">
           <div class="about-carousel__track" data-about-track>
@@ -2501,9 +2508,38 @@ const bindMobileNav = () => {
   const nav = $("[data-mobile-nav]");
   if (!toggle || !nav) return;
 
+  const close = () => {
+    nav.classList.remove("is-open");
+    document.body.classList.remove("has-mobile-nav");
+    toggle.setAttribute("aria-expanded", "false");
+  };
+
   toggle.addEventListener("click", () => {
-    const isOpen = nav.classList.toggle("is-open");
-    toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    const isOpen = nav.classList.contains("is-open");
+    if (isOpen) {
+      close();
+      return;
+    }
+
+    nav.classList.add("is-open");
+    document.body.classList.add("has-mobile-nav");
+    toggle.setAttribute("aria-expanded", "true");
+  });
+
+  $$("a", nav).forEach((link) => {
+    link.addEventListener("click", close);
+  });
+
+  window.addEventListener("resize", () => {
+    if (window.matchMedia("(min-width: 1181px)").matches) {
+      close();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      close();
+    }
   });
 };
 
@@ -2666,12 +2702,14 @@ const bindFaq = () => {
         const toggle = $("button", entry);
         if (!toggle) return;
         toggle.setAttribute("aria-expanded", "false");
-        $("span:last-child", toggle).textContent = "+";
+        const icon = $("[data-faq-icon]", toggle);
+        if (icon) icon.textContent = "+";
       });
       if (!isOpen) {
         item.classList.add("is-open");
         button.setAttribute("aria-expanded", "true");
-        $("span:last-child", button).textContent = "−";
+        const icon = $("[data-faq-icon]", button);
+        if (icon) icon.textContent = "−";
       }
     });
   });
