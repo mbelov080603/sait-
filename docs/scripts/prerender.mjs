@@ -1,0 +1,856 @@
+import fs from "node:fs/promises";
+import { execFileSync } from "node:child_process";
+import path from "node:path";
+import vm from "node:vm";
+import { fileURLToPath } from "node:url";
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const SITE_URL = "https://globalbasket.ru";
+const SEO_START = "<!-- prerender-seo:start -->";
+const SEO_END = "<!-- prerender-seo:end -->";
+const HEADER_START = "<!-- prerender-header:start -->";
+const HEADER_END = "<!-- prerender-header:end -->";
+const FOOTER_START = "<!-- prerender-footer:start -->";
+const FOOTER_END = "<!-- prerender-footer:end -->";
+
+const dataSource = await fs.readFile(path.join(ROOT, "scripts/data.js"), "utf8");
+const mainSource = await fs.readFile(path.join(ROOT, "scripts/main.js"), "utf8");
+
+const loadStore = () => {
+  const sandbox = { window: {} };
+  vm.runInNewContext(dataSource, sandbox, { filename: "data.js" });
+  return sandbox.window.GlobalBasketData;
+};
+
+const store = loadStore();
+const products =
+  Array.isArray(store.products) && store.products.length
+    ? store.products
+    : [store.product].filter(Boolean);
+const categories = Array.isArray(store.categories) ? store.categories : [];
+const featuredProduct = products.find((item) => item?.status === "active") || products[0] || store.product;
+
+const escapeHtml = (value = "") =>
+  String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+
+const escapeAttribute = (value = "") =>
+  escapeHtml(value).replaceAll('"', "&quot;");
+
+const escapeRegex = (value = "") =>
+  String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const absoluteUrl = (value = "/") => new URL(value, SITE_URL).toString();
+
+const serializeJsonLd = (value) =>
+  JSON.stringify(value).replace(/</g, "\\u003c").replace(/<\/script>/gi, "<\\/script>");
+
+const buildDocumentTitle = (value = "") => {
+  const normalized = String(value || "").trim();
+  if (!normalized) return "Global Basket";
+  return /global basket/i.test(normalized) ? normalized : `Global Basket | ${normalized}`;
+};
+
+const normalizePhone = (href = "", fallback = "") => {
+  const cleaned = String(href || fallback).replace(/^tel:/, "").trim();
+  return cleaned || String(fallback || "").trim();
+};
+
+const buildOrganizationSchema = () => ({
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Global Basket",
+  url: SITE_URL,
+  logo: absoluteUrl("/assets/logo.jpg"),
+  email: store.contact.email,
+  telephone: normalizePhone(store.contact.phoneHref, store.contact.phone),
+  contactPoint: [
+    {
+      "@type": "ContactPoint",
+      contactType: "sales",
+      telephone: normalizePhone(store.contact.phoneHref, store.contact.phone),
+      email: store.contact.email,
+      availableLanguage: ["ru"],
+      url: absoluteUrl("/contacts/"),
+    },
+  ],
+  sameAs: [store.contact.channelHref, store.contact.telegramHref].filter(Boolean),
+});
+
+const buildBreadcrumbSchema = (items = []) => ({
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: items.map((item, index) => ({
+    "@type": "ListItem",
+    position: index + 1,
+    name: item.name,
+    item: absoluteUrl(item.path),
+  })),
+});
+
+const buildProductSchema = (product) => ({
+  "@context": "https://schema.org",
+  "@type": "Product",
+  name: product.h1 || product.fullName || product.shortName,
+  description:
+    product.fullDescription ||
+    product.shortDescription ||
+    product.seoDescription ||
+    product.catalogDescription,
+  image: [product.images?.main, ...(product.gallery || []).map((item) => item.src)]
+    .filter(Boolean)
+    .map((item) => absoluteUrl(item)),
+  brand: {
+    "@type": "Brand",
+    name: "Global Basket",
+  },
+  category: product.category,
+  additionalProperty: (product.specs || []).map((item) => ({
+    "@type": "PropertyValue",
+    name: item.label,
+    value: item.value,
+  })),
+});
+
+const buildFaqSchema = (items = []) => ({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: items.map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: item.answer,
+    },
+  })),
+});
+
+const createClassList = () => {
+  const set = new Set();
+  return {
+    add: (...names) => names.forEach((name) => set.add(name)),
+    remove: (...names) => names.forEach((name) => set.delete(name)),
+    contains: (name) => set.has(name),
+    toggle: (name, force) => {
+      if (force === true) {
+        set.add(name);
+        return true;
+      }
+      if (force === false) {
+        set.delete(name);
+        return false;
+      }
+      if (set.has(name)) {
+        set.delete(name);
+        return false;
+      }
+      set.add(name);
+      return true;
+    },
+  };
+};
+
+class FakeElement {
+  constructor(tagName = "div") {
+    this.tagName = String(tagName).toLowerCase();
+    this.innerHTML = "";
+    this.textContent = "";
+    this.value = "";
+    this.dataset = {};
+    this.attributes = new Map();
+    this.classList = createClassList();
+    this.style = {
+      setProperty() {},
+    };
+  }
+
+  querySelector() {
+    return null;
+  }
+
+  querySelectorAll() {
+    return [];
+  }
+
+  addEventListener() {}
+
+  removeEventListener() {}
+
+  append(node) {
+    if (node?.tagName === "meta") {
+      return node;
+    }
+    return node;
+  }
+
+  appendChild(node) {
+    return this.append(node);
+  }
+
+  setAttribute(name, value) {
+    this.attributes.set(name, String(value));
+  }
+
+  getAttribute(name) {
+    return this.attributes.get(name) || null;
+  }
+
+  removeAttribute(name) {
+    this.attributes.delete(name);
+  }
+
+  focus() {}
+
+  scrollIntoView() {}
+
+  reportValidity() {
+    return true;
+  }
+}
+
+class FakeHead extends FakeElement {
+  constructor() {
+    super("head");
+    this.metaTags = new Map();
+  }
+
+  querySelector(selector) {
+    const metaMatch = selector.match(/^meta\[name="(.+)"\]$/);
+    if (metaMatch) {
+      return this.metaTags.get(metaMatch[1]) || null;
+    }
+    return null;
+  }
+
+  append(node) {
+    if (node?.tagName === "meta") {
+      const name = node.getAttribute("name");
+      if (name) {
+        this.metaTags.set(name, node);
+      }
+    }
+    return node;
+  }
+}
+
+class FakeDocument {
+  constructor({ bodyDataset = {}, mountKeys = [] }) {
+    this.title = "";
+    this.body = new FakeElement("body");
+    this.body.dataset = { ...bodyDataset };
+    this.documentElement = {
+      style: {
+        setProperty() {},
+      },
+    };
+    this.head = new FakeHead();
+    this.mounts = new Map();
+
+    mountKeys.forEach((key) => {
+      this.mounts.set(key, new FakeElement("div"));
+    });
+  }
+
+  createElement(tagName) {
+    return new FakeElement(tagName);
+  }
+
+  addEventListener() {}
+
+  querySelector(selector) {
+    if (selector === "[data-site-header]") return this.mounts.get("data-site-header") || null;
+    if (selector === "[data-site-footer]") return this.mounts.get("data-site-footer") || null;
+    if (selector.startsWith("#")) {
+      return this.mounts.get(selector.slice(1)) || null;
+    }
+    return null;
+  }
+
+  querySelectorAll() {
+    return [];
+  }
+}
+
+const bundleSource = `
+${dataSource}
+${mainSource}
+this.__GB_EXPORTS__ = {
+  renderHeader,
+  renderFooter,
+  renderHome,
+  renderCatalog,
+  renderProductPage,
+  renderContactsPage,
+  renderAboutPage,
+  renderDeliveryPage,
+  renderCategoryPage,
+  renderJournalPage,
+  renderArticlePage,
+  renderUtilityPage,
+  store,
+};
+`;
+
+const renderMounts = ({ path: routePath, bodyDataset, mountKeys, renderMethod }) => {
+  const document = new FakeDocument({ bodyDataset, mountKeys: ["data-site-header", "data-site-footer", ...mountKeys] });
+  const location = new URL(routePath, SITE_URL);
+  const windowObject = {
+    location,
+    history: {
+      replaceState() {},
+    },
+    matchMedia() {
+      return {
+        matches: true,
+        addEventListener() {},
+        removeEventListener() {},
+      };
+    },
+    addEventListener() {},
+    removeEventListener() {},
+    requestAnimationFrame() {
+      return 0;
+    },
+    cancelAnimationFrame() {},
+    setTimeout() {
+      return 0;
+    },
+    clearTimeout() {},
+    scrollTo() {},
+    scrollY: 0,
+    sessionStorage: {
+      getItem() {
+        return null;
+      },
+      setItem() {},
+      removeItem() {},
+    },
+  };
+
+  const sandbox = {
+    window: windowObject,
+    document,
+    console,
+    URL,
+    URLSearchParams,
+    Intl,
+    HTMLElement: FakeElement,
+    HTMLInputElement: FakeElement,
+    FormData,
+    fetch: async () => {
+      throw new Error("fetch is not available during prerender");
+    },
+    IntersectionObserver: class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+    requestAnimationFrame: windowObject.requestAnimationFrame,
+    cancelAnimationFrame: windowObject.cancelAnimationFrame,
+    setTimeout: windowObject.setTimeout,
+    clearTimeout: windowObject.clearTimeout,
+  };
+
+  sandbox.globalThis = sandbox;
+  sandbox.self = windowObject;
+  windowObject.window = windowObject;
+  windowObject.document = document;
+
+  vm.runInNewContext(bundleSource, sandbox, { filename: "prerender-bundle.js" });
+  const api = sandbox.__GB_EXPORTS__;
+
+  api.renderHeader();
+  api.renderFooter();
+  api[renderMethod]();
+
+  return {
+    document,
+    store: api.store,
+  };
+};
+
+const injectWrappedBlock = (html, start, end, replacement, placeholderPattern) => {
+  const block = `${start}\n${replacement}\n${end}`;
+  const markerPattern = new RegExp(`${escapeRegex(start)}[\\s\\S]*?${escapeRegex(end)}`, "m");
+  if (markerPattern.test(html)) {
+    return html.replace(markerPattern, block);
+  }
+  return html.replace(placeholderPattern, block);
+};
+
+const replaceElementContents = (html, id, content, mode = "html") => {
+  const openPattern = new RegExp(`<([a-z0-9-]+)([^>]*\\bid="${escapeRegex(id)}"[^>]*)>`, "i");
+  const openMatch = openPattern.exec(html);
+  if (!openMatch) {
+    throw new Error(`Unable to find #${id}`);
+  }
+
+  const tagName = openMatch[1];
+  const openTagStart = openMatch.index;
+  const openTagEnd = openTagStart + openMatch[0].length;
+  const value = mode === "text" ? escapeHtml(content) : content;
+
+  const closePattern = new RegExp(`</?${escapeRegex(tagName)}\\b[^>]*>`, "gi");
+  closePattern.lastIndex = openTagEnd;
+  let depth = 1;
+  let closeTagStart = -1;
+  let closeTagEnd = -1;
+
+  for (let match = closePattern.exec(html); match; match = closePattern.exec(html)) {
+    const token = match[0];
+    const isClosing = token.startsWith("</");
+    const isSelfClosing = token.endsWith("/>");
+    if (isClosing) {
+      depth -= 1;
+      if (depth === 0) {
+        closeTagStart = match.index;
+        closeTagEnd = match.index + token.length;
+        break;
+      }
+    } else if (!isSelfClosing) {
+      depth += 1;
+    }
+  }
+
+  if (closeTagStart === -1 || closeTagEnd === -1) {
+    throw new Error(`Unable to find closing tag for #${id}`);
+  }
+
+  return `${html.slice(0, openTagEnd)}${value}${html.slice(closeTagStart, closeTagEnd)}${html.slice(closeTagEnd)}`;
+};
+
+const replaceTitle = (html, title) =>
+  html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(buildDocumentTitle(title))}</title>`);
+
+const upsertMetaName = (html, name, content) => {
+  const pattern = new RegExp(`<meta\\s+name=["']${escapeRegex(name)}["'][^>]*>`, "i");
+  if (!content) return html.replace(pattern, "");
+  const tag = `<meta name="${name}" content="${escapeAttribute(content)}" />`;
+  if (pattern.test(html)) {
+    return html.replace(pattern, tag);
+  }
+  return html.replace(/<\/head>/i, `    ${tag}\n  </head>`);
+};
+
+const applySeo = (html, { path: routePath, title, description, keywords = "", image = "", ogType = "website", schemas = [] }) => {
+  let next = replaceTitle(html, title);
+  next = upsertMetaName(next, "description", description);
+  next = upsertMetaName(next, "keywords", keywords);
+
+  const markerPattern = new RegExp(`${escapeRegex(SEO_START)}[\\s\\S]*?${escapeRegex(SEO_END)}\\n?`, "m");
+  next = next.replace(markerPattern, "");
+
+  const seoBlock = [
+    SEO_START,
+    `    <link rel="canonical" href="${absoluteUrl(routePath)}" />`,
+    `    <meta property="og:type" content="${escapeAttribute(ogType)}" />`,
+    `    <meta property="og:title" content="${escapeAttribute(buildDocumentTitle(title))}" />`,
+    `    <meta property="og:description" content="${escapeAttribute(description)}" />`,
+    `    <meta property="og:url" content="${absoluteUrl(routePath)}" />`,
+    image ? `    <meta property="og:image" content="${absoluteUrl(image)}" />` : "",
+    `    <meta name="twitter:card" content="${image ? "summary_large_image" : "summary"}" />`,
+    `    <meta name="twitter:title" content="${escapeAttribute(buildDocumentTitle(title))}" />`,
+    `    <meta name="twitter:description" content="${escapeAttribute(description)}" />`,
+    image ? `    <meta name="twitter:image" content="${absoluteUrl(image)}" />` : "",
+    ...schemas.map(
+      (schema) =>
+        `    <script type="application/ld+json">${serializeJsonLd(schema)}</script>`,
+    ),
+    SEO_END,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return next.replace(/<\/head>/i, `${seoBlock}\n  </head>`);
+};
+
+const applyCommonFrame = (html, rendered) => {
+  let next = injectWrappedBlock(
+    html,
+    HEADER_START,
+    HEADER_END,
+    `<div data-site-header>${rendered.document.mounts.get("data-site-header")?.innerHTML || ""}</div>`,
+    /<div data-site-header><\/div>/,
+  );
+  next = injectWrappedBlock(
+    next,
+    FOOTER_START,
+    FOOTER_END,
+    `<div data-site-footer>${rendered.document.mounts.get("data-site-footer")?.innerHTML || ""}</div>`,
+    /<div data-site-footer><\/div>/,
+  );
+  return next.replace(
+    /<div class="breadcrumb">/g,
+    '<div class="breadcrumb" role="navigation" aria-label="Breadcrumbs">',
+  );
+};
+
+const loadTemplateHtml = async (file) => {
+  try {
+    return execFileSync("git", ["show", `HEAD:${file}`], {
+      cwd: ROOT,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+  } catch {
+    return fs.readFile(path.join(ROOT, file), "utf8");
+  }
+};
+
+const writeRenderedPage = async ({
+  file,
+  rendered,
+  htmlMounts = [],
+  textMounts = [],
+  seo,
+}) => {
+  const fullPath = path.join(ROOT, file);
+  let html = await loadTemplateHtml(file);
+  html = applyCommonFrame(html, rendered);
+  html = applySeo(html, seo);
+
+  htmlMounts.forEach((id) => {
+    const mount = rendered.document.mounts.get(id);
+    html = replaceElementContents(html, id, mount?.innerHTML || "");
+  });
+
+  textMounts.forEach((id) => {
+    const mount = rendered.document.mounts.get(id);
+    html = replaceElementContents(html, id, mount?.textContent || "", "text");
+  });
+
+  await fs.writeFile(fullPath, html);
+};
+
+await writeRenderedPage({
+  file: "index.html",
+  rendered: renderMounts({
+    path: "/",
+    bodyDataset: { page: "home", nav: "home" },
+    mountKeys: [
+      "home-hero",
+      "home-featured",
+      "home-categories",
+      "home-advantages",
+      "home-journal-featured",
+      "home-journal-list",
+    ],
+    renderMethod: "renderHome",
+  }),
+  htmlMounts: [
+    "home-hero",
+    "home-featured",
+    "home-categories",
+    "home-advantages",
+    "home-journal-featured",
+    "home-journal-list",
+  ],
+  seo: {
+    path: "/",
+    title: "Главная",
+    description:
+      "Global Basket — каталог натуральных продуктов со всего мира с inquiry-first сценарием: описание товара, журнал и запрос условий без checkout-обещаний.",
+    image: featuredProduct?.images?.main || "/assets/logo.jpg",
+    schemas: [buildOrganizationSchema()],
+  },
+});
+
+await writeRenderedPage({
+  file: "about/index.html",
+  rendered: renderMounts({
+    path: "/about/",
+    bodyDataset: { page: "about", nav: "about" },
+    mountKeys: [
+      "about-hero",
+      "about-who",
+      "about-mission",
+      "about-facts",
+      "about-values",
+      "about-why",
+      "about-selection",
+      "about-differences",
+      "about-character",
+      "about-legend",
+      "about-cta",
+    ],
+    renderMethod: "renderAboutPage",
+  }),
+  htmlMounts: [
+    "about-hero",
+    "about-who",
+    "about-mission",
+    "about-facts",
+    "about-values",
+    "about-why",
+    "about-selection",
+    "about-differences",
+    "about-character",
+    "about-legend",
+    "about-cta",
+  ],
+  seo: {
+    path: "/about/",
+    title: "О бренде",
+    description:
+      "О бренде Global Basket: кто мы, как отбираем продукты, какие ценности держим и почему каталог работает как честный сценарий выбора и запроса условий.",
+    image: store.aboutPage.hero.image.src,
+    schemas: [
+      buildOrganizationSchema(),
+      buildBreadcrumbSchema([
+        { name: "Главная", path: "/" },
+        { name: "О бренде", path: "/about/" },
+      ]),
+    ],
+  },
+});
+
+await writeRenderedPage({
+  file: "delivery/index.html",
+  rendered: renderMounts({
+    path: "/delivery/",
+    bodyDataset: { page: "delivery", nav: "delivery" },
+    mountKeys: ["delivery-steps", "delivery-cards", "delivery-returns"],
+    renderMethod: "renderDeliveryPage",
+  }),
+  htmlMounts: ["delivery-steps", "delivery-cards", "delivery-returns"],
+  seo: {
+    path: "/delivery/",
+    title: "Доставка и оплата",
+    description:
+      "Доставка и оплата Global Basket: как работает inquiry-first сценарий, когда уточняется стоимость, объём, поставка и следующий шаг без checkout-логики.",
+    image: featuredProduct?.images?.main || "/assets/logo.jpg",
+    schemas: [
+      buildOrganizationSchema(),
+      buildBreadcrumbSchema([
+        { name: "Главная", path: "/" },
+        { name: "Доставка и оплата", path: "/delivery/" },
+      ]),
+    ],
+  },
+});
+
+await writeRenderedPage({
+  file: "contacts/index.html",
+  rendered: renderMounts({
+    path: "/contacts/",
+    bodyDataset: { page: "contacts", nav: "contacts" },
+    mountKeys: ["contacts-intro", "contact-panel"],
+    renderMethod: "renderContactsPage",
+  }),
+  htmlMounts: ["contacts-intro", "contact-panel"],
+  seo: {
+    path: "/contacts/",
+    title: "Контакты",
+    description:
+      "Контакты Global Basket: форма запроса по поставке, продукту и доставке, плюс резервные каналы связи через Telegram, телефон и email.",
+    image: "/assets/logo.jpg",
+    schemas: [
+      buildOrganizationSchema(),
+      buildBreadcrumbSchema([
+        { name: "Главная", path: "/" },
+        { name: "Контакты", path: "/contacts/" },
+      ]),
+    ],
+  },
+});
+
+for (const [slug, utilityPage] of Object.entries(store.utilityPages || {})) {
+  await writeRenderedPage({
+    file: `${slug}/index.html`,
+    rendered: renderMounts({
+      path: `/${slug}/`,
+      bodyDataset: { page: "utility", utility: slug, nav: "utility" },
+      mountKeys: ["utility-page"],
+      renderMethod: "renderUtilityPage",
+    }),
+    htmlMounts: ["utility-page"],
+    seo: {
+      path: `/${slug}/`,
+      title: utilityPage.title,
+      description: utilityPage.text,
+      image: "/assets/logo.jpg",
+      schemas: [
+        buildOrganizationSchema(),
+        buildBreadcrumbSchema([
+          { name: "Главная", path: "/" },
+          { name: utilityPage.title, path: `/${slug}/` },
+        ]),
+      ],
+    },
+  });
+}
+
+await writeRenderedPage({
+  file: "journal/index.html",
+  rendered: renderMounts({
+    path: "/journal/",
+    bodyDataset: { page: "journal", nav: "journal" },
+    mountKeys: ["journal-featured", "journal-list"],
+    renderMethod: "renderJournalPage",
+  }),
+  htmlMounts: ["journal-featured", "journal-list"],
+  seo: {
+    path: "/journal/",
+    title: "Журнал",
+    description:
+      "Журнал Global Basket — материалы о продукте, подаче и развитии каталога, доступные уже в исходном HTML без зависимости от client-side рендера.",
+    image: store.journal.posts[0]?.image || featuredProduct?.images?.main || "/assets/logo.jpg",
+    schemas: [
+      buildOrganizationSchema(),
+      buildBreadcrumbSchema([
+        { name: "Главная", path: "/" },
+        { name: "Журнал", path: "/journal/" },
+      ]),
+    ],
+  },
+});
+
+await writeRenderedPage({
+  file: "catalog/index.html",
+  rendered: renderMounts({
+    path: "/catalog/",
+    bodyDataset: { page: "catalog", nav: "catalog" },
+    mountKeys: ["catalog-sidebar", "catalog-toolbar", "catalog-grid", "catalog-support"],
+    renderMethod: "renderCatalog",
+  }),
+  htmlMounts: ["catalog-sidebar", "catalog-toolbar", "catalog-grid", "catalog-support"],
+  seo: {
+    path: "/catalog/",
+    title: "Каталог",
+    description:
+      "Каталог Global Basket: товарные карточки и разделы с готовым HTML-контентом, характеристиками и понятным переходом к запросу условий.",
+    image: featuredProduct?.images?.main || "/assets/logo.jpg",
+    schemas: [
+      buildOrganizationSchema(),
+      buildBreadcrumbSchema([
+        { name: "Главная", path: "/" },
+        { name: "Каталог", path: "/catalog/" },
+      ]),
+    ],
+  },
+});
+
+for (const category of categories) {
+  await writeRenderedPage({
+    file: `categories/${category.id}/index.html`,
+    rendered: renderMounts({
+      path: `/categories/${category.id}/`,
+      bodyDataset: { page: "category", category: category.id, nav: "category" },
+      mountKeys: [
+        "category-breadcrumb-current",
+        "category-title",
+        "category-description",
+        "category-intro-cards",
+        "category-shelf",
+        "category-related",
+      ],
+      renderMethod: "renderCategoryPage",
+    }),
+    htmlMounts: ["category-intro-cards", "category-shelf", "category-related"],
+    textMounts: ["category-breadcrumb-current", "category-title", "category-description"],
+    seo: {
+      path: `/categories/${category.id}/`,
+      title: category.title || category.name,
+      description: category.intro || category.description || "",
+      image: category.image || featuredProduct?.images?.main || "/assets/logo.jpg",
+      schemas: [
+        buildOrganizationSchema(),
+        buildBreadcrumbSchema([
+          { name: "Главная", path: "/" },
+          { name: "Каталог", path: "/catalog/" },
+          { name: category.title || category.name, path: `/categories/${category.id}/` },
+        ]),
+      ],
+    },
+  });
+}
+
+for (const post of store.journal.posts) {
+  await writeRenderedPage({
+    file: `journal/${post.slug}/index.html`,
+    rendered: renderMounts({
+      path: `/journal/${post.slug}/`,
+      bodyDataset: { page: "article", article: post.slug, nav: "journal" },
+      mountKeys: ["article-hero", "article-sections"],
+      renderMethod: "renderArticlePage",
+    }),
+    htmlMounts: ["article-hero", "article-sections"],
+    seo: {
+      path: `/journal/${post.slug}/`,
+      title: post.title,
+      description: post.lead || post.excerpt || "",
+      image: post.image || featuredProduct?.images?.main || "/assets/logo.jpg",
+      ogType: "article",
+      schemas: [
+        buildOrganizationSchema(),
+        buildBreadcrumbSchema([
+          { name: "Главная", path: "/" },
+          { name: "Журнал", path: "/journal/" },
+          { name: post.title, path: `/journal/${post.slug}/` },
+        ]),
+      ],
+    },
+  });
+}
+
+for (const product of products) {
+  await writeRenderedPage({
+    file: product.href.replace(/^\//, "") + "index.html",
+    rendered: renderMounts({
+      path: product.href,
+      bodyDataset: { page: "product", product: product.id, nav: "catalog" },
+      mountKeys: [
+        "product-breadcrumb-current",
+        "product-gallery",
+        "product-summary",
+        "product-details",
+        "product-benefits-eyebrow",
+        "product-benefits-title",
+        "product-benefits",
+        "product-actions-eyebrow",
+        "product-actions-title",
+        "product-marketplaces",
+        "product-faq",
+      ],
+      renderMethod: "renderProductPage",
+    }),
+    htmlMounts: [
+      "product-gallery",
+      "product-summary",
+      "product-details",
+      "product-benefits",
+      "product-marketplaces",
+      "product-faq",
+    ],
+    textMounts: [
+      "product-breadcrumb-current",
+      "product-benefits-eyebrow",
+      "product-benefits-title",
+      "product-actions-eyebrow",
+      "product-actions-title",
+    ],
+    seo: {
+      path: product.href,
+      title: product.seoTitle || product.h1 || product.shortName,
+      description:
+        product.seoDescription ||
+        product.annotation ||
+        product.shortDescription ||
+        product.catalogDescription,
+      keywords: product.seoKeywords || "",
+      image: product.images?.main || product.gallery?.[0]?.src || "/assets/logo.jpg",
+      schemas: [
+        buildOrganizationSchema(),
+        buildBreadcrumbSchema([
+          { name: "Главная", path: "/" },
+          { name: "Каталог", path: "/catalog/" },
+          { name: product.shortName, path: product.href },
+        ]),
+        buildProductSchema(product),
+        buildFaqSchema(product.faq || []),
+      ],
+    },
+  });
+}
