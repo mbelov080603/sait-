@@ -2940,42 +2940,6 @@ const renderAccountSummaryPanel = (profile = null) => {
   `;
 };
 
-const renderAccountSnapshotPanel = (profile = null) => {
-  const cartItems = getCartItems();
-  const favoriteItems = getFavoriteItems();
-  const summary = derivePreferenceSummary(profile);
-  const lastPayload = readJsonStorage(STORAGE_KEYS.lastAccountPayload, null);
-  const bitrixLead = lastPayload?.integration?.bitrixLead || null;
-
-  return `
-    <article class="request-panel account-snapshot-card">
-      <div class="section-head section-head--compact">
-        <p class="eyebrow">Снимок данных</p>
-        <h2>Что уйдёт в CRM</h2>
-        <p>При регистрации профиль собирает контакт, текущую корзину, избранное и интересующие разделы сайта в одном payload, готовом для воронки Bitrix24.</p>
-      </div>
-      <div class="account-snapshot-card__grid">
-        <article>
-          <strong>Корзина</strong>
-          <p>${cartItems.length ? cartItems.map((item) => `${item.shortName} × ${Math.max(1, Number(item.quantity) || 1)}`).join(", ") : "Пока пусто."}</p>
-        </article>
-        <article>
-          <strong>Избранное</strong>
-          <p>${favoriteItems.length ? favoriteItems.map((item) => item.shortName).join(", ") : "Пока нет сохранённых позиций."}</p>
-        </article>
-        <article>
-          <strong>Предпочтения</strong>
-          <p>${summary.categoryNames.length ? summary.categoryNames.join(", ") : "Появятся после выбора разделов или добавления товаров."}</p>
-        </article>
-        <article>
-          <strong>Bitrix24</strong>
-          <p>${bitrixLead ? `Lead title: ${bitrixLead.title}. Pipeline seed: ${bitrixLead.pipelineSeed || "account_registration"}.` : "После первого сохранения здесь появится готовый lead envelope для CRM."}</p>
-        </article>
-      </div>
-    </article>
-  `;
-};
-
 const renderAccountRegistrationPanel = (profile = null) => {
   const contactKey = resolvePreferredContactKey(profile?.preferredContact || "phone");
   const contactValue = getProfileContactValue(profile);
@@ -3084,7 +3048,6 @@ const renderAccountPage = () => {
       </div>
       <div class="utility-grid utility-grid--account-main">
         ${renderAccountRegistrationPanel(profile)}
-        ${renderAccountSnapshotPanel(profile)}
       </div>
     </div>
   `;

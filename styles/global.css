@@ -4274,7 +4274,7 @@ body.has-mobile-nav {
 }
 
 .utility-grid--account-main {
-  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
 }
 
@@ -4292,6 +4292,10 @@ body.has-mobile-nav {
   gap: 16px;
   align-content: start;
   height: 100%;
+}
+
+.account-register-panel {
+  max-width: 760px;
 }
 
 .account-summary-card__list {
