@@ -106,6 +106,242 @@ const resolveCategoryFromLocation = () => {
 
 const currentCategory = resolveCategoryFromLocation();
 
+const STORAGE_KEYS = {
+  accountProfile: "gb-account-profile",
+  cartItems: "gb-cart-items",
+  favoriteItems: "gb-favorite-items",
+  lastAccountPayload: "gb-last-account-payload",
+};
+
+const DEFAULT_ACCOUNT_NAME = "Покупатель Global Basket";
+
+const readJsonStorage = (key, fallback) => {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+};
+
+const writeJsonStorage = (key, value) => {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // ignore storage errors to keep the UI usable in private mode
+  }
+};
+
+const removeStorageItem = (key) => {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // ignore storage errors to keep the UI usable in private mode
+  }
+};
+
+const createLocalId = (prefix = "gb") =>
+  `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+const toIsoNow = () => new Date().toISOString();
+
+const cleanStoredList = (value) => (Array.isArray(value) ? value.filter(Boolean) : []);
+
+const getCartItems = () => cleanStoredList(readJsonStorage(STORAGE_KEYS.cartItems, []));
+const getFavoriteItems = () => cleanStoredList(readJsonStorage(STORAGE_KEYS.favoriteItems, []));
+const getAccountProfile = () => readJsonStorage(STORAGE_KEYS.accountProfile, null);
+
+const setCartItems = (items) => {
+  writeJsonStorage(STORAGE_KEYS.cartItems, cleanStoredList(items));
+};
+
+const setFavoriteItems = (items) => {
+  writeJsonStorage(STORAGE_KEYS.favoriteItems, cleanStoredList(items));
+};
+
+const setAccountProfile = (profile) => {
+  if (!profile) {
+    removeStorageItem(STORAGE_KEYS.accountProfile);
+    return;
+  }
+  writeJsonStorage(STORAGE_KEYS.accountProfile, profile);
+};
+
+const getStoredVariantLabel = (variant = null) =>
+  typeof variant === "string" ? variant : variant?.label || variant?.value || "";
+
+const buildStoredProductSnapshot = (productItem, variant = null, quantity = 1, source = "site") => {
+  const variantLabel = getStoredVariantLabel(variant);
+  return {
+    entryId: `${productItem.id || productItem.slug}::${variantLabel || "default"}`,
+    productId: productItem.id || productItem.slug || "",
+    slug: productItem.slug || "",
+    href: productItem.href || "",
+    shortName: productItem.shortName || productItem.h1 || productItem.fullName || "",
+    fullName: productItem.fullName || productItem.shortName || "",
+    subtitle: buildVariantSubtitle(productItem, variant) || productItem.subtitle || "",
+    categoryName: productItem.category || "",
+    categoryId: productItem.categorySlug || "",
+    image:
+      productItem.images?.packshot ||
+      productItem.images?.main ||
+      productItem.images?.detail ||
+      "",
+    price: productItem.price || "",
+    variantLabel,
+    quantity,
+    source,
+    savedAt: toIsoNow(),
+  };
+};
+
+const resolveStoredProduct = (entry) => {
+  if (!entry) return null;
+  return (
+    findProduct(entry.productId || "") ||
+    findProduct(entry.slug || "") ||
+    findProduct(entry.href || "") ||
+    null
+  );
+};
+
+const buildInterestOptions = () =>
+  activeCategories.map((item) => ({
+    id: item.id,
+    label: item.title || item.name,
+  }));
+
+const derivePreferenceSummary = (profile = getAccountProfile()) => {
+  const cartItems = getCartItems();
+  const favoriteItems = getFavoriteItems();
+  const categoryMap = new Map();
+  const explicitInterests = Array.isArray(profile?.interestIds) ? profile.interestIds : [];
+
+  [...cartItems, ...favoriteItems].forEach((entry) => {
+    if (!entry?.categoryId) return;
+    const label = entry.categoryName || findCategory(entry.categoryId)?.title || entry.categoryId;
+    categoryMap.set(entry.categoryId, label);
+  });
+
+  explicitInterests.forEach((id) => {
+    if (categoryMap.has(id)) return;
+    const category = findCategory(id);
+    categoryMap.set(id, category?.title || category?.name || id);
+  });
+
+  return {
+    cartCount: cartItems.reduce((sum, entry) => sum + Math.max(1, Number(entry.quantity) || 1), 0),
+    cartLineCount: cartItems.length,
+    favoriteCount: favoriteItems.length,
+    categoryIds: Array.from(categoryMap.keys()),
+    categoryNames: Array.from(categoryMap.values()),
+    preferredContact: profile?.preferredContact || "",
+  };
+};
+
+const syncAccountProfileWithStorage = () => {
+  const profile = getAccountProfile();
+  if (!profile) return null;
+
+  const preferenceSummary = derivePreferenceSummary(profile);
+  const nextProfile = {
+    ...profile,
+    cartSnapshot: getCartItems(),
+    favoriteSnapshot: getFavoriteItems(),
+    preferenceCategoryIds: preferenceSummary.categoryIds,
+    preferenceCategoryNames: preferenceSummary.categoryNames,
+    updatedAt: toIsoNow(),
+  };
+
+  setAccountProfile(nextProfile);
+  return nextProfile;
+};
+
+const getHeaderState = () => {
+  const profile = getAccountProfile();
+  return {
+    favorites: getFavoriteItems().length,
+    cart: getCartItems().reduce((sum, entry) => sum + Math.max(1, Number(entry.quantity) || 1), 0),
+    accountRegistered: Boolean(profile),
+  };
+};
+
+const isFavoriteSaved = (productItem) =>
+  getFavoriteItems().some((entry) => entry.productId === (productItem.id || productItem.slug));
+
+const getCartQuantityForProduct = (productItem, variant = null) => {
+  const variantLabel = getStoredVariantLabel(variant);
+  return getCartItems()
+    .filter(
+      (entry) =>
+        entry.productId === (productItem.id || productItem.slug) &&
+        (entry.variantLabel || "") === variantLabel,
+    )
+    .reduce((sum, entry) => sum + Math.max(1, Number(entry.quantity) || 1), 0);
+};
+
+const toggleFavoriteProduct = (productItem, variant = null, source = "site") => {
+  const current = getFavoriteItems();
+  const productId = productItem.id || productItem.slug;
+  const exists = current.some((entry) => entry.productId === productId);
+
+  const next = exists
+    ? current.filter((entry) => entry.productId !== productId)
+    : [...current, buildStoredProductSnapshot(productItem, variant, 1, source)];
+
+  setFavoriteItems(next);
+  syncAccountProfileWithStorage();
+  return !exists;
+};
+
+const addProductToCart = (productItem, variant = null, source = "site", quantity = 1) => {
+  const current = getCartItems();
+  const next = [...current];
+  const snapshot = buildStoredProductSnapshot(productItem, variant, quantity, source);
+  const index = next.findIndex((entry) => entry.entryId === snapshot.entryId);
+
+  if (index >= 0) {
+    const existing = next[index];
+    next[index] = {
+      ...existing,
+      quantity: Math.max(1, Number(existing.quantity) || 1) + Math.max(1, Number(quantity) || 1),
+      savedAt: toIsoNow(),
+    };
+  } else {
+    next.push(snapshot);
+  }
+
+  setCartItems(next);
+  syncAccountProfileWithStorage();
+};
+
+const updateCartItemQuantity = (entryId, nextQuantity) => {
+  const normalizedQuantity = Math.max(0, Number(nextQuantity) || 0);
+  const current = getCartItems();
+  const next =
+    normalizedQuantity > 0
+      ? current.map((entry) =>
+          entry.entryId === entryId
+            ? { ...entry, quantity: normalizedQuantity, savedAt: toIsoNow() }
+            : entry,
+        )
+      : current.filter((entry) => entry.entryId !== entryId);
+
+  setCartItems(next);
+  syncAccountProfileWithStorage();
+};
+
+const removeCartItem = (entryId) => {
+  setCartItems(getCartItems().filter((entry) => entry.entryId !== entryId));
+  syncAccountProfileWithStorage();
+};
+
+const removeFavoriteItem = (productId) => {
+  setFavoriteItems(getFavoriteItems().filter((entry) => entry.productId !== productId));
+  syncAccountProfileWithStorage();
+};
+
 const buildContactHref = (productItem, source = "catalog-card", variant = null) => {
   const params = new URLSearchParams();
   params.set("source", source);
@@ -328,6 +564,28 @@ const renderIcon = (name) => `
 const renderBadge = (label, tone = "active") =>
   `<span class="meta-badge meta-badge--${tone}">${label}</span>`;
 
+const renderHeaderIconLink = (item) => {
+  const state = getHeaderState();
+  const counterType =
+    item.icon === "heart" ? "favorites" : item.icon === "bag" ? "cart" : item.icon === "user" ? "account" : "";
+  const count = counterType === "favorites" ? state.favorites : counterType === "cart" ? state.cart : 0;
+  const showAccountDot = counterType === "account" && state.accountRegistered;
+
+  return `
+    <a
+      class="icon-button icon-button--stateful ${count > 0 || showAccountDot ? "has-indicator" : ""}"
+      href="${item.href}"
+      aria-label="${item.label}"
+      title="${item.label}"
+      data-header-counter="${counterType}"
+    >
+      ${renderIcon(item.icon)}
+      <span class="icon-button__badge" ${count > 0 ? "" : "hidden"}>${count}</span>
+      <span class="icon-button__dot" ${showAccountDot && !count ? "" : "hidden"}></span>
+    </a>
+  `;
+};
+
 const renderHeader = () => {
   const mount = $("[data-site-header]");
   if (!mount) return;
@@ -341,15 +599,7 @@ const renderHeader = () => {
     )
     .join("");
 
-  const iconLinks = store.headerIcons
-    .map(
-      (item) => `
-        <a class="icon-button" href="${item.href}" aria-label="${item.label}" title="${item.label}">
-          ${renderIcon(item.icon)}
-        </a>
-      `,
-    )
-    .join("");
+  const iconLinks = store.headerIcons.map(renderHeaderIconLink).join("");
 
   mount.innerHTML = `
     <div class="page-noise" aria-hidden="true"></div>
@@ -436,6 +686,29 @@ const renderHeader = () => {
       </div>
     </header>
   `;
+};
+
+const updateHeaderState = () => {
+  const state = getHeaderState();
+
+  $$("[data-header-counter]").forEach((link) => {
+    const type = link.dataset.headerCounter || "";
+    const badge = $(".icon-button__badge", link);
+    const dot = $(".icon-button__dot", link);
+    const count = type === "favorites" ? state.favorites : type === "cart" ? state.cart : 0;
+    const showAccountDot = type === "account" && state.accountRegistered;
+
+    link.classList.toggle("has-indicator", count > 0 || showAccountDot);
+
+    if (badge) {
+      badge.hidden = count <= 0;
+      badge.textContent = count > 99 ? "99+" : String(count);
+    }
+
+    if (dot) {
+      dot.hidden = !(showAccountDot && count <= 0);
+    }
+  });
 };
 
 const renderFooter = () => {
@@ -585,27 +858,54 @@ const formatCatalogCount = (count) => {
   return `${count} позиций`;
 };
 
-const renderEnterpriseProductCard = (productItem = product) => `
-  <article class="product-card">
-    <div class="product-card__top">
-      ${renderBadge(productItem.badge, productItem.badgeTone)}
-    </div>
-    <div class="product-card__content">
-      <a class="product-card__media product-card__media--${productItem.imageKind || "illustration"}" href="${productItem.href}">
-        <img src="${productItem.images.packshot}" alt="${productItem.fullName}" loading="lazy" decoding="async" />
-      </a>
-      <div class="product-card__body">
-        <h3><a href="${productItem.href}">${productItem.shortName}</a></h3>
-        <p class="product-card__subtitle">${productItem.subtitle}</p>
-        <p class="product-card__lead">${productItem.catalogDescription || productItem.lead}</p>
-        <div class="product-card__actions">
-          <a class="button button--small" href="${productItem.href}">Подробнее</a>
-          <a class="text-link text-link--inline" href="${buildContactHref(productItem, "catalog-card")}">Уточнить условия</a>
+const renderEnterpriseProductCard = (productItem = product) => {
+  const defaultVariant = resolveProductVariant(productItem);
+  const variantLabel = getStoredVariantLabel(defaultVariant);
+  return `
+    <article class="product-card">
+      <div class="product-card__top">
+        ${renderBadge(productItem.badge, productItem.badgeTone)}
+      </div>
+      <div class="product-card__content">
+        <a class="product-card__media product-card__media--${productItem.imageKind || "illustration"}" href="${productItem.href}">
+          <img src="${productItem.images.packshot}" alt="${productItem.fullName}" loading="lazy" decoding="async" />
+        </a>
+        <div class="product-card__body">
+          <h3><a href="${productItem.href}">${productItem.shortName}</a></h3>
+          <p class="product-card__subtitle">${productItem.subtitle}</p>
+          <p class="product-card__lead">${productItem.catalogDescription || productItem.lead}</p>
+          <div class="product-card__actions">
+            <a class="button button--small" href="${productItem.href}">Подробнее</a>
+            <button
+              class="button button--ghost button--small"
+              type="button"
+              data-cart-add
+              data-product-id="${escapeAttribute(productItem.id || productItem.slug || "")}"
+              data-product-variant="${escapeAttribute(variantLabel)}"
+              data-action-source="catalog-card"
+            >
+              В корзину
+            </button>
+          </div>
+          <div class="product-card__utility">
+            <button
+              class="text-link text-link--inline"
+              type="button"
+              data-favorite-toggle
+              data-product-id="${escapeAttribute(productItem.id || productItem.slug || "")}"
+              data-product-variant="${escapeAttribute(variantLabel)}"
+              data-action-source="catalog-card"
+              aria-pressed="false"
+            >
+              В избранное
+            </button>
+            <a class="text-link text-link--inline" href="${buildContactHref(productItem, "catalog-card")}">Уточнить условия</a>
+          </div>
         </div>
       </div>
-    </div>
-  </article>
-`;
+    </article>
+  `;
+};
 
 const renderProductSpecs = (items = []) => `
   <dl class="spec-list">
@@ -1434,6 +1734,27 @@ const renderProductPage = () => {
         </div>
         <div class="purchase-panel__actions">
           <a class="button" href="${buildContactHref(productItem, "pdp", variant)}">Уточнить условия</a>
+          <button
+            class="button button--ghost"
+            type="button"
+            data-cart-add
+            data-product-id="${escapeAttribute(productItem.id || productItem.slug || "")}"
+            data-product-variant="${escapeAttribute(getStoredVariantLabel(variant))}"
+            data-action-source="product-page"
+          >
+            В корзину
+          </button>
+          <button
+            class="text-link text-link--inline"
+            type="button"
+            data-favorite-toggle
+            data-product-id="${escapeAttribute(productItem.id || productItem.slug || "")}"
+            data-product-variant="${escapeAttribute(getStoredVariantLabel(variant))}"
+            data-action-source="product-page"
+            aria-pressed="false"
+          >
+            В избранное
+          </button>
           <a class="text-link text-link--inline" href="/sait-/catalog/">Вернуться в каталог</a>
         </div>
       </div>
@@ -1458,6 +1779,7 @@ const renderProductPage = () => {
         if (summary) {
           summary.innerHTML = renderSummary(selectedVariant);
           bindVariantChoices();
+          bindStoredProductActions(summary);
         }
         updateActionSection(selectedVariant);
       });
@@ -2475,10 +2797,432 @@ const renderArticlePage = () => {
   }
 };
 
+const formatDateShort = (value = "") => {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+};
+
+const formatPreferredContactLabel = (value = "") => {
+  const key = resolvePreferredContactKey(value);
+  if (key === "email") return "Email";
+  if (key === "telegram") return "Telegram";
+  return "Телефон";
+};
+
+const getPreferredContactFieldValue = (profile = null) => {
+  const key = resolvePreferredContactKey(profile?.preferredContact || "");
+  if (key === "email") return "Email";
+  if (key === "telegram") return "Telegram";
+  return "Телефон";
+};
+
+const getProfileContactValue = (profile = null) => {
+  const key = resolvePreferredContactKey(profile?.preferredContact || "");
+  if (key === "email") return profile?.email || "";
+  if (key === "telegram") return profile?.telegramUsername || "";
+  return profile?.phone || "";
+};
+
+const renderSavedSelectionCard = (entry, mode = "cart") => {
+  const productItem = resolveStoredProduct(entry);
+  const href = productItem?.href || entry.href || "/sait-/catalog/";
+  const variantLabel = entry.variantLabel ? `Фасовка: ${entry.variantLabel}` : "";
+  const subtitle = entry.subtitle || productItem?.subtitle || "";
+  const category = entry.categoryName || productItem?.category || "";
+  const defaultVariant = productItem ? resolveProductVariant(productItem, entry.variantLabel || "") : null;
+
+  return `
+    <article class="saved-item-card">
+      <a class="saved-item-card__media" href="${href}">
+        <img src="${entry.image || productItem?.images?.packshot || "/sait-/assets/logo.jpg"}" alt="${entry.fullName || entry.shortName}" loading="lazy" decoding="async" />
+      </a>
+      <div class="saved-item-card__body">
+        <div class="saved-item-card__meta">
+          ${category ? renderBadge(category, "service") : ""}
+          ${variantLabel ? `<span class="saved-item-card__variant">${variantLabel}</span>` : ""}
+        </div>
+        <h2><a href="${href}">${entry.shortName || entry.fullName}</a></h2>
+        ${subtitle ? `<p>${subtitle}</p>` : ""}
+        <div class="saved-item-card__actions">
+          <a class="button button--small" href="${href}">Открыть товар</a>
+          ${
+            mode === "cart"
+              ? `
+                <div class="quantity-stepper" aria-label="Количество">
+                  <button type="button" data-cart-quantity-action="decrease" data-entry-id="${escapeAttribute(entry.entryId)}" aria-label="Уменьшить количество">−</button>
+                  <span>${Math.max(1, Number(entry.quantity) || 1)}</span>
+                  <button type="button" data-cart-quantity-action="increase" data-entry-id="${escapeAttribute(entry.entryId)}" aria-label="Увеличить количество">+</button>
+                </div>
+                <button
+                  class="text-link text-link--inline"
+                  type="button"
+                  data-favorite-toggle
+                  data-product-id="${escapeAttribute(entry.productId || "")}"
+                  data-product-variant="${escapeAttribute(entry.variantLabel || "")}"
+                  data-action-source="cart-page"
+                  aria-pressed="${isFavoriteSaved(productItem || entry) ? "true" : "false"}"
+                >
+                  В избранное
+                </button>
+                <button class="text-link text-link--inline" type="button" data-cart-remove data-entry-id="${escapeAttribute(entry.entryId)}">Удалить</button>
+              `
+              : `
+                <button
+                  class="button button--ghost button--small"
+                  type="button"
+                  data-cart-add
+                  data-product-id="${escapeAttribute(entry.productId || "")}"
+                  data-product-variant="${escapeAttribute(entry.variantLabel || getStoredVariantLabel(defaultVariant))}"
+                  data-action-source="favorites-page"
+                >
+                  В корзину
+                </button>
+                <button class="text-link text-link--inline" type="button" data-favorite-remove data-product-id="${escapeAttribute(entry.productId || "")}">Убрать</button>
+              `
+          }
+        </div>
+      </div>
+    </article>
+  `;
+};
+
+const renderAccountSummaryPanel = (profile = null) => {
+  const summary = derivePreferenceSummary(profile);
+  const contactValue = getProfileContactValue(profile);
+  const contactLabel = profile ? formatPreferredContactLabel(profile.preferredContact) : "Контакт";
+  const categoryText = summary.categoryNames.length ? summary.categoryNames.join(", ") : "Предпочтения появятся после выбора товаров.";
+
+  return `
+    <article class="request-panel account-summary-card">
+      <div class="section-head section-head--compact">
+        <p class="eyebrow">Профиль</p>
+        <h2>${profile ? store.utilityPages.account.registeredTitle : "Что сохранится в аккаунте"}</h2>
+        <p>${profile ? store.utilityPages.account.registeredText : "После регистрации в этом браузере сохраняются корзина, избранное и интересующие разделы каталога."}</p>
+      </div>
+      <dl class="account-summary-card__list">
+        <div>
+          <dt>Статус</dt>
+          <dd>${profile ? "Аккаунт сохранён" : "Пока не зарегистрирован"}</dd>
+        </div>
+        <div>
+          <dt>${contactLabel}</dt>
+          <dd>${contactValue || "Можно указать телефон, email или Telegram"}</dd>
+        </div>
+        <div>
+          <dt>Корзина</dt>
+          <dd>${summary.cartLineCount || 0} поз. / ${summary.cartCount || 0} шт.</dd>
+        </div>
+        <div>
+          <dt>Избранное</dt>
+          <dd>${summary.favoriteCount || 0} поз.</dd>
+        </div>
+        <div>
+          <dt>Интересующие разделы</dt>
+          <dd>${categoryText}</dd>
+        </div>
+        <div>
+          <dt>Последнее обновление</dt>
+          <dd>${formatDateShort(profile?.updatedAt || profile?.registeredAt || "")}</dd>
+        </div>
+      </dl>
+      <div class="hero-product__actions">
+        <a class="button button--ghost button--small" href="/sait-/cart/">Открыть корзину</a>
+        <a class="button button--ghost button--small" href="/sait-/favorites/">Открыть избранное</a>
+      </div>
+    </article>
+  `;
+};
+
+const renderAccountSnapshotPanel = (profile = null) => {
+  const cartItems = getCartItems();
+  const favoriteItems = getFavoriteItems();
+  const summary = derivePreferenceSummary(profile);
+  const lastPayload = readJsonStorage(STORAGE_KEYS.lastAccountPayload, null);
+  const bitrixLead = lastPayload?.integration?.bitrixLead || null;
+
+  return `
+    <article class="request-panel account-snapshot-card">
+      <div class="section-head section-head--compact">
+        <p class="eyebrow">Снимок данных</p>
+        <h2>Что уйдёт в CRM</h2>
+        <p>При регистрации профиль собирает контакт, текущую корзину, избранное и интересующие разделы сайта в одном payload, готовом для воронки Bitrix24.</p>
+      </div>
+      <div class="account-snapshot-card__grid">
+        <article>
+          <strong>Корзина</strong>
+          <p>${cartItems.length ? cartItems.map((item) => `${item.shortName} × ${Math.max(1, Number(item.quantity) || 1)}`).join(", ") : "Пока пусто."}</p>
+        </article>
+        <article>
+          <strong>Избранное</strong>
+          <p>${favoriteItems.length ? favoriteItems.map((item) => item.shortName).join(", ") : "Пока нет сохранённых позиций."}</p>
+        </article>
+        <article>
+          <strong>Предпочтения</strong>
+          <p>${summary.categoryNames.length ? summary.categoryNames.join(", ") : "Появятся после выбора разделов или добавления товаров."}</p>
+        </article>
+        <article>
+          <strong>Bitrix24</strong>
+          <p>${bitrixLead ? `Lead title: ${bitrixLead.title}. Pipeline seed: ${bitrixLead.pipelineSeed || "account_registration"}.` : "После первого сохранения здесь появится готовый lead envelope для CRM."}</p>
+        </article>
+      </div>
+    </article>
+  `;
+};
+
+const renderAccountRegistrationPanel = (profile = null) => {
+  const contactKey = resolvePreferredContactKey(profile?.preferredContact || "phone");
+  const contactValue = getProfileContactValue(profile);
+  const selectedInterests = new Set(Array.isArray(profile?.interestIds) ? profile.interestIds : []);
+  const interestOptions = buildInterestOptions();
+
+  return `
+    <article class="request-panel account-register-panel" id="account-register">
+      <div class="section-head section-head--compact">
+        <p class="eyebrow">Регистрация</p>
+        <h2>${store.utilityPages.account.formTitle}</h2>
+        <p>${store.utilityPages.account.formText}</p>
+      </div>
+      <form class="request-form request-form--account" data-account-registration-form novalidate>
+        <fieldset class="request-form__section">
+          <legend>Контакт для аккаунта</legend>
+          <div class="request-form__grid">
+            <label>
+              <span>Какой контакт сохранить</span>
+              <select name="contact_preferred">
+                <option value="Телефон" ${contactKey === "phone" ? "selected" : ""}>Телефон</option>
+                <option value="Telegram" ${contactKey === "telegram" ? "selected" : ""}>Telegram</option>
+                <option value="Email" ${contactKey === "email" ? "selected" : ""}>Email</option>
+              </select>
+            </label>
+            <div class="request-form__contact-slot" data-contact-slot data-active-contact="${contactKey}">
+              <label class="request-form__contact-panel ${contactKey === "phone" ? "is-active" : ""}" data-contact-field="phone" aria-hidden="${contactKey === "phone" ? "false" : "true"}">
+                <span>Телефон</span>
+                <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" value="${contactKey === "phone" ? escapeAttribute(contactValue) : ""}" ${contactKey === "phone" ? "" : "disabled"} required />
+              </label>
+              <label class="request-form__contact-panel ${contactKey === "email" ? "is-active" : ""}" data-contact-field="email" aria-hidden="${contactKey === "email" ? "false" : "true"}">
+                <span>Email</span>
+                <input type="email" name="email" autocomplete="email" placeholder="name@example.com" value="${contactKey === "email" ? escapeAttribute(contactValue) : ""}" ${contactKey === "email" ? "" : "disabled"} required />
+              </label>
+              <label class="request-form__contact-panel ${contactKey === "telegram" ? "is-active" : ""}" data-contact-field="telegram" aria-hidden="${contactKey === "telegram" ? "false" : "true"}">
+                <span>Telegram</span>
+                <input type="text" name="telegram_username" autocomplete="off" placeholder="@username" value="${contactKey === "telegram" ? escapeAttribute(contactValue) : ""}" ${contactKey === "telegram" ? "" : "disabled"} required />
+              </label>
+            </div>
+          </div>
+          <p class="request-form__hint" data-contact-helper>
+            ${contactKey === "email" ? "Сохраним email для входа и связи по заказу." : contactKey === "telegram" ? "Сохраним Telegram для быстрого контакта и регистрации." : "Сохраним телефон для входа и связи по заказу."}
+          </p>
+        </fieldset>
+        <fieldset class="request-form__section">
+          <legend>Предпочтения</legend>
+          <div class="account-interest-grid">
+            ${interestOptions
+              .map(
+                (item) => `
+                  <label class="choice-chip ${selectedInterests.has(item.id) ? "is-selected" : ""}">
+                    <input type="checkbox" name="interest_categories" value="${escapeAttribute(item.id)}" ${selectedInterests.has(item.id) ? "checked" : ""} />
+                    <span>${item.label}</span>
+                  </label>
+                `,
+              )
+              .join("")}
+          </div>
+          <p class="request-form__hint">Разделы ниже помогут сохранить интересы пользователя, даже если корзина пока пустая.</p>
+        </fieldset>
+        <fieldset class="request-form__section request-form__section--actions">
+          <legend>Согласие и сохранение</legend>
+          <label class="request-form__consent">
+            <input type="checkbox" name="consent" ${profile ? "checked" : ""} required />
+            <span>${store.utilityPages.account.consent}</span>
+          </label>
+          <div class="request-form__actions">
+            <button class="button" type="submit">${store.utilityPages.account.submitLabel}</button>
+            <a class="text-link text-link--inline request-form__action-link" href="/sait-/catalog/">Сначала выбрать товары</a>
+          </div>
+          <p class="request-form__note">Корзина и избранное прикрепятся к профилю автоматически на этом устройстве.</p>
+          <p class="request-form__status" data-request-status aria-live="polite"></p>
+        </fieldset>
+      </form>
+    </article>
+  `;
+};
+
+const renderAccountPage = () => {
+  const hero = $("#utility-page");
+  const page = store.utilityPages.account;
+  const profile = getAccountProfile();
+
+  if (!hero || !page) return;
+
+  hero.innerHTML = `
+    <div class="breadcrumb">
+      <a href="/sait-/">Главная</a>
+      <span>/</span>
+      <span>${page.title}</span>
+    </div>
+    <div class="utility-stack utility-stack--account">
+      <div class="utility-grid utility-grid--account-top">
+        <article class="request-panel utility-page utility-page--account">
+          <div class="section-head section-head--compact">
+            <p class="eyebrow">Раздел</p>
+            <h1>${page.title}</h1>
+            <p>${page.text}</p>
+          </div>
+          <div class="hero-product__actions">
+            <a class="button" href="${page.primary.href}">${page.primary.label}</a>
+            <a class="button button--ghost" href="${page.secondary.href}">${page.secondary.label}</a>
+          </div>
+        </article>
+        ${renderAccountSummaryPanel(profile)}
+      </div>
+      <div class="utility-grid utility-grid--account-main">
+        ${renderAccountRegistrationPanel(profile)}
+        ${renderAccountSnapshotPanel(profile)}
+      </div>
+    </div>
+  `;
+};
+
+const renderFavoritesPage = () => {
+  const hero = $("#utility-page");
+  const page = store.utilityPages.favorites;
+  const items = getFavoriteItems();
+  const profile = getAccountProfile();
+
+  if (!hero || !page) return;
+
+  hero.innerHTML = `
+    <div class="breadcrumb">
+      <a href="/sait-/">Главная</a>
+      <span>/</span>
+      <span>${page.title}</span>
+    </div>
+    <div class="utility-stack">
+      <div class="utility-grid utility-grid--utility-top">
+        <article class="request-panel utility-page">
+          <div class="section-head section-head--compact">
+            <p class="eyebrow">Раздел</p>
+            <h1>${page.title}</h1>
+            <p>${page.text}</p>
+          </div>
+          <div class="hero-product__actions">
+            <a class="button" href="${page.primary.href}">${page.primary.label}</a>
+            <a class="button button--ghost" href="${profile ? "/sait-/account/" : "/sait-/account/#account-register"}">${profile ? "Открыть аккаунт" : "Сохранить аккаунт"}</a>
+          </div>
+        </article>
+        <article class="request-panel utility-summary-card">
+          <div class="section-head section-head--compact">
+            <p class="eyebrow">Сводка</p>
+            <h2>Сохранённые позиции</h2>
+            <p>${items.length ? "Выбранные товары уже лежат в личной подборке и могут быть добавлены в корзину." : "Подборка пока пустая. Сохраняйте понравившиеся позиции из каталога и со страницы товара."}</p>
+          </div>
+          <dl class="account-summary-card__list">
+            <div><dt>Позиций</dt><dd>${items.length}</dd></div>
+            <div><dt>Аккаунт</dt><dd>${profile ? "Сохранён" : "Пока не сохранён"}</dd></div>
+          </dl>
+        </article>
+      </div>
+      <div class="saved-item-list">
+        ${
+          items.length
+            ? items.map((entry) => renderSavedSelectionCard(entry, "favorites")).join("")
+            : `
+              <article class="empty-state">
+                <strong>В избранном пока ничего нет.</strong>
+                <p>Откройте каталог или карточку товара и добавьте позиции в личную подборку.</p>
+                <a class="button button--small" href="/sait-/catalog/">Перейти в каталог</a>
+              </article>
+            `
+        }
+      </div>
+    </div>
+  `;
+};
+
+const renderCartPage = () => {
+  const hero = $("#utility-page");
+  const page = store.utilityPages.cart;
+  const items = getCartItems();
+  const profile = getAccountProfile();
+  const totalUnits = items.reduce((sum, entry) => sum + Math.max(1, Number(entry.quantity) || 1), 0);
+
+  if (!hero || !page) return;
+
+  hero.innerHTML = `
+    <div class="breadcrumb">
+      <a href="/sait-/">Главная</a>
+      <span>/</span>
+      <span>${page.title}</span>
+    </div>
+    <div class="utility-stack">
+      <div class="utility-grid utility-grid--utility-top">
+        <article class="request-panel utility-page">
+          <div class="section-head section-head--compact">
+            <p class="eyebrow">Раздел</p>
+            <h1>${page.title}</h1>
+            <p>${page.text}</p>
+          </div>
+          <div class="hero-product__actions">
+            <a class="button" href="${page.primary.href}">${page.primary.label}</a>
+            <a class="button button--ghost" href="/sait-/contacts/?source=cart">Добавить в запрос</a>
+          </div>
+        </article>
+        <article class="request-panel utility-summary-card">
+          <div class="section-head section-head--compact">
+            <p class="eyebrow">Сводка</p>
+            <h2>Текущее наполнение корзины</h2>
+            <p>${items.length ? "Корзина хранится локально и будет прикреплена к аккаунту при регистрации." : "Корзина пока пустая. Добавьте товары из каталога или со страницы продукта."}</p>
+          </div>
+          <dl class="account-summary-card__list">
+            <div><dt>Строк</dt><dd>${items.length}</dd></div>
+            <div><dt>Единиц</dt><dd>${totalUnits}</dd></div>
+            <div><dt>Аккаунт</dt><dd>${profile ? "Сохранён" : "Пока не сохранён"}</dd></div>
+          </dl>
+        </article>
+      </div>
+      <div class="saved-item-list">
+        ${
+          items.length
+            ? items.map((entry) => renderSavedSelectionCard(entry, "cart")).join("")
+            : `
+              <article class="empty-state">
+                <strong>Корзина пока пустая.</strong>
+                <p>Добавьте товары из каталога. После регистрации эта подборка сохранится в аккаунте на устройстве.</p>
+                <a class="button button--small" href="/sait-/catalog/">Перейти в каталог</a>
+              </article>
+            `
+        }
+      </div>
+    </div>
+  `;
+};
+
 const renderUtilityPage = () => {
   const slug = document.body.dataset.utility;
   const page = store.utilityPages[slug];
   if (!page) return;
+
+  if (slug === "account") {
+    renderAccountPage();
+    return;
+  }
+
+  if (slug === "favorites") {
+    renderFavoritesPage();
+    return;
+  }
+
+  if (slug === "cart") {
+    renderCartPage();
+    return;
+  }
 
   const hero = $("#utility-page");
   if (hero) {
@@ -2579,6 +3323,7 @@ const applyCatalogToolbarState = () => {
             <a class="button button--small" href="/sait-/catalog/">В каталог</a>
           </article>
         `;
+    bindStoredProductActions(grid);
 
     $$("[data-filter]", toolbar).forEach((button) => {
       button.classList.toggle("is-active", button.dataset.filter === filter);
@@ -2750,6 +3495,64 @@ const hydrateLeadMeta = (form) => {
   Object.entries(meta).forEach(([name, value]) => setFormFieldValue(form, name, value));
 };
 
+const buildBitrixComment = (payload) => {
+  const summary = derivePreferenceSummary(payload.account || getAccountProfile());
+  const lines = [
+    payload.lead?.message ? `Комментарий: ${payload.lead.message}` : "",
+    payload.product?.name ? `Товар: ${payload.product.name}` : "",
+    payload.product?.category ? `Категория: ${payload.product.category}` : "",
+    payload.product?.variant ? `Вариант: ${payload.product.variant}` : "",
+    payload.order?.quantityKg ? `Количество: ${payload.order.quantityKg} кг` : "",
+    payload.delivery?.address ? `Адрес доставки: ${payload.delivery.address}` : "",
+    payload.account?.cartItems?.length
+      ? `Корзина: ${payload.account.cartItems
+          .map((item) => `${item.shortName} x ${Math.max(1, Number(item.quantity) || 1)}`)
+          .join(", ")}`
+      : "",
+    payload.account?.favoriteItems?.length
+      ? `Избранное: ${payload.account.favoriteItems.map((item) => item.shortName).join(", ")}`
+      : "",
+    summary.categoryNames?.length ? `Предпочтения: ${summary.categoryNames.join(", ")}` : "",
+    payload.context?.landingUrl ? `URL: ${payload.context.landingUrl}` : "",
+    payload.context?.sessionId ? `Session ID: ${payload.context.sessionId}` : "",
+  ].filter(Boolean);
+
+  return lines.join("\n");
+};
+
+const buildBitrixLeadEnvelope = (payload) => {
+  const topic = payload.lead?.topic || payload.integration?.crmPipelineSeed || "site_request";
+  const leadTitle =
+    topic === "account_registration"
+      ? "Регистрация аккаунта Global Basket"
+      : `Заявка Global Basket: ${payload.lead?.topic || "Новый запрос"}`;
+
+  return {
+    entityType: "lead",
+    title: leadTitle,
+    sourceCode: payload.context?.source || "site",
+    pipelineSeed: payload.integration?.crmPipelineSeed || "site_request",
+    statusSeed: payload.integration?.crmStatusSeed || "new",
+    contact: {
+      name: payload.lead?.name || DEFAULT_ACCOUNT_NAME,
+      phone: payload.lead?.phone || "",
+      email: payload.lead?.email || "",
+      telegram: payload.lead?.telegramUsername || "",
+      preferredChannel: payload.lead?.preferredContact || "",
+    },
+    product: payload.product || {},
+    account: payload.account || {},
+    fields: {
+      TITLE: leadTitle,
+      NAME: payload.lead?.name || DEFAULT_ACCOUNT_NAME,
+      PHONE: payload.lead?.phone ? [{ VALUE: payload.lead.phone, VALUE_TYPE: "WORK" }] : [],
+      EMAIL: payload.lead?.email ? [{ VALUE: payload.lead.email, VALUE_TYPE: "WORK" }] : [],
+      COMMENTS: buildBitrixComment(payload),
+      SOURCE_DESCRIPTION: payload.context?.landingUrl || "",
+    },
+  };
+};
+
 const buildLeadPayload = (form) => {
   hydrateLeadMeta(form);
 
@@ -2758,7 +3561,7 @@ const buildLeadPayload = (form) => {
   const hasDistance = data.has("distance_km");
   const quantityKg = hasQuantity ? normalizePositiveNumber(data.get("quantity_kg")) : null;
   const distanceKm = hasDistance ? parseOptionalPositiveNumber(data.get("distance_km")) : null;
-  return {
+  const payload = {
     lead: {
       name: (data.get("name") || "").toString().trim(),
       phone: (data.get("phone") || "").toString().trim(),
@@ -2832,6 +3635,9 @@ const buildLeadPayload = (form) => {
       payloadVersion: (data.get("payload_version") || "").toString().trim(),
     },
   };
+
+  payload.integration.bitrixLead = buildBitrixLeadEnvelope(payload);
+  return payload;
 };
 
 const buildLeadMailto = (payload) => {
@@ -2875,6 +3681,18 @@ const buildLeadMailto = (payload) => {
     payload.utm.campaign ? `UTM Campaign: ${payload.utm.campaign}` : "",
     payload.utm.content ? `UTM Content: ${payload.utm.content}` : "",
     payload.utm.term ? `UTM Term: ${payload.utm.term}` : "",
+    payload.account?.profileId ? `Профиль: ${payload.account.profileId}` : "",
+    payload.account?.cartItems?.length
+      ? `Корзина: ${payload.account.cartItems
+          .map((item) => `${item.shortName} x ${Math.max(1, Number(item.quantity) || 1)}`)
+          .join(", ")}`
+      : "",
+    payload.account?.favoriteItems?.length
+      ? `Избранное: ${payload.account.favoriteItems.map((item) => item.shortName).join(", ")}`
+      : "",
+    payload.account?.interestLabels?.length
+      ? `Предпочтения: ${payload.account.interestLabels.join(", ")}`
+      : "",
     "",
     "Комментарий:",
     payload.lead.message || "—",
@@ -2883,6 +3701,137 @@ const buildLeadMailto = (payload) => {
   const body = encodeURIComponent(lines.join("\n"));
 
   return `${store.contact.emailHref}?subject=${subject}&body=${body}`;
+};
+
+const buildRuntimeMeta = () => {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    landingUrl: window.location.href,
+    pageTitle: document.title,
+    referrer: document.referrer || "",
+    submittedAt: new Date().toISOString(),
+    sessionId: getLeadSessionId(),
+    utm: {
+      source: params.get("utm_source") || "",
+      medium: params.get("utm_medium") || "",
+      campaign: params.get("utm_campaign") || "",
+      content: params.get("utm_content") || "",
+      term: params.get("utm_term") || "",
+    },
+  };
+};
+
+const isGithubPagesRuntime = () =>
+  /github\.io$/i.test(window.location.hostname) || window.location.pathname.startsWith("/sait-/");
+
+const buildAccountRegistrationPayload = (form) => {
+  const data = new FormData(form);
+  const existingProfile = getAccountProfile();
+  const preferredContactRaw = (data.get("contact_preferred") || "").toString().trim();
+  const preferredContact = resolvePreferredContactKey(preferredContactRaw);
+  const interestIds = data.getAll("interest_categories").map((item) => String(item).trim()).filter(Boolean);
+  const runtime = buildRuntimeMeta();
+  const cartItems = getCartItems();
+  const favoriteItems = getFavoriteItems();
+  const profile = {
+    id: existingProfile?.id || createLocalId("gbacct"),
+    registeredAt: existingProfile?.registeredAt || runtime.submittedAt,
+    updatedAt: runtime.submittedAt,
+    preferredContact,
+    phone: (data.get("phone") || existingProfile?.phone || "").toString().trim(),
+    email: (data.get("email") || existingProfile?.email || "").toString().trim(),
+    telegramUsername: (data.get("telegram_username") || existingProfile?.telegramUsername || "")
+      .toString()
+      .trim(),
+    interestIds,
+    cartSnapshot: cartItems,
+    favoriteSnapshot: favoriteItems,
+  };
+
+  const preferenceSummary = derivePreferenceSummary(profile);
+  profile.preferenceCategoryIds = preferenceSummary.categoryIds;
+  profile.preferenceCategoryNames = preferenceSummary.categoryNames;
+
+  const payload = {
+    lead: {
+      name: existingProfile?.name || DEFAULT_ACCOUNT_NAME,
+      phone: profile.phone,
+      email: profile.email,
+      telegramUsername: profile.telegramUsername,
+      preferredContact,
+      topic: "Регистрация аккаунта",
+      message:
+        "Пользователь сохранил аккаунт на сайте. Корзина, избранное и предпочтения добавлены в CRM snapshot.",
+      consent: data.get("consent") === "on",
+    },
+    company: {
+      name: "",
+      inn: "",
+      purchaseFormat: "",
+    },
+    context: {
+      source: "account-registration",
+      page: "account",
+      landingUrl: runtime.landingUrl,
+      pageTitle: runtime.pageTitle,
+      referrer: runtime.referrer,
+      submittedAt: runtime.submittedAt,
+      sessionId: runtime.sessionId,
+    },
+    product: {
+      id: "",
+      name: "",
+      category: preferenceSummary.categoryNames[0] || "",
+      variant: "",
+      marketplaceInterest: "",
+    },
+    order: {
+      quantityKg: null,
+      topic: "Регистрация аккаунта",
+    },
+    delivery: {
+      address: "",
+      distanceKm: null,
+      distanceBlocks1000: null,
+    },
+    pricing: {
+      basePricePerKg: 0,
+      discountRate: 0,
+      discountTier: "",
+      distanceMarkupRate: 0,
+      subtotalBase: 0,
+      subtotalAfterDiscount: 0,
+      totalEstimate: 0,
+      estimatedPricePerKg: 0,
+      currency: "RUB",
+      isEstimate: false,
+    },
+    utm: runtime.utm,
+    account: {
+      profileId: profile.id,
+      registeredAt: profile.registeredAt,
+      updatedAt: profile.updatedAt,
+      preferredContact,
+      interestIds,
+      interestLabels: preferenceSummary.categoryNames,
+      cartItems,
+      favoriteItems,
+      cartCount: preferenceSummary.cartCount,
+      favoriteCount: preferenceSummary.favoriteCount,
+      storageMode: isGithubPagesRuntime() ? "browser-local" : "server-sync",
+    },
+    integration: {
+      channelOrigin: "site",
+      targets: ["bitrix24", "telegram"],
+      crmStatusSeed: "new",
+      crmPipelineSeed: "account_registration",
+      payloadVersion: "v2",
+    },
+  };
+
+  payload.integration.bitrixLead = buildBitrixLeadEnvelope(payload);
+
+  return { profile, payload };
 };
 
 const setRequestStatus = (form, message, tone = "") => {
@@ -3184,6 +4133,179 @@ const bindRequestForms = () => {
   });
 };
 
+const syncChoiceChips = (root = document) => {
+  $$("input[type='checkbox']", root).forEach((input) => {
+    const chip = input.closest(".choice-chip");
+    if (!chip) return;
+    chip.classList.toggle("is-selected", input.checked);
+  });
+};
+
+const updateStoredActionState = (root = document) => {
+  $$("[data-favorite-toggle]", root).forEach((button) => {
+    const productItem = findProduct(button.dataset.productId || "");
+    if (!productItem) return;
+    const active = isFavoriteSaved(productItem);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+    button.textContent = active ? "В избранном" : "В избранное";
+  });
+
+  $$("[data-cart-add]", root).forEach((button) => {
+    const productItem = findProduct(button.dataset.productId || "");
+    if (!productItem) return;
+    const quantity = getCartQuantityForProduct(productItem, button.dataset.productVariant || "");
+    button.textContent = quantity > 0 ? `В корзине ×${quantity}` : "В корзину";
+  });
+};
+
+const refreshStatefulUi = ({ accountMessage = "", accountTone = "" } = {}) => {
+  updateHeaderState();
+
+  if (
+    document.body.dataset.page === "utility" &&
+    ["account", "cart", "favorites"].includes(document.body.dataset.utility || "")
+  ) {
+    renderUtilityPage();
+  }
+
+  bindStoredProductActions();
+  bindAccountRegistrationForms();
+  syncChoiceChips();
+  updateStoredActionState();
+
+  if (accountMessage && document.body.dataset.utility === "account") {
+    const form = $("[data-account-registration-form]");
+    if (form) setRequestStatus(form, accountMessage, accountTone);
+  }
+};
+
+const bindStoredProductActions = (root = document) => {
+  $$("[data-cart-add]", root).forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const productItem = findProduct(button.dataset.productId || "");
+      if (!productItem) return;
+      const variant = resolveProductVariant(productItem, button.dataset.productVariant || "");
+      addProductToCart(productItem, variant, button.dataset.actionSource || "site");
+      refreshStatefulUi();
+    });
+  });
+
+  $$("[data-favorite-toggle]", root).forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const productItem = findProduct(button.dataset.productId || "");
+      if (!productItem) return;
+      const variant = resolveProductVariant(productItem, button.dataset.productVariant || "");
+      toggleFavoriteProduct(productItem, variant, button.dataset.actionSource || "site");
+      refreshStatefulUi();
+    });
+  });
+
+  $$("[data-cart-quantity-action]", root).forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const entryId = button.dataset.entryId || "";
+      const entry = getCartItems().find((item) => item.entryId === entryId);
+      if (!entry) return;
+      const delta = button.dataset.cartQuantityAction === "decrease" ? -1 : 1;
+      updateCartItemQuantity(entryId, Math.max(0, Math.max(1, Number(entry.quantity) || 1) + delta));
+      refreshStatefulUi();
+    });
+  });
+
+  $$("[data-cart-remove]", root).forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      removeCartItem(button.dataset.entryId || "");
+      refreshStatefulUi();
+    });
+  });
+
+  $$("[data-favorite-remove]", root).forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      removeFavoriteItem(button.dataset.productId || "");
+      refreshStatefulUi();
+    });
+  });
+
+  updateStoredActionState(root);
+};
+
+const bindAccountRegistrationForms = (root = document) => {
+  $$("[data-account-registration-form]", root).forEach((form) => {
+    if (form.dataset.bound === "true") return;
+    form.dataset.bound = "true";
+    syncPreferredContactField(form);
+    syncChoiceChips(form);
+
+    const preferredField = form.elements.namedItem("contact_preferred");
+    preferredField?.addEventListener("change", () => {
+      syncPreferredContactField(form);
+    });
+
+    $$("input[name='interest_categories']", form).forEach((input) => {
+      input.addEventListener("change", () => syncChoiceChips(form));
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      if (form.dataset.submitting === "true") return;
+      if (!form.reportValidity()) return;
+
+      const { profile, payload } = buildAccountRegistrationPayload(form);
+      form.dataset.submitting = "true";
+      setFormSubmittingState(form, true);
+      setRequestStatus(form, "Сохраняем аккаунт…", "loading");
+
+      setAccountProfile(profile);
+      writeJsonStorage(STORAGE_KEYS.lastAccountPayload, payload);
+
+      try {
+        if (isGithubPagesRuntime()) {
+          refreshStatefulUi({
+            accountMessage:
+              "Аккаунт сохранён в браузере. Корзина, избранное и предпочтения теперь привязаны к этому профилю, а CRM-ready payload собран для Bitrix24.",
+            accountTone: "success",
+          });
+          return;
+        }
+
+        const result = await submitLeadPayload(payload);
+        const syncedProfile = {
+          ...profile,
+          crmRequestId: result.requestId,
+          syncedAt: toIsoNow(),
+        };
+        setAccountProfile(syncedProfile);
+        refreshStatefulUi({
+          accountMessage:
+            result?.bitrix?.ok === true
+              ? `Аккаунт сохранён. CRM-снимок отправлен в Telegram и подготовлен для Bitrix24, номер обращения: ${result.requestId}.`
+              : `Аккаунт сохранён. CRM-снимок отправлен, номер обращения: ${result.requestId}.`,
+          accountTone: "success",
+        });
+      } catch (error) {
+        refreshStatefulUi({
+          accountMessage:
+            "Аккаунт сохранён локально, но серверный маршрут сейчас недоступен. Профиль, корзина и предпочтения всё равно сохранены в этом браузере, а CRM-ready payload подготовлен.",
+          accountTone: "error",
+        });
+      } finally {
+        form.dataset.submitting = "false";
+        setFormSubmittingState(form, false);
+      }
+    });
+  });
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   renderHeader();
   renderFooter();
@@ -3229,5 +4351,9 @@ document.addEventListener("DOMContentLoaded", () => {
   bindFaq();
   bindQuoteCalculators();
   bindRequestForms();
+  bindStoredProductActions();
+  bindAccountRegistrationForms();
+  syncChoiceChips();
+  updateHeaderState();
   applyCatalogToolbarState();
 });
