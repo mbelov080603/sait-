@@ -175,6 +175,74 @@ const line = (label, value) =>
 
 const formatTargets = (targets = []) => (Array.isArray(targets) ? targets.join(", ") : "");
 
+const getBitrixLeadWebhook = () =>
+  process.env.BITRIX_LEAD_WEBHOOK || localRuntimeConfig.bitrixLeadWebhook || "";
+
+const buildBitrixWebhookRequest = (payload, requestId) => {
+  const lead = payload.integration?.bitrixLead || {};
+  const fields = {
+    ...(lead.fields || {}),
+    TITLE: lead.fields?.TITLE || lead.title || `Заявка Global Basket: ${requestId}`,
+    COMMENTS: [lead.fields?.COMMENTS, `Request ID: ${requestId}`].filter(Boolean).join("\n"),
+  };
+
+  return /crm\.lead\.add/i.test(getBitrixLeadWebhook())
+    ? {
+        fields,
+        params: {
+          REGISTER_SONET_EVENT: "Y",
+        },
+      }
+    : {
+        ...lead,
+        requestId,
+        fields,
+      };
+};
+
+const sendBitrixLead = async (payload, requestId) => {
+  const webhook = getBitrixLeadWebhook();
+  if (!webhook) {
+    return {
+      ok: false,
+      configured: false,
+      skipped: true,
+    };
+  }
+
+  const requestBody = buildBitrixWebhookRequest(payload, requestId);
+  const response = await fetch(webhook, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      accept: "application/json",
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  const responseText = await response.text();
+  let parsedBody = {};
+  try {
+    parsedBody = responseText ? JSON.parse(responseText) : {};
+  } catch {
+    parsedBody = {
+      raw: responseText.slice(0, 400),
+    };
+  }
+
+  if (!response.ok) {
+    throw new Error(`Bitrix webhook returned ${response.status}`);
+  }
+
+  return {
+    ok: true,
+    configured: true,
+    forwarded: true,
+    status: response.status,
+    body: parsedBody,
+  };
+};
+
 const buildTelegramMessage = (payload, requestId) => {
   const lead = payload.lead || {};
   const company = payload.company || {};
@@ -185,6 +253,7 @@ const buildTelegramMessage = (payload, requestId) => {
   const pricing = payload.pricing || {};
   const utm = payload.utm || {};
   const integration = payload.integration || {};
+  const account = payload.account || {};
 
   const lines = [
     "<b>Новая заявка с сайта Global Basket</b>",
@@ -259,6 +328,31 @@ const buildTelegramMessage = (payload, requestId) => {
     line("UTM content", utm.content),
     line("UTM term", utm.term),
     "",
+    "<b>Аккаунт и предпочтения</b>",
+    line("Профиль", account.profileId),
+    line("Предпочтительный канал", account.preferredContact),
+    line("Режим хранения", account.storageMode),
+    line(
+      "Корзина",
+      Array.isArray(account.cartItems) && account.cartItems.length
+        ? account.cartItems
+            .map((item) => `${item.shortName} x ${Math.max(1, Number(item.quantity) || 1)}`)
+            .join(", ")
+        : "",
+    ),
+    line(
+      "Избранное",
+      Array.isArray(account.favoriteItems) && account.favoriteItems.length
+        ? account.favoriteItems.map((item) => item.shortName).join(", ")
+        : "",
+    ),
+    line(
+      "Интересующие разделы",
+      Array.isArray(account.interestLabels) && account.interestLabels.length
+        ? account.interestLabels.join(", ")
+        : "",
+    ),
+    "",
     "<b>Комментарий</b>",
     escapeHtml(lead.message || "—"),
   ].filter(Boolean);
@@ -277,6 +371,7 @@ module.exports = async (req, res) => {
     const delivery = payload.delivery || {};
     const order = payload.order || {};
     const pricing = payload.pricing || {};
+    const integration = payload.integration || {};
 
     if (delivery.address) {
       try {
@@ -344,10 +439,30 @@ module.exports = async (req, res) => {
       disable_web_page_preview: true,
     });
 
+    let bitrix = {
+      ok: false,
+      configured: false,
+      skipped: true,
+    };
+
+    try {
+      bitrix = await sendBitrixLead(payload, requestId);
+    } catch (bitrixError) {
+      console.error("contact-request bitrix forward failed", bitrixError);
+      bitrix = {
+        ok: false,
+        configured: Boolean(getBitrixLeadWebhook()),
+        skipped: false,
+        message: bitrixError.message,
+      };
+    }
+
     return json(res, 200, {
       ok: true,
       requestId,
       routedTo: complaintsChatId,
+      bitrixLead: integration.bitrixLead || null,
+      bitrix,
     });
   } catch (error) {
     console.error("contact-request error", error);

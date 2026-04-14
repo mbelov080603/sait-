@@ -60,7 +60,7 @@ const checks = [
   {
     path: "/about/",
     includes: [
-      "<h1>Global Basket - вкусы мира в честном, полезном и доступном формате</h1>",
+      "<h1>Global Basket — вкусы мира в честном, полезном и доступном формате</h1>",
       "Кто мы",
       '"@type":"BreadcrumbList"',
     ],
