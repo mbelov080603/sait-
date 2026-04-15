@@ -3924,8 +3924,13 @@ body.has-mobile-nav {
 }
 
 .product-card__media--photo img {
-  object-fit: cover;
-  object-position: center 42%;
+  object-fit: contain;
+  object-position: center;
+  filter: none;
+}
+
+.product-card__media--photo {
+  background: #ffffff;
 }
 
 .product-card__body {
