@@ -2303,7 +2303,6 @@ const renderAboutPage = () => {
           <span>/</span>
           <span>О бренде</span>
         </div>
-        <p class="eyebrow">${about.hero.eyebrow}</p>
         <h1>${about.hero.title}</h1>
         <p class="about-brand-hero__lead">${about.hero.text}</p>
         <ul class="about-brand-hero__chips">
@@ -2343,7 +2342,6 @@ const renderAboutPage = () => {
     who.innerHTML = `
       <div class="about-split">
         <div class="about-section-copy" data-reveal>
-          <p class="eyebrow">Кто мы</p>
           <h2>${about.who.title}</h2>
           ${about.who.paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join("")}
         </div>
@@ -2358,7 +2356,6 @@ const renderAboutPage = () => {
   if (mission) {
     mission.innerHTML = `
       <div class="section-head about-section-head" data-reveal>
-        <p class="eyebrow">Платформа бренда</p>
         <h2>${about.mission.title}</h2>
         <p>${about.mission.text}</p>
       </div>
@@ -2374,7 +2371,6 @@ const renderAboutPage = () => {
       <section class="about-carousel" data-about-carousel aria-roledescription="carousel" aria-label="${about.facts.title}">
         <div class="about-carousel__top">
           <div class="section-head about-section-head" data-reveal>
-            <p class="eyebrow">Факты о бренде</p>
             <h2>${about.facts.title}</h2>
             <p>${about.facts.text}</p>
           </div>
@@ -2401,7 +2397,6 @@ const renderAboutPage = () => {
   if (values) {
     values.innerHTML = `
       <div class="section-head about-section-head" data-reveal>
-        <p class="eyebrow">Ценности бренда</p>
         <h2>${about.values.title}</h2>
       </div>
       <div class="about-values-grid">
@@ -2414,7 +2409,6 @@ const renderAboutPage = () => {
   if (why) {
     why.innerHTML = `
       <div class="section-head about-section-head" data-reveal>
-        <p class="eyebrow">Почему нас выбирают</p>
         <h2>${about.whyChoose.title}</h2>
       </div>
       <div class="about-why-grid">
@@ -2444,7 +2438,6 @@ const renderAboutPage = () => {
     selection.innerHTML = `
       <div class="about-section-top">
         <div class="section-head about-section-head" data-reveal>
-          <p class="eyebrow">Отбор продуктов</p>
           <h2>${about.selection.title}</h2>
           <p>${about.selection.text}</p>
         </div>
@@ -2473,7 +2466,6 @@ const renderAboutPage = () => {
     differences.innerHTML = `
       <div class="about-section-top">
         <div class="section-head about-section-head" data-reveal>
-          <p class="eyebrow">Отличия</p>
           <h2>${about.differences.title}</h2>
         </div>
         <article class="about-image-card about-image-card--compact" data-reveal>
@@ -2506,7 +2498,6 @@ const renderAboutPage = () => {
   if (character) {
     character.innerHTML = `
       <div class="section-head about-section-head" data-reveal>
-        <p class="eyebrow">Характер бренда</p>
         <h2>${about.character.title}</h2>
       </div>
       <div class="about-character" data-reveal>
@@ -2522,7 +2513,6 @@ const renderAboutPage = () => {
   if (legend) {
     legend.innerHTML = `
       <article class="about-legend" data-reveal>
-        <p class="eyebrow">Легенда бренда</p>
         <h2>${about.legend.title}</h2>
         <p>${about.legend.text}</p>
       </article>
@@ -2534,7 +2524,6 @@ const renderAboutPage = () => {
     cta.innerHTML = `
       <article class="about-final-cta" data-reveal>
         <div class="section-head section-head--compact">
-          <p class="eyebrow">Global Basket</p>
           <h2>${about.cta.title}</h2>
           <p>${about.cta.text}</p>
         </div>

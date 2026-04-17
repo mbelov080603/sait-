@@ -603,7 +603,7 @@ window.GlobalBasketData = {
         src: "/assets/about/assortment-spoons.jpg",
         alt: "Ассорти орехов на деревянных ложках как образ продуманного и широкого ассортимента",
       },
-      leftLabel: "Многие бренды",
+      leftLabel: "Другие бренды",
       rightLabel: "Global Basket",
       rows: [
         {

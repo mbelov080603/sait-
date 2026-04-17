@@ -973,7 +973,9 @@ textarea {
 }
 
 .about-image-card--portrait img {
-  min-height: 520px;
+  height: clamp(360px, 31vw, 420px);
+  min-height: 0;
+  object-position: center 48%;
 }
 
 .about-image-card--compact img {
