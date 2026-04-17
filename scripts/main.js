@@ -652,7 +652,6 @@ const renderHeader = () => {
             </form>
           </div>
           ${iconLinks}
-          <a class="button button--small button--header" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>Написать в Telegram</a>
         </div>
 
         <button
@@ -681,7 +680,6 @@ const renderHeader = () => {
             <a href="${store.contact.emailHref}">${store.contact.email}</a>
           </div>
           <div class="mobile-nav__icons">${iconLinks}</div>
-          <a class="button" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>Написать в Telegram</a>
         </div>
       </div>
     </header>
@@ -999,7 +997,7 @@ const renderLeadRequestForm = (config, context = {}) => {
   return `
     <article class="request-panel request-panel--lead">
       <div class="section-head section-head--compact">
-        <p class="eyebrow">${config.eyebrow}</p>
+        ${config.eyebrow ? `<p class="eyebrow">${config.eyebrow}</p>` : ""}
         <h2>${config.title}</h2>
         <p>${config.text}</p>
       </div>
@@ -1010,11 +1008,21 @@ const renderLeadRequestForm = (config, context = {}) => {
               `<input type="hidden" name="${name}" value="${escapeAttribute(value)}" />`,
           )
           .join("")}
-        <div class="request-form__grid request-form__grid--contact">
+        <div class="request-form__grid request-form__grid--lead-primary">
           <label>
             <span>Ваше имя</span>
             <input type="text" name="name" autocomplete="name" placeholder="Как к вам обращаться" required />
           </label>
+          <label>
+            <span>Как удобнее связаться</span>
+            <select name="contact_preferred">
+              ${config.preferredContacts
+                .map((item) => `<option value="${item.value}">${item.label}</option>`)
+                .join("")}
+            </select>
+          </label>
+        </div>
+        <div class="request-form__grid request-form__grid--lead-secondary">
           <div class="request-form__contact-slot" data-contact-slot data-active-contact="phone">
             <label class="request-form__contact-panel is-active" data-contact-field="phone">
               <span>Телефон</span>
@@ -1029,8 +1037,6 @@ const renderLeadRequestForm = (config, context = {}) => {
               <input type="text" name="telegram_username" autocomplete="off" placeholder="@username" disabled />
             </label>
           </div>
-        </div>
-        <div class="request-form__grid">
           <label>
             <span>Что вас интересует</span>
             <select name="topic" required>
@@ -1039,19 +1045,11 @@ const renderLeadRequestForm = (config, context = {}) => {
                 .join("")}
             </select>
           </label>
-          <label>
-            <span>Как удобнее связаться</span>
-            <select name="contact_preferred">
-              ${config.preferredContacts
-                .map((item) => `<option value="${item.value}">${item.label}</option>`)
-                .join("")}
-            </select>
-          </label>
         </div>
         <p class="request-form__hint" data-contact-helper>
-          Укажите основной канал связи. Остальные данные можно сообщить менеджеру после первого контакта.
+          Укажите основной канал связи. Остальное можно уточнить одним сообщением.
         </p>
-        <label>
+        <label class="request-form__field request-form__field--full">
           <span>Комментарий</span>
           <textarea name="message" placeholder="Например: хочу узнать цену, формат поставки или условия покупки."></textarea>
         </label>
@@ -1392,9 +1390,9 @@ const renderHome = () => {
   const hero = $("#home-hero");
   if (hero) {
     hero.innerHTML = `
-      <article class="hero-stage hero-stage--lead">
+      <article class="hero-stage hero-stage--lead hero-stage--home">
         <div class="hero-stage__copy">
-          <p class="eyebrow">${store.home.hero.eyebrow}</p>
+          ${store.home.hero.eyebrow ? `<p class="eyebrow">${store.home.hero.eyebrow}</p>` : ""}
           <h1>${store.home.hero.title}</h1>
           <div class="hero-stage__body">
             ${store.home.hero.paragraphs.map((item) => `<p>${item}</p>`).join("")}
@@ -1429,9 +1427,9 @@ const renderHome = () => {
   const featured = $("#home-featured");
   if (featured) {
     featured.innerHTML = `
-      <article class="feature-split">
+      <article class="feature-split feature-split--home">
         <div class="feature-split__copy">
-          <p class="eyebrow">${store.home.featured.title}</p>
+          ${store.home.featured.title ? `<p class="eyebrow">${store.home.featured.title}</p>` : ""}
           <h2>${store.home.featured.heading}</h2>
           <p>${store.home.featured.text}</p>
           <ul class="feature-points">
@@ -2898,41 +2896,50 @@ const renderAccountSummaryPanel = (profile = null) => {
   const contactValue = getProfileContactValue(profile);
   const contactLabel = profile ? formatPreferredContactLabel(profile.preferredContact) : "Контакт";
   const categoryText = summary.categoryNames.length ? summary.categoryNames.join(", ") : "Предпочтения появятся после выбора товаров.";
+  const items = [
+    {
+      label: contactLabel,
+      value: contactValue || "Телефон, email или Telegram",
+    },
+    {
+      label: "Корзина",
+      value: `${summary.cartLineCount || 0} поз. / ${summary.cartCount || 0} шт.`,
+    },
+    {
+      label: "Избранное",
+      value: `${summary.favoriteCount || 0} поз.`,
+    },
+    {
+      label: "Интересующие разделы",
+      value: categoryText,
+      wide: true,
+    },
+    {
+      label: "Последнее обновление",
+      value: formatDateShort(profile?.updatedAt || profile?.registeredAt || ""),
+    },
+  ];
 
   return `
     <article class="request-panel account-summary-card">
       <div class="section-head section-head--compact">
         <p class="eyebrow">Профиль</p>
-        <h2>${profile ? store.utilityPages.account.registeredTitle : "Что сохранится в аккаунте"}</h2>
-        <p>${profile ? store.utilityPages.account.registeredText : "После регистрации в этом браузере сохраняются корзина, избранное и интересующие разделы каталога."}</p>
+        <h2>${profile ? store.utilityPages.account.registeredTitle : "Что сохранится после регистрации"}</h2>
+        <p>${profile ? store.utilityPages.account.registeredText : "После сохранения профиля в этом браузере останутся контакт, корзина, избранное и выбранные разделы каталога."}</p>
       </div>
       <dl class="account-summary-card__list">
-        <div>
-          <dt>Статус</dt>
-          <dd>${profile ? "Аккаунт сохранён" : "Пока не зарегистрирован"}</dd>
-        </div>
-        <div>
-          <dt>${contactLabel}</dt>
-          <dd>${contactValue || "Можно указать телефон, email или Telegram"}</dd>
-        </div>
-        <div>
-          <dt>Корзина</dt>
-          <dd>${summary.cartLineCount || 0} поз. / ${summary.cartCount || 0} шт.</dd>
-        </div>
-        <div>
-          <dt>Избранное</dt>
-          <dd>${summary.favoriteCount || 0} поз.</dd>
-        </div>
-        <div>
-          <dt>Интересующие разделы</dt>
-          <dd>${categoryText}</dd>
-        </div>
-        <div>
-          <dt>Последнее обновление</dt>
-          <dd>${formatDateShort(profile?.updatedAt || profile?.registeredAt || "")}</dd>
-        </div>
+        ${items
+          .map(
+            (item) => `
+              <div class="account-summary-card__item ${item.wide ? "account-summary-card__item--wide" : ""}">
+                <dt>${item.label}</dt>
+                <dd>${item.value}</dd>
+              </div>
+            `,
+          )
+          .join("")}
       </dl>
-      <div class="hero-product__actions">
+      <div class="account-summary-card__actions">
         <a class="button button--ghost button--small" href="/cart/">Открыть корзину</a>
         <a class="button button--ghost button--small" href="/favorites/">Открыть избранное</a>
       </div>
@@ -3010,7 +3017,7 @@ const renderAccountRegistrationPanel = (profile = null) => {
             <button class="button" type="submit">${store.utilityPages.account.submitLabel}</button>
             <a class="text-link text-link--inline request-form__action-link" href="/catalog/">Сначала выбрать товары</a>
           </div>
-          <p class="request-form__note">Корзина и избранное прикрепятся к профилю автоматически на этом устройстве.</p>
+          <p class="request-form__note">Профиль сохранится в этом браузере и подтянет корзину, избранное и выбранные интересы.</p>
           <p class="request-form__status" data-request-status aria-live="polite"></p>
         </fieldset>
       </form>
@@ -3033,13 +3040,18 @@ const renderAccountPage = () => {
     </div>
     <div class="utility-stack utility-stack--account">
       <div class="utility-grid utility-grid--account-top">
-        <article class="request-panel utility-page utility-page--account">
+        <article class="request-panel utility-page utility-page--account account-hero-card">
           <div class="section-head section-head--compact">
             <p class="eyebrow">Раздел</p>
             <h1>${page.title}</h1>
             <p>${page.text}</p>
           </div>
-          <div class="hero-product__actions">
+          <ul class="account-hero-card__highlights">
+            ${(page.highlights || [])
+              .map((item) => `<li>${item}</li>`)
+              .join("")}
+          </ul>
+          <div class="hero-product__actions account-hero-card__actions">
             <a class="button" href="${page.primary.href}">${page.primary.label}</a>
             <a class="button button--ghost" href="${page.secondary.href}">${page.secondary.label}</a>
           </div>

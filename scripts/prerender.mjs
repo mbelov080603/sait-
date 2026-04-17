@@ -489,13 +489,17 @@ const applyCommonFrame = (html, rendered) => {
 
 const loadTemplateHtml = async (file) => {
   try {
+    return await fs.readFile(path.join(ROOT, file), "utf8");
+  } catch {}
+
+  try {
     return execFileSync("git", ["show", `HEAD:${file}`], {
       cwd: ROOT,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"],
     });
   } catch {
-    return fs.readFile(path.join(ROOT, file), "utf8");
+    return "";
   }
 };
 

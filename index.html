@@ -12,7 +12,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles/global.css" />
-    <!-- prerender-seo:start -->
+        <!-- prerender-seo:start -->
     <link rel="canonical" href="https://globalbasket.ru/" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Global Basket | Главная" />
@@ -135,7 +135,6 @@
       <span class="icon-button__dot" hidden></span>
     </a>
   
-          <a class="button button--small button--header" href="https://t.me/global_basket_bot?start=site_contact" target="_blank" rel="noreferrer">Написать в Telegram</a>
         </div>
 
         <button
@@ -216,7 +215,6 @@
       <span class="icon-button__dot" hidden></span>
     </a>
   </div>
-          <a class="button" href="https://t.me/global_basket_bot?start=site_contact" target="_blank" rel="noreferrer">Написать в Telegram</a>
         </div>
       </div>
     </header>
@@ -226,9 +224,9 @@
     <main>
       <section class="page-hero page-hero--home">
         <div class="shell" id="home-hero">
-      <article class="hero-stage hero-stage--lead">
+      <article class="hero-stage hero-stage--lead hero-stage--home">
         <div class="hero-stage__copy">
-          <p class="eyebrow">Кто мы</p>
+          
           <h1>Global Basket — честный выбор натуральных продуктов со всего мира.</h1>
           <div class="hero-stage__body">
             <p>Global Basket — это бренд натуральных и высококачественных продуктов питания, собранных из разных уголков мира и доступных широкому кругу покупателей. Мы не просто поставляем продукты из разных стран, а тщательно отбираем то, что действительно достойно оказаться на столе покупателя.</p><p>Для покупателя Global Basket — это проводник в мире качественных и натуральных продуктов, фильтр, который отсеивает сомнительное и оставляет достойное, и знак доверия, за которым стоит понятная система ценностей.</p>
@@ -255,12 +253,12 @@
     </div>
       </section>
 
-      <section class="page-section page-section--tinted">
+      <section class="page-section page-section--tinted page-section--home-featured">
         <div class="shell">
           <div id="home-featured">
-      <article class="feature-split">
+      <article class="feature-split feature-split--home">
         <div class="feature-split__copy">
-          <p class="eyebrow">Флагманский продукт</p>
+          
           <h2>Очищенная макадамия — главный продукт витрины Global Basket.</h2>
           <p>Здесь всё подчинено спокойной подаче: чистый состав, понятное происхождение, аккуратная упаковка и уверенный путь к заказу без лишнего шума.</p>
           <ul class="feature-points">
@@ -279,17 +277,25 @@
           
     <article class="request-panel request-panel--lead">
       <div class="section-head section-head--compact">
-        <p class="eyebrow">Связаться</p>
-        <h2>Связаться со мной</h2>
-        <p>Оставьте контакты, и мы напишем вам по покупке, цене, оптовому запросу или следующему шагу по заказу.</p>
+        
+        <h2>Оставить запрос</h2>
+        <p>Оставьте один удобный контакт, и мы ответим по покупке, наличию, цене или оптовому запросу.</p>
       </div>
       <form class="request-form request-form--lead" data-request-form data-request-adapter="crm-ready" novalidate>
         <input type="hidden" name="source" value="home-featured" /><input type="hidden" name="page" value="home" /><input type="hidden" name="product_id" value="" /><input type="hidden" name="product_name" value="" /><input type="hidden" name="product_category" value="" /><input type="hidden" name="product_variant" value="" /><input type="hidden" name="lead_channel_origin" value="site" /><input type="hidden" name="marketplace_interest" value="" /><input type="hidden" name="crm_status_seed" value="new" /><input type="hidden" name="crm_pipeline_seed" value="site_request" /><input type="hidden" name="integration_targets" value="bitrix24,1c" /><input type="hidden" name="payload_version" value="v1" /><input type="hidden" name="session_id" value="" /><input type="hidden" name="landing_url" value="https://globalbasket.ru/" /><input type="hidden" name="page_title" value="Global Basket | Главная" /><input type="hidden" name="referrer" value="" /><input type="hidden" name="submitted_at" value="" /><input type="hidden" name="utm_source" value="" /><input type="hidden" name="utm_medium" value="" /><input type="hidden" name="utm_campaign" value="" /><input type="hidden" name="utm_content" value="" /><input type="hidden" name="utm_term" value="" />
-        <div class="request-form__grid request-form__grid--contact">
+        <div class="request-form__grid request-form__grid--lead-primary">
           <label>
             <span>Ваше имя</span>
             <input type="text" name="name" autocomplete="name" placeholder="Как к вам обращаться" required />
           </label>
+          <label>
+            <span>Как удобнее связаться</span>
+            <select name="contact_preferred">
+              <option value="phone">Телефон</option><option value="telegram">Telegram</option><option value="email">Email</option>
+            </select>
+          </label>
+        </div>
+        <div class="request-form__grid request-form__grid--lead-secondary">
           <div class="request-form__contact-slot" data-contact-slot data-active-contact="phone">
             <label class="request-form__contact-panel is-active" data-contact-field="phone">
               <span>Телефон</span>
@@ -304,25 +310,17 @@
               <input type="text" name="telegram_username" autocomplete="off" placeholder="@username" disabled />
             </label>
           </div>
-        </div>
-        <div class="request-form__grid">
           <label>
             <span>Что вас интересует</span>
             <select name="topic" required>
               <option value="retail">Купить</option><option value="price">Узнать цену</option><option value="wholesale">Оптовый запрос</option><option value="delivery">Доставка и оплата</option><option value="other">Другой вопрос</option>
             </select>
           </label>
-          <label>
-            <span>Как удобнее связаться</span>
-            <select name="contact_preferred">
-              <option value="phone">Телефон</option><option value="telegram">Telegram</option><option value="email">Email</option>
-            </select>
-          </label>
         </div>
         <p class="request-form__hint" data-contact-helper>
-          Укажите основной канал связи. Остальные данные можно сообщить менеджеру после первого контакта.
+          Укажите основной канал связи. Остальное можно уточнить одним сообщением.
         </p>
-        <label>
+        <label class="request-form__field request-form__field--full">
           <span>Комментарий</span>
           <textarea name="message" placeholder="Например: хочу узнать цену, формат поставки или условия покупки."></textarea>
         </label>
@@ -331,10 +329,10 @@
           <span>Согласен(а) на обработку контактных данных для ответа по моему запросу. <a href="/privacy/">Политика обработки персональных данных</a>.</span>
         </label>
         <div class="request-form__actions">
-          <button class="button" type="submit">Связаться со мной</button>
+          <button class="button" type="submit">Отправить запрос</button>
           <a class="text-link text-link--inline request-form__action-link" href="https://t.me/global_basket_bot?start=site_home_lead" target="_blank" rel="noreferrer">Написать в Telegram</a>
         </div>
-        <p class="request-form__note">Мы используем эти данные только для ответа по вашему запросу. Если удобнее, можно сразу написать нам в Telegram.</p>
+        <p class="request-form__note">Ответим в ближайшее рабочее время. Если удобнее, можно сразу написать нам в Telegram.</p>
         <p class="request-form__status" data-request-status aria-live="polite"></p>
       </form>
     </article>
@@ -345,10 +343,9 @@
         </div>
       </section>
 
-      <section class="page-section page-section--compact">
+      <section class="page-section page-section--compact page-section--home-categories">
         <div class="shell">
           <div class="section-head">
-            <p class="eyebrow">Категории</p>
             <h2>Сейчас в каталоге открыт флагманский продукт, а ближайшие направления собраны как понятная витрина бренда.</h2>
           </div>
           <div class="category-grid" id="home-categories">
