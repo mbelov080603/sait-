@@ -10,6 +10,7 @@ const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selec
 
 const escapeQuery = (value = "") => value.trim().toLowerCase();
 const queryTokens = (value = "") => escapeQuery(value).split(/\s+/).filter(Boolean);
+const trimHeadingPeriod = (value = "") => String(value).trim().replace(/\.$/, "");
 const escapeAttribute = (value = "") =>
   String(value)
     .replaceAll("&", "&amp;")
@@ -793,7 +794,6 @@ const renderCategoryCard = (item) => `
         ? `<a class="category-card__media" href="${item.href || "#"}"><img src="${item.image}" alt="${item.name}" loading="lazy" decoding="async" /></a>`
         : ""
     }
-    ${renderBadge(item.statusLabel, item.status)}
     <h3>${item.href ? `<a href="${item.href}">${item.name}</a>` : item.name}</h3>
     <p>${item.description}</p>
     ${
@@ -1393,7 +1393,7 @@ const renderHome = () => {
       <article class="hero-stage hero-stage--lead hero-stage--home">
         <div class="hero-stage__copy">
           ${store.home.hero.eyebrow ? `<p class="eyebrow">${store.home.hero.eyebrow}</p>` : ""}
-          <h1>${store.home.hero.title}</h1>
+          <h1>${trimHeadingPeriod(store.home.hero.title)}</h1>
           <div class="hero-stage__body">
             ${store.home.hero.paragraphs.map((item) => `<p>${item}</p>`).join("")}
           </div>
@@ -1430,7 +1430,7 @@ const renderHome = () => {
       <article class="feature-split feature-split--home">
         <div class="feature-split__copy">
           ${store.home.featured.title ? `<p class="eyebrow">${store.home.featured.title}</p>` : ""}
-          <h2>${store.home.featured.heading}</h2>
+          <h2>${trimHeadingPeriod(store.home.featured.heading)}</h2>
           <p>${store.home.featured.text}</p>
           <ul class="feature-points">
             ${store.home.featured.points.map((item) => `<li>${item}</li>`).join("")}
@@ -1685,8 +1685,8 @@ const renderProductPage = () => {
 
     if (actionsTitle) {
       actionsTitle.textContent = useMarketplaceMode
-        ? productItem.actionsSectionTitle || "Маркетплейсы дают дополнительный канал доверия и покупки."
-        : "Уточните наличие, фасовку и следующий шаг по выбранному варианту.";
+        ? trimHeadingPeriod(productItem.actionsSectionTitle || "Маркетплейсы дают дополнительный канал доверия и покупки")
+        : "Уточните наличие, фасовку и следующий шаг по выбранному варианту";
     }
 
     if (marketplaces) {
@@ -1819,9 +1819,10 @@ const renderProductPage = () => {
 
   const benefitsTitle = $("#product-benefits-title");
   if (benefitsTitle) {
-    benefitsTitle.textContent =
+    benefitsTitle.textContent = trimHeadingPeriod(
       productItem.benefitSectionTitle ||
-      "Ключевые свойства товара собраны так, чтобы позиция читалась спокойно и убедительно.";
+        "Ключевые свойства товара собраны так, чтобы позиция читалась спокойно и убедительно",
+    );
   }
 
   const benefits = $("#product-benefits");
@@ -2641,7 +2642,7 @@ const renderCategoryPage = () => {
     related.innerHTML = `
       <div class="section-head">
         <p class="eyebrow">В наличии</p>
-        <h2>Товары раздела «${category.title || category.name}».</h2>
+        <h2>Товары раздела «${category.title || category.name}»</h2>
       </div>
       <div class="catalog-grid">
         ${relatedProducts.map((item) => renderEnterpriseProductCard(item)).join("")}

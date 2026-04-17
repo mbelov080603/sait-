@@ -52,7 +52,7 @@ const checks = [
   {
     path: "/",
     includes: [
-      "<h1>Global Basket — честный выбор натуральных продуктов со всего мира.</h1>",
+      "<h1>Global Basket — честный выбор натуральных продуктов со всего мира</h1>",
       'name="product_id" value=""',
       '"@type":"Organization"',
     ],
