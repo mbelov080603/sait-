@@ -3401,6 +3401,43 @@ const bindHeaderSearch = () => {
   }
 };
 
+const bindCompactHeader = () => {
+  const header = $(".site-header");
+  const searchRoot = $("[data-header-search]");
+  if (!header) return;
+
+  const prefersDesktop = () => window.matchMedia("(min-width: 1181px)").matches;
+
+  const closeSearch = () => {
+    if (!searchRoot) return;
+    searchRoot.classList.remove("is-open");
+    const toggle = $("[data-search-toggle]", searchRoot);
+    const form = $("[data-search-desktop]", searchRoot);
+    toggle?.setAttribute("aria-expanded", "false");
+    form?.setAttribute("aria-hidden", "true");
+  };
+
+  const sync = () => {
+    const isCondensed = prefersDesktop() && window.scrollY > 56;
+    header.classList.toggle("is-condensed", isCondensed);
+    document.body.classList.toggle("has-condensed-header", isCondensed);
+
+    if (isCondensed) {
+      closeSearch();
+    }
+  };
+
+  let frame = 0;
+  const requestSync = () => {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(sync);
+  };
+
+  window.addEventListener("scroll", requestSync, { passive: true });
+  window.addEventListener("resize", requestSync, { passive: true });
+  sync();
+};
+
 const bindFaq = () => {
   $$(".faq-item").forEach((item) => {
     const button = $("button", item);
@@ -4312,6 +4349,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   bindMobileNav();
   bindHeaderSearch();
+  bindCompactHeader();
   bindSearchForms();
   bindFaq();
   bindQuoteCalculators();
