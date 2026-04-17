@@ -86,23 +86,23 @@ window.GlobalBasketData = {
     description:
       "Макадамия — центральный товар витрины Global Basket: спокойная подача, аккуратная упаковка и собранный интерфейс без визуального шума.",
     images: {
-      hero: "/sait-/assets/catalog/products/macadamia-ozon-front.jpg",
-      packshot: "/sait-/assets/catalog/products/macadamia-ozon-packshot.jpg",
-      main: "/sait-/assets/catalog/products/macadamia-ozon-front.jpg",
-      lifestyle: "/sait-/assets/catalog/products/macadamia-ozon-lifestyle.jpg",
-      poster: "/sait-/assets/catalog/products/macadamia-ozon-front.jpg",
+      hero: "/sait-/assets/catalog/products/macadamia-ozon-front.png",
+      packshot: "/sait-/assets/catalog/products/macadamia-ozon-packshot.png",
+      main: "/sait-/assets/catalog/products/macadamia-ozon-front.png",
+      lifestyle: "/sait-/assets/catalog/products/macadamia-ozon-lifestyle.png",
+      poster: "/sait-/assets/catalog/products/macadamia-ozon-front.png",
     },
     gallery: [
       {
-        src: "/sait-/assets/catalog/products/macadamia-ozon-front.jpg",
+        src: "/sait-/assets/catalog/products/macadamia-ozon-front.png",
         alt: "Очищенная макадамия Global Basket в упаковке с россыпью орехов",
       },
       {
-        src: "/sait-/assets/catalog/products/macadamia-ozon-packshot.jpg",
+        src: "/sait-/assets/catalog/products/macadamia-ozon-packshot.png",
         alt: "Фронтальный packshot очищенной макадамии Global Basket",
       },
       {
-        src: "/sait-/assets/catalog/products/macadamia-ozon-lifestyle.jpg",
+        src: "/sait-/assets/catalog/products/macadamia-ozon-lifestyle.png",
         alt: "Очищенная макадамия Global Basket в домашней подаче",
       },
     ],
@@ -203,11 +203,15 @@ window.GlobalBasketData = {
   ],
   home: {
     hero: {
-      eyebrow: "Кто мы",
+      eyebrow: "",
       title: "Global Basket — честный выбор натуральных продуктов со всего мира.",
+      image: {
+        src: "/sait-/assets/home/global-basket-hero-portrait.png",
+        alt: "Девушка с очищенной макадамией Global Basket в домашней подаче",
+      },
       paragraphs: [
-        "Global Basket - это бренд натуральных и высококачественных продуктов питания, собранных из разных уголков мира и доступных широкому кругу покупателей. Мы не просто поставляем продукты из разных стран, а тщательно отбираем то, что действительно достойно оказаться на столе покупателя.",
-        "Для покупателя Global Basket - это проводник в мире качественных и натуральных продуктов, фильтр, который отсеивает сомнительное и оставляет достойное, и знак доверия, за которым стоит понятная система ценностей.",
+        "Global Basket — это бренд натуральных и высококачественных продуктов питания, собранных из разных уголков мира и доступных широкому кругу покупателей. Мы не просто поставляем продукты из разных стран, а тщательно отбираем то, что действительно достойно оказаться на столе покупателя.",
+        "Для покупателя Global Basket — это проводник в мире качественных и натуральных продуктов, фильтр, который отсеивает сомнительное и оставляет достойное, и знак доверия, за которым стоит понятная система ценностей.",
       ],
       chips: [
         "Натуральные продукты",
@@ -221,17 +225,17 @@ window.GlobalBasketData = {
       },
     },
     leadForm: {
-      eyebrow: "Связаться",
-      title: "Связаться со мной",
+      eyebrow: "",
+      title: "Оставить запрос",
       text:
-        "Оставьте контакты, и мы напишем вам по покупке, цене, оптовому запросу или следующему шагу по заказу.",
-      submitLabel: "Связаться со мной",
+        "Оставьте один удобный контакт, и мы ответим по покупке, наличию, цене или оптовому запросу.",
+      submitLabel: "Отправить запрос",
       secondaryCta: {
         label: "Написать в Telegram",
         href: "https://t.me/global_basket_bot?start=site_home_lead",
       },
       note:
-        "Мы используем эти данные только для ответа по вашему запросу. Если удобнее, можно сразу написать нам в Telegram.",
+        "Ответим в ближайшее рабочее время. Если удобнее, можно сразу написать нам в Telegram.",
       consent:
         'Согласен(а) на обработку контактных данных для ответа по моему запросу. <a href="/privacy/">Политика обработки персональных данных</a>.',
       topics: [
@@ -248,7 +252,7 @@ window.GlobalBasketData = {
       ],
     },
     featured: {
-      title: "Флагманский продукт",
+      title: "",
       heading: "Очищенная макадамия — главный продукт витрины Global Basket.",
       text:
         "Здесь всё подчинено спокойной подаче: чистый состав, понятное происхождение, аккуратная упаковка и уверенный путь к заказу без лишнего шума.",
@@ -378,21 +382,35 @@ window.GlobalBasketData = {
   utilityPages: {
     favorites: {
       title: "Избранное",
-      text: "Сохраняйте интересные позиции, чтобы быстро возвращаться к ним при следующем выборе. Основной товар уже доступен в каталоге.",
+      text: "Сохраняйте интересные позиции, чтобы быстро возвращаться к ним, собирать личную подборку и переносить её в аккаунт без повторного поиска.",
       primary: { label: "В каталог", href: "/sait-/catalog/" },
       secondary: { label: "Добавить в запрос", href: "/sait-/contacts/?source=favorites" },
     },
     account: {
       title: "Аккаунт",
-      text: "По заказу, сопровождению и уточнению условий мы сейчас работаем напрямую через контакты. Так проще и точнее для продукта с персональным запросом.",
-      primary: { label: "Связаться", href: "/sait-/contacts/?source=account" },
-      secondary: { label: "В каталог", href: "/sait-/catalog/" },
+      text: "Сохраните один контакт и свои интересы, чтобы держать корзину, избранное и нужные разделы каталога в одном месте.",
+      primary: { label: "Сохранить аккаунт", href: "/sait-/account/#account-register" },
+      secondary: { label: "Открыть каталог", href: "/sait-/catalog/" },
+      highlights: [
+        "Один контакт для связи",
+        "Корзина и избранное в одном месте",
+        "Предпочтения по разделам каталога",
+      ],
+      formTitle: "Простая регистрация",
+      formText:
+        "Укажите один удобный канал связи и отметьте интересующие разделы. Профиль сохранит выбранные позиции в этом браузере.",
+      consent:
+        "Согласен(а) на обработку контактных данных для сохранения аккаунта, корзины, предпочтений и последующей связи по запросу.",
+      submitLabel: "Сохранить аккаунт",
+      registeredTitle: "Профиль уже сохранён",
+      registeredText:
+        "Контакт и предпочтения можно обновить в любой момент. Корзина и избранное привязаны к этому браузеру.",
     },
     cart: {
       title: "Корзина",
-      text: "Заказ оформляется через короткий запрос: сначала уточняем объём и условия, затем подтверждаем следующий шаг без лишней переписки.",
-      primary: { label: "Добавить в запрос", href: "/sait-/contacts/?source=cart" },
-      secondary: { label: "Смотреть товар", href: "/sait-/catalog/macadamia/" },
+      text: "Собирайте нужные позиции в корзину, меняйте количество и затем сохраняйте эту подборку в аккаунт или переносите её в запрос.",
+      primary: { label: "Сохранить в аккаунт", href: "/sait-/account/#account-register" },
+      secondary: { label: "В каталог", href: "/sait-/catalog/" },
     },
     privacy: {
       title: "Политика обработки персональных данных",
@@ -414,14 +432,14 @@ window.GlobalBasketData = {
     ],
     hero: {
       eyebrow: "О бренде",
-      title: "Global Basket - вкусы мира в честном, полезном и доступном формате",
+      title: "Global Basket — вкусы мира в честном, полезном и доступном формате",
       text:
         "Мы отбираем натуральные и качественные продукты со всего мира, чтобы здоровый и вкусный выбор был понятным, удобным и доступным для повседневной жизни.",
       chips: [
         "Натуральные продукты",
         "Отбор со всего мира",
         "Честная цена и качество",
-        "Теплая подача",
+        "Тёплая подача",
       ],
       primaryCta: { label: "Смотреть каталог", href: "/sait-/catalog/" },
       secondaryCta: { label: "Связаться", href: "/sait-/contacts/?source=about-hero" },
@@ -433,8 +451,8 @@ window.GlobalBasketData = {
     who: {
       title: "Кто мы",
       paragraphs: [
-        "Global Basket - это бренд натуральных и высококачественных продуктов питания, собранных из разных уголков мира и доступных широкому кругу покупателей. Мы не просто поставляем продукты из разных стран, а тщательно отбираем то, что действительно достойно оказаться на столе покупателя.",
-        "Для покупателя Global Basket - это проводник в мире качественных и натуральных продуктов, фильтр, который отсеивает сомнительное и оставляет достойное, и знак доверия, за которым стоит понятная система ценностей.",
+        "Global Basket — это бренд натуральных и высококачественных продуктов питания, собранных из разных уголков мира и доступных широкому кругу покупателей. Мы не просто поставляем продукты из разных стран, а тщательно отбираем то, что действительно достойно оказаться на столе покупателя.",
+        "Для покупателя Global Basket — это проводник в мире качественных и натуральных продуктов, фильтр, который отсеивает сомнительное и оставляет достойное, и знак доверия, за которым стоит понятная система ценностей.",
       ],
       image: {
         src: "/sait-/assets/about/selection-hands.jpg",
@@ -549,7 +567,7 @@ window.GlobalBasketData = {
       ],
       image: {
         src: "/sait-/assets/about/warm-kitchen.jpg",
-        alt: "Теплая домашняя кухня с чаем и орехами как образ уюта и доверия к бренду",
+        alt: "Тёплая домашняя кухня с чаем и орехами как образ уюта и доверия к бренду",
       },
     },
     selection: {
@@ -625,12 +643,12 @@ window.GlobalBasketData = {
     legend: {
       title: "Как появилась идея бренда",
       text:
-        "Global Basket родился из простой мысли: в мире существует огромное количество достойных, натуральных и по-настоящему качественных продуктов, но далеко не всегда они доступны человеку в удобной, понятной и честной форме. Мы решили собрать лучшее из разных уголков мира в один бренд, который ассоциируется с теплом, заботой и разумным выбором. Так появилась корзина вкусов со всего мира - не для показного потребления, а для настоящей, полезной и комфортной жизни.",
+        "Global Basket родился из простой мысли: в мире существует огромное количество достойных, натуральных и по-настоящему качественных продуктов, но далеко не всегда они доступны человеку в удобной, понятной и честной форме. Мы решили собрать лучшее из разных уголков мира в один бренд, который ассоциируется с теплом, заботой и разумным выбором. Так появилась корзина вкусов со всего мира — не для показного потребления, а для настоящей, полезной и комфортной жизни.",
     },
     cta: {
       title: "Выбирайте продукты, которым можно доверять",
       text:
-        "Global Basket - это натуральные и качественные продукты со всего мира для тех, кто ценит вкус, пользу и честный подход к еде.",
+        "Global Basket — это натуральные и качественные продукты со всего мира для тех, кто ценит вкус, пользу и честный подход к еде.",
       primary: { label: "Перейти в каталог", href: "/sait-/catalog/" },
       secondary: { label: "Связаться с нами", href: "/sait-/contacts/?source=about-final" },
     },
@@ -669,7 +687,7 @@ window.GlobalBasketData = {
         title: "Как аккуратная упаковка усиливает впечатление от продукта",
         excerpt: "Почему визуально собранная подача работает на доверие ещё до первого обращения.",
         href: "/sait-/journal/packaging/",
-        image: "/sait-/assets/catalog/products/macadamia-ozon-packshot.jpg",
+        image: "/sait-/assets/journal/packaging-preview.png",
         lead:
           "Когда продукт подан спокойно и аккуратно, пользователь быстрее считывает его уровень и легче переходит к следующему действию.",
         sections: [
@@ -688,7 +706,7 @@ window.GlobalBasketData = {
         title: "Почему макадамия хорошо подходит для спокойной премиальной витрины",
         excerpt: "Один сильный товар может задать тон всему магазину, если вокруг него собрана понятная и аккуратная структура.",
         href: "/sait-/journal/macadamia-start/",
-        image: "/sait-/assets/catalog/products/macadamia-ozon-front.jpg",
+        image: "/sait-/assets/journal/macadamia-start-preview.png",
         lead:
           "Макадамия помогает запустить каталог без ощущения пустоты: продукт сам по себе выглядит цельно и даёт достаточно поводов для сильной первой витрины.",
         introParagraphs: [
@@ -839,7 +857,7 @@ window.GlobalBasketData = {
         title: "Как расширять ассортимент и сохранять аккуратную витрину",
         excerpt: "Как добавлять новые категории постепенно и при этом сохранять цельный, спокойный интерфейс магазина.",
         href: "/sait-/journal/catalog-growth/",
-        image: "/sait-/assets/catalog/products/macadamia-ozon-lifestyle.jpg",
+        image: "/sait-/assets/journal/catalog-growth-preview.png",
         lead:
           "Рост ассортимента не должен превращать магазин в шумный набор блоков. Важно расширять каталог так, чтобы пользователь по-прежнему быстро понимал, где он находится и что делать дальше.",
         sections: [
@@ -2201,9 +2219,9 @@ const productsFromPack = catalogPayload.products_cards
       main: mapCatalogMediaPath(page.cover_image || card.cover_image),
       lifestyle:
         card.product_slug === "macadamia"
-          ? "/sait-/assets/catalog/products/macadamia-ozon-lifestyle.jpg"
+          ? "/sait-/assets/catalog/products/macadamia-ozon-lifestyle.png"
           : mapCatalogMediaPath(page.detail_image || card.detail_image),
-      poster: "/sait-/assets/catalog/products/macadamia-ozon-front.jpg",
+      poster: "/sait-/assets/catalog/products/macadamia-ozon-front.png",
     };
     const factCards = buildFactCards(specs, defaultVariant, variantType);
 
@@ -2283,27 +2301,27 @@ const productsFromPack = catalogPayload.products_cards
           imageKind: "photo",
           images: {
             ...item.images,
-            hero: "/sait-/assets/catalog/products/macadamia-ozon-front.jpg",
-            packshot: "/sait-/assets/catalog/products/macadamia-ozon-packshot.jpg",
-            main: "/sait-/assets/catalog/products/macadamia-ozon-front.jpg",
-            lifestyle: "/sait-/assets/catalog/products/macadamia-ozon-lifestyle.jpg",
-            poster: "/sait-/assets/catalog/products/macadamia-ozon-front.jpg",
+            hero: "/sait-/assets/catalog/products/macadamia-ozon-front.png",
+            packshot: "/sait-/assets/catalog/products/macadamia-ozon-packshot.png",
+            main: "/sait-/assets/catalog/products/macadamia-ozon-front.png",
+            lifestyle: "/sait-/assets/catalog/products/macadamia-ozon-lifestyle.png",
+            poster: "/sait-/assets/catalog/products/macadamia-ozon-front.png",
           },
           gallery: [
             {
-              src: "/sait-/assets/catalog/products/macadamia-ozon-front.jpg",
+              src: "/sait-/assets/catalog/products/macadamia-ozon-front.png",
               alt: "Очищенная макадамия Global Basket в упаковке с россыпью орехов",
             },
             {
-              src: "/sait-/assets/catalog/products/macadamia-ozon-packshot.jpg",
+              src: "/sait-/assets/catalog/products/macadamia-ozon-packshot.png",
               alt: "Фронтальный packshot очищенной макадамии Global Basket",
             },
             {
-              src: "/sait-/assets/catalog/products/macadamia-ozon-kernels-pile.jpg",
+              src: "/sait-/assets/catalog/products/macadamia-ozon-kernels-pile.png",
               alt: "Очищенные ядра макадамии крупным планом",
             },
             {
-              src: "/sait-/assets/catalog/products/macadamia-ozon-kernels-scatter.jpg",
+              src: "/sait-/assets/catalog/products/macadamia-ozon-kernels-scatter.png",
               alt: "Очищенные ядра макадамии на белом фоне",
             },
           ],

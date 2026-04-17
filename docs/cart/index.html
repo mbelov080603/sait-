@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Заказ оформляется через короткий запрос: сначала уточняем объём и условия, затем подтверждаем следующий шаг без лишней переписки." />
+    <meta name="description" content="Собирайте нужные позиции в корзину, меняйте количество и затем сохраняйте эту подборку в аккаунт или переносите её в запрос." />
     <title>Global Basket | Корзина</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,16 +12,16 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/sait-/styles/global.css" />
-    <!-- prerender-seo:start -->
+            <!-- prerender-seo:start -->
     <link rel="canonical" href="https://mbelov080603.github.io/sait-/cart/" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Global Basket | Корзина" />
-    <meta property="og:description" content="Заказ оформляется через короткий запрос: сначала уточняем объём и условия, затем подтверждаем следующий шаг без лишней переписки." />
+    <meta property="og:description" content="Собирайте нужные позиции в корзину, меняйте количество и затем сохраняйте эту подборку в аккаунт или переносите её в запрос." />
     <meta property="og:url" content="https://mbelov080603.github.io/sait-/cart/" />
     <meta property="og:image" content="https://mbelov080603.github.io/sait-/assets/logo.jpg" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Global Basket | Корзина" />
-    <meta name="twitter:description" content="Заказ оформляется через короткий запрос: сначала уточняем объём и условия, затем подтверждаем следующий шаг без лишней переписки." />
+    <meta name="twitter:description" content="Собирайте нужные позиции в корзину, меняйте количество и затем сохраняйте эту подборку в аккаунт или переносите её в запрос." />
     <meta name="twitter:image" content="https://mbelov080603.github.io/sait-/assets/logo.jpg" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Global Basket","url":"https://mbelov080603.github.io/sait-","logo":"https://mbelov080603.github.io/sait-/assets/logo.jpg","email":"hello@globalbasket.ru","telephone":"+79773384640","contactPoint":[{"@type":"ContactPoint","contactType":"sales","telephone":"+79773384640","email":"hello@globalbasket.ru","availableLanguage":["ru"],"url":"https://mbelov080603.github.io/sait-/contacts/"}],"sameAs":["https://t.me/Global_Basket","https://t.me/global_basket_bot?start=site_contact"]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Главная","item":"https://mbelov080603.github.io/sait-/"},{"@type":"ListItem","position":2,"name":"Корзина","item":"https://mbelov080603.github.io/sait-/cart/"}]}</script>
@@ -32,15 +32,6 @@
 <div data-site-header>
     <div class="page-noise" aria-hidden="true"></div>
     <header class="site-header">
-      <div class="top-notice-bar">
-        <div class="shell top-notice-bar__inner">
-          <div class="top-notice-bar__items"><a href="/sait-/contacts/?source=wholesale">Оптовые запросы</a><span>Упаковка: вакуум</span><span>Происхождение: Кения</span></div>
-          <div class="top-notice-bar__meta">
-            <span>Пн-Пт 09:00-18:00</span>
-            <a href="tel:+79773384640">8 (977) 338-46-40</a>
-          </div>
-        </div>
-      </div>
       <div class="shell header-main">
         <a class="brand-mark" href="/sait-/" aria-label="На главную Global Basket">
           <img src="/sait-/assets/logo.jpg" alt="Логотип Global Basket" />
@@ -97,31 +88,54 @@
             </form>
           </div>
           
-        <a class="icon-button" href="/sait-/favorites/" aria-label="Избранное" title="Избранное">
-          
+    <a
+      class="icon-button icon-button--stateful "
+      href="/sait-/favorites/"
+      aria-label="Избранное"
+      title="Избранное"
+      data-header-counter="favorites"
+    >
+      
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path d="M12 21.35 10.55 20C5.4 15.24 2 12.09 2 8.25 2 5.1 4.42 2.75 7.5 2.75c1.74 0 3.41.81 4.5 2.08 1.09-1.27 2.76-2.08 4.5-2.08 3.08 0 5.5 2.35 5.5 5.5 0 3.84-3.4 6.99-8.55 11.76L12 21.35Z"></path>
   </svg>
 
-        </a>
+      <span class="icon-button__badge" hidden>0</span>
+      <span class="icon-button__dot" hidden></span>
+    </a>
+  
+    <a
+      class="icon-button icon-button--stateful "
+      href="/sait-/account/"
+      aria-label="Аккаунт"
+      title="Аккаунт"
+      data-header-counter="account"
+    >
       
-        <a class="icon-button" href="/sait-/account/" aria-label="Аккаунт" title="Аккаунт">
-          
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path d="M12 12a4.75 4.75 0 1 0 0-9.5A4.75 4.75 0 0 0 12 12Zm0 2.25c-4.14 0-7.5 2.63-7.5 5.88 0 .76.62 1.37 1.38 1.37h12.24c.76 0 1.38-.61 1.38-1.37 0-3.25-3.36-5.88-7.5-5.88Z"></path>
   </svg>
 
-        </a>
+      <span class="icon-button__badge" hidden>0</span>
+      <span class="icon-button__dot" hidden></span>
+    </a>
+  
+    <a
+      class="icon-button icon-button--stateful "
+      href="/sait-/cart/"
+      aria-label="Корзина"
+      title="Корзина"
+      data-header-counter="cart"
+    >
       
-        <a class="icon-button" href="/sait-/cart/" aria-label="Корзина" title="Корзина">
-          
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path d="M7 7.5V6.25a5 5 0 0 1 10 0V7.5h1.75c.74 0 1.36.56 1.43 1.29l1.1 11.5a1.5 1.5 0 0 1-1.49 1.71H5.21a1.5 1.5 0 0 1-1.49-1.71l1.1-11.5A1.44 1.44 0 0 1 6.25 7.5H7Zm2 0h6V6.25a3 3 0 0 0-6 0V7.5Z"></path>
   </svg>
 
-        </a>
-      
-          <a class="button button--small button--header" href="https://t.me/global_basket_bot?start=site_contact" target="_blank" rel="noreferrer">Написать в Telegram</a>
+      <span class="icon-button__badge" hidden>0</span>
+      <span class="icon-button__dot" hidden></span>
+    </a>
+  
         </div>
 
         <button
@@ -154,31 +168,54 @@
             <a href="mailto:hello@globalbasket.ru">hello@globalbasket.ru</a>
           </div>
           <div class="mobile-nav__icons">
-        <a class="icon-button" href="/sait-/favorites/" aria-label="Избранное" title="Избранное">
-          
+    <a
+      class="icon-button icon-button--stateful "
+      href="/sait-/favorites/"
+      aria-label="Избранное"
+      title="Избранное"
+      data-header-counter="favorites"
+    >
+      
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path d="M12 21.35 10.55 20C5.4 15.24 2 12.09 2 8.25 2 5.1 4.42 2.75 7.5 2.75c1.74 0 3.41.81 4.5 2.08 1.09-1.27 2.76-2.08 4.5-2.08 3.08 0 5.5 2.35 5.5 5.5 0 3.84-3.4 6.99-8.55 11.76L12 21.35Z"></path>
   </svg>
 
-        </a>
+      <span class="icon-button__badge" hidden>0</span>
+      <span class="icon-button__dot" hidden></span>
+    </a>
+  
+    <a
+      class="icon-button icon-button--stateful "
+      href="/sait-/account/"
+      aria-label="Аккаунт"
+      title="Аккаунт"
+      data-header-counter="account"
+    >
       
-        <a class="icon-button" href="/sait-/account/" aria-label="Аккаунт" title="Аккаунт">
-          
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path d="M12 12a4.75 4.75 0 1 0 0-9.5A4.75 4.75 0 0 0 12 12Zm0 2.25c-4.14 0-7.5 2.63-7.5 5.88 0 .76.62 1.37 1.38 1.37h12.24c.76 0 1.38-.61 1.38-1.37 0-3.25-3.36-5.88-7.5-5.88Z"></path>
   </svg>
 
-        </a>
+      <span class="icon-button__badge" hidden>0</span>
+      <span class="icon-button__dot" hidden></span>
+    </a>
+  
+    <a
+      class="icon-button icon-button--stateful "
+      href="/sait-/cart/"
+      aria-label="Корзина"
+      title="Корзина"
+      data-header-counter="cart"
+    >
       
-        <a class="icon-button" href="/sait-/cart/" aria-label="Корзина" title="Корзина">
-          
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path d="M7 7.5V6.25a5 5 0 0 1 10 0V7.5h1.75c.74 0 1.36.56 1.43 1.29l1.1 11.5a1.5 1.5 0 0 1-1.49 1.71H5.21a1.5 1.5 0 0 1-1.49-1.71l1.1-11.5A1.44 1.44 0 0 1 6.25 7.5H7Zm2 0h6V6.25a3 3 0 0 0-6 0V7.5Z"></path>
   </svg>
 
-        </a>
-      </div>
-          <a class="button" href="https://t.me/global_basket_bot?start=site_contact" target="_blank" rel="noreferrer">Написать в Telegram</a>
+      <span class="icon-button__badge" hidden>0</span>
+      <span class="icon-button__dot" hidden></span>
+    </a>
+  </div>
         </div>
       </div>
     </header>
@@ -187,23 +224,48 @@
     <main>
       <section class="page-hero">
         <div class="shell" id="utility-page">
-      <div class="breadcrumb">
-        <a href="/sait-/">Главная</a>
-        <span>/</span>
-        <span>Корзина</span>
-      </div>
-      <article class="request-panel utility-page">
-        <div class="section-head section-head--compact">
-          <p class="eyebrow">Раздел</p>
-          <h1>Корзина</h1>
-          <p>Заказ оформляется через короткий запрос: сначала уточняем объём и условия, затем подтверждаем следующий шаг без лишней переписки.</p>
-        </div>
-        <div class="hero-product__actions">
-          <a class="button" href="/sait-/contacts/?source=cart">Добавить в запрос</a>
-          <a class="button button--ghost" href="/sait-/catalog/macadamia/">Смотреть товар</a>
-        </div>
-      </article>
+    <div class="breadcrumb">
+      <a href="/sait-/">Главная</a>
+      <span>/</span>
+      <span>Корзина</span>
     </div>
+    <div class="utility-stack">
+      <div class="utility-grid utility-grid--utility-top">
+        <article class="request-panel utility-page">
+          <div class="section-head section-head--compact">
+            <p class="eyebrow">Раздел</p>
+            <h1>Корзина</h1>
+            <p>Собирайте нужные позиции в корзину, меняйте количество и затем сохраняйте эту подборку в аккаунт или переносите её в запрос.</p>
+          </div>
+          <div class="hero-product__actions">
+            <a class="button" href="/sait-/account/#account-register">Сохранить в аккаунт</a>
+            <a class="button button--ghost" href="/sait-/contacts/?source=cart">Добавить в запрос</a>
+          </div>
+        </article>
+        <article class="request-panel utility-summary-card">
+          <div class="section-head section-head--compact">
+            <p class="eyebrow">Сводка</p>
+            <h2>Текущее наполнение корзины</h2>
+            <p>Корзина пока пустая. Добавьте товары из каталога или со страницы продукта.</p>
+          </div>
+          <dl class="account-summary-card__list">
+            <div><dt>Строк</dt><dd>0</dd></div>
+            <div><dt>Единиц</dt><dd>0</dd></div>
+            <div><dt>Аккаунт</dt><dd>Пока не сохранён</dd></div>
+          </dl>
+        </article>
+      </div>
+      <div class="saved-item-list">
+        
+              <article class="empty-state">
+                <strong>Корзина пока пустая.</strong>
+                <p>Добавьте товары из каталога. После регистрации эта подборка сохранится в аккаунте на устройстве.</p>
+                <a class="button button--small" href="/sait-/catalog/">Перейти в каталог</a>
+              </article>
+            
+      </div>
+    </div>
+  </div>
       </section>
     </main>
     <!-- prerender-footer:start -->

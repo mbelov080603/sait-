@@ -10,6 +10,7 @@ const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selec
 
 const escapeQuery = (value = "") => value.trim().toLowerCase();
 const queryTokens = (value = "") => escapeQuery(value).split(/\s+/).filter(Boolean);
+const trimHeadingPeriod = (value = "") => String(value).trim().replace(/\.$/, "");
 const escapeAttribute = (value = "") =>
   String(value)
     .replaceAll("&", "&amp;")
@@ -105,6 +106,242 @@ const resolveCategoryFromLocation = () => {
 };
 
 const currentCategory = resolveCategoryFromLocation();
+
+const STORAGE_KEYS = {
+  accountProfile: "gb-account-profile",
+  cartItems: "gb-cart-items",
+  favoriteItems: "gb-favorite-items",
+  lastAccountPayload: "gb-last-account-payload",
+};
+
+const DEFAULT_ACCOUNT_NAME = "Покупатель Global Basket";
+
+const readJsonStorage = (key, fallback) => {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+};
+
+const writeJsonStorage = (key, value) => {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // ignore storage errors to keep the UI usable in private mode
+  }
+};
+
+const removeStorageItem = (key) => {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // ignore storage errors to keep the UI usable in private mode
+  }
+};
+
+const createLocalId = (prefix = "gb") =>
+  `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+const toIsoNow = () => new Date().toISOString();
+
+const cleanStoredList = (value) => (Array.isArray(value) ? value.filter(Boolean) : []);
+
+const getCartItems = () => cleanStoredList(readJsonStorage(STORAGE_KEYS.cartItems, []));
+const getFavoriteItems = () => cleanStoredList(readJsonStorage(STORAGE_KEYS.favoriteItems, []));
+const getAccountProfile = () => readJsonStorage(STORAGE_KEYS.accountProfile, null);
+
+const setCartItems = (items) => {
+  writeJsonStorage(STORAGE_KEYS.cartItems, cleanStoredList(items));
+};
+
+const setFavoriteItems = (items) => {
+  writeJsonStorage(STORAGE_KEYS.favoriteItems, cleanStoredList(items));
+};
+
+const setAccountProfile = (profile) => {
+  if (!profile) {
+    removeStorageItem(STORAGE_KEYS.accountProfile);
+    return;
+  }
+  writeJsonStorage(STORAGE_KEYS.accountProfile, profile);
+};
+
+const getStoredVariantLabel = (variant = null) =>
+  typeof variant === "string" ? variant : variant?.label || variant?.value || "";
+
+const buildStoredProductSnapshot = (productItem, variant = null, quantity = 1, source = "site") => {
+  const variantLabel = getStoredVariantLabel(variant);
+  return {
+    entryId: `${productItem.id || productItem.slug}::${variantLabel || "default"}`,
+    productId: productItem.id || productItem.slug || "",
+    slug: productItem.slug || "",
+    href: productItem.href || "",
+    shortName: productItem.shortName || productItem.h1 || productItem.fullName || "",
+    fullName: productItem.fullName || productItem.shortName || "",
+    subtitle: buildVariantSubtitle(productItem, variant) || productItem.subtitle || "",
+    categoryName: productItem.category || "",
+    categoryId: productItem.categorySlug || "",
+    image:
+      productItem.images?.packshot ||
+      productItem.images?.main ||
+      productItem.images?.detail ||
+      "",
+    price: productItem.price || "",
+    variantLabel,
+    quantity,
+    source,
+    savedAt: toIsoNow(),
+  };
+};
+
+const resolveStoredProduct = (entry) => {
+  if (!entry) return null;
+  return (
+    findProduct(entry.productId || "") ||
+    findProduct(entry.slug || "") ||
+    findProduct(entry.href || "") ||
+    null
+  );
+};
+
+const buildInterestOptions = () =>
+  activeCategories.map((item) => ({
+    id: item.id,
+    label: item.title || item.name,
+  }));
+
+const derivePreferenceSummary = (profile = getAccountProfile()) => {
+  const cartItems = getCartItems();
+  const favoriteItems = getFavoriteItems();
+  const categoryMap = new Map();
+  const explicitInterests = Array.isArray(profile?.interestIds) ? profile.interestIds : [];
+
+  [...cartItems, ...favoriteItems].forEach((entry) => {
+    if (!entry?.categoryId) return;
+    const label = entry.categoryName || findCategory(entry.categoryId)?.title || entry.categoryId;
+    categoryMap.set(entry.categoryId, label);
+  });
+
+  explicitInterests.forEach((id) => {
+    if (categoryMap.has(id)) return;
+    const category = findCategory(id);
+    categoryMap.set(id, category?.title || category?.name || id);
+  });
+
+  return {
+    cartCount: cartItems.reduce((sum, entry) => sum + Math.max(1, Number(entry.quantity) || 1), 0),
+    cartLineCount: cartItems.length,
+    favoriteCount: favoriteItems.length,
+    categoryIds: Array.from(categoryMap.keys()),
+    categoryNames: Array.from(categoryMap.values()),
+    preferredContact: profile?.preferredContact || "",
+  };
+};
+
+const syncAccountProfileWithStorage = () => {
+  const profile = getAccountProfile();
+  if (!profile) return null;
+
+  const preferenceSummary = derivePreferenceSummary(profile);
+  const nextProfile = {
+    ...profile,
+    cartSnapshot: getCartItems(),
+    favoriteSnapshot: getFavoriteItems(),
+    preferenceCategoryIds: preferenceSummary.categoryIds,
+    preferenceCategoryNames: preferenceSummary.categoryNames,
+    updatedAt: toIsoNow(),
+  };
+
+  setAccountProfile(nextProfile);
+  return nextProfile;
+};
+
+const getHeaderState = () => {
+  const profile = getAccountProfile();
+  return {
+    favorites: getFavoriteItems().length,
+    cart: getCartItems().reduce((sum, entry) => sum + Math.max(1, Number(entry.quantity) || 1), 0),
+    accountRegistered: Boolean(profile),
+  };
+};
+
+const isFavoriteSaved = (productItem) =>
+  getFavoriteItems().some((entry) => entry.productId === (productItem.id || productItem.slug));
+
+const getCartQuantityForProduct = (productItem, variant = null) => {
+  const variantLabel = getStoredVariantLabel(variant);
+  return getCartItems()
+    .filter(
+      (entry) =>
+        entry.productId === (productItem.id || productItem.slug) &&
+        (entry.variantLabel || "") === variantLabel,
+    )
+    .reduce((sum, entry) => sum + Math.max(1, Number(entry.quantity) || 1), 0);
+};
+
+const toggleFavoriteProduct = (productItem, variant = null, source = "site") => {
+  const current = getFavoriteItems();
+  const productId = productItem.id || productItem.slug;
+  const exists = current.some((entry) => entry.productId === productId);
+
+  const next = exists
+    ? current.filter((entry) => entry.productId !== productId)
+    : [...current, buildStoredProductSnapshot(productItem, variant, 1, source)];
+
+  setFavoriteItems(next);
+  syncAccountProfileWithStorage();
+  return !exists;
+};
+
+const addProductToCart = (productItem, variant = null, source = "site", quantity = 1) => {
+  const current = getCartItems();
+  const next = [...current];
+  const snapshot = buildStoredProductSnapshot(productItem, variant, quantity, source);
+  const index = next.findIndex((entry) => entry.entryId === snapshot.entryId);
+
+  if (index >= 0) {
+    const existing = next[index];
+    next[index] = {
+      ...existing,
+      quantity: Math.max(1, Number(existing.quantity) || 1) + Math.max(1, Number(quantity) || 1),
+      savedAt: toIsoNow(),
+    };
+  } else {
+    next.push(snapshot);
+  }
+
+  setCartItems(next);
+  syncAccountProfileWithStorage();
+};
+
+const updateCartItemQuantity = (entryId, nextQuantity) => {
+  const normalizedQuantity = Math.max(0, Number(nextQuantity) || 0);
+  const current = getCartItems();
+  const next =
+    normalizedQuantity > 0
+      ? current.map((entry) =>
+          entry.entryId === entryId
+            ? { ...entry, quantity: normalizedQuantity, savedAt: toIsoNow() }
+            : entry,
+        )
+      : current.filter((entry) => entry.entryId !== entryId);
+
+  setCartItems(next);
+  syncAccountProfileWithStorage();
+};
+
+const removeCartItem = (entryId) => {
+  setCartItems(getCartItems().filter((entry) => entry.entryId !== entryId));
+  syncAccountProfileWithStorage();
+};
+
+const removeFavoriteItem = (productId) => {
+  setFavoriteItems(getFavoriteItems().filter((entry) => entry.productId !== productId));
+  syncAccountProfileWithStorage();
+};
 
 const buildContactHref = (productItem, source = "catalog-card", variant = null) => {
   const params = new URLSearchParams();
@@ -328,6 +565,28 @@ const renderIcon = (name) => `
 const renderBadge = (label, tone = "active") =>
   `<span class="meta-badge meta-badge--${tone}">${label}</span>`;
 
+const renderHeaderIconLink = (item) => {
+  const state = getHeaderState();
+  const counterType =
+    item.icon === "heart" ? "favorites" : item.icon === "bag" ? "cart" : item.icon === "user" ? "account" : "";
+  const count = counterType === "favorites" ? state.favorites : counterType === "cart" ? state.cart : 0;
+  const showAccountDot = counterType === "account" && state.accountRegistered;
+
+  return `
+    <a
+      class="icon-button icon-button--stateful ${count > 0 || showAccountDot ? "has-indicator" : ""}"
+      href="${item.href}"
+      aria-label="${item.label}"
+      title="${item.label}"
+      data-header-counter="${counterType}"
+    >
+      ${renderIcon(item.icon)}
+      <span class="icon-button__badge" ${count > 0 ? "" : "hidden"}>${count}</span>
+      <span class="icon-button__dot" ${showAccountDot && !count ? "" : "hidden"}></span>
+    </a>
+  `;
+};
+
 const renderHeader = () => {
   const mount = $("[data-site-header]");
   if (!mount) return;
@@ -341,36 +600,11 @@ const renderHeader = () => {
     )
     .join("");
 
-  const iconLinks = store.headerIcons
-    .map(
-      (item) => `
-        <a class="icon-button" href="${item.href}" aria-label="${item.label}" title="${item.label}">
-          ${renderIcon(item.icon)}
-        </a>
-      `,
-    )
-    .join("");
-
-  const noticeItems = store.noticeBar.items
-    .map((item) =>
-      item.href
-        ? `<a href="${item.href}">${item.label}</a>`
-        : `<span>${item.label}</span>`,
-    )
-    .join("");
+  const iconLinks = store.headerIcons.map(renderHeaderIconLink).join("");
 
   mount.innerHTML = `
     <div class="page-noise" aria-hidden="true"></div>
     <header class="site-header">
-      <div class="top-notice-bar">
-        <div class="shell top-notice-bar__inner">
-          <div class="top-notice-bar__items">${noticeItems}</div>
-          <div class="top-notice-bar__meta">
-            <span>${store.contact.hours}</span>
-            <a href="${store.contact.phoneHref}">${store.contact.phone}</a>
-          </div>
-        </div>
-      </div>
       <div class="shell header-main">
         <a class="brand-mark" href="/sait-/" aria-label="На главную Global Basket">
           <img src="/sait-/assets/logo.jpg" alt="Логотип Global Basket" />
@@ -419,7 +653,6 @@ const renderHeader = () => {
             </form>
           </div>
           ${iconLinks}
-          <a class="button button--small button--header" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>Написать в Telegram</a>
         </div>
 
         <button
@@ -448,11 +681,33 @@ const renderHeader = () => {
             <a href="${store.contact.emailHref}">${store.contact.email}</a>
           </div>
           <div class="mobile-nav__icons">${iconLinks}</div>
-          <a class="button" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>Написать в Telegram</a>
         </div>
       </div>
     </header>
   `;
+};
+
+const updateHeaderState = () => {
+  const state = getHeaderState();
+
+  $$("[data-header-counter]").forEach((link) => {
+    const type = link.dataset.headerCounter || "";
+    const badge = $(".icon-button__badge", link);
+    const dot = $(".icon-button__dot", link);
+    const count = type === "favorites" ? state.favorites : type === "cart" ? state.cart : 0;
+    const showAccountDot = type === "account" && state.accountRegistered;
+
+    link.classList.toggle("has-indicator", count > 0 || showAccountDot);
+
+    if (badge) {
+      badge.hidden = count <= 0;
+      badge.textContent = count > 99 ? "99+" : String(count);
+    }
+
+    if (dot) {
+      dot.hidden = !(showAccountDot && count <= 0);
+    }
+  });
 };
 
 const renderFooter = () => {
@@ -539,12 +794,11 @@ const renderCategoryCard = (item) => `
         ? `<a class="category-card__media" href="${item.href || "#"}"><img src="${item.image}" alt="${item.name}" loading="lazy" decoding="async" /></a>`
         : ""
     }
-    ${renderBadge(item.statusLabel, item.status)}
     <h3>${item.href ? `<a href="${item.href}">${item.name}</a>` : item.name}</h3>
     <p>${item.description}</p>
     ${
       item.href
-        ? `<a class="text-link text-link--inline" href="${item.href}">Смотреть раздел</a>`
+        ? `<a class="text-link text-link--inline category-card__cta" href="${item.href}">Смотреть раздел</a>`
         : `<span class="card-note">Скоро откроем.</span>`
     }
   </article>
@@ -569,7 +823,7 @@ const renderSectionCard = (item) => `
     <p>${item.description}</p>
     ${
       item.href
-        ? `<a class="text-link" href="${item.href}">Смотреть раздел</a>`
+        ? `<a class="text-link section-card__cta" href="${item.href}">Смотреть раздел</a>`
         : `<span class="card-note">Скоро откроем.</span>`
     }
   </article>
@@ -582,7 +836,7 @@ const renderJournalCard = (post, featured = false) => `
       ${renderBadge("Материал", "editorial")}
       <h3><a href="${post.href}">${post.title}</a></h3>
       <p>${featured ? post.lead : post.excerpt}</p>
-      <a class="text-link text-link--inline" href="${post.href}">Читать</a>
+      <a class="text-link text-link--inline journal-card__cta" href="${post.href}">Читать</a>
     </div>
   </article>
 `;
@@ -602,27 +856,54 @@ const formatCatalogCount = (count) => {
   return `${count} позиций`;
 };
 
-const renderEnterpriseProductCard = (productItem = product) => `
-  <article class="product-card">
-    <div class="product-card__top">
-      ${renderBadge(productItem.badge, productItem.badgeTone)}
-    </div>
-    <div class="product-card__content">
-      <a class="product-card__media product-card__media--${productItem.imageKind || "illustration"}" href="${productItem.href}">
-        <img src="${productItem.images.packshot}" alt="${productItem.fullName}" loading="lazy" decoding="async" />
-      </a>
-      <div class="product-card__body">
-        <h3><a href="${productItem.href}">${productItem.shortName}</a></h3>
-        <p class="product-card__subtitle">${productItem.subtitle}</p>
-        <p class="product-card__lead">${productItem.catalogDescription || productItem.lead}</p>
-        <div class="product-card__actions">
-          <a class="button button--small" href="${productItem.href}">Подробнее</a>
-          <a class="text-link text-link--inline" href="${buildContactHref(productItem, "catalog-card")}">Уточнить условия</a>
+const renderEnterpriseProductCard = (productItem = product) => {
+  const defaultVariant = resolveProductVariant(productItem);
+  const variantLabel = getStoredVariantLabel(defaultVariant);
+  return `
+    <article class="product-card">
+      <div class="product-card__top">
+        ${renderBadge(productItem.badge, productItem.badgeTone)}
+      </div>
+      <div class="product-card__content">
+        <a class="product-card__media product-card__media--${productItem.imageKind || "illustration"}" href="${productItem.href}">
+          <img src="${productItem.images.packshot}" alt="${productItem.fullName}" loading="lazy" decoding="async" />
+        </a>
+        <div class="product-card__body">
+          <h3><a href="${productItem.href}">${productItem.shortName}</a></h3>
+          <p class="product-card__subtitle">${productItem.subtitle}</p>
+          <p class="product-card__lead">${productItem.catalogDescription || productItem.lead}</p>
+          <div class="product-card__actions">
+            <a class="button button--small" href="${productItem.href}">Подробнее</a>
+            <button
+              class="button button--ghost button--small"
+              type="button"
+              data-cart-add
+              data-product-id="${escapeAttribute(productItem.id || productItem.slug || "")}"
+              data-product-variant="${escapeAttribute(variantLabel)}"
+              data-action-source="catalog-card"
+            >
+              В корзину
+            </button>
+          </div>
+          <div class="product-card__utility">
+            <button
+              class="text-link text-link--inline"
+              type="button"
+              data-favorite-toggle
+              data-product-id="${escapeAttribute(productItem.id || productItem.slug || "")}"
+              data-product-variant="${escapeAttribute(variantLabel)}"
+              data-action-source="catalog-card"
+              aria-pressed="false"
+            >
+              В избранное
+            </button>
+            <a class="text-link text-link--inline" href="${buildContactHref(productItem, "catalog-card")}">Уточнить условия</a>
+          </div>
         </div>
       </div>
-    </div>
-  </article>
-`;
+    </article>
+  `;
+};
 
 const renderProductSpecs = (items = []) => `
   <dl class="spec-list">
@@ -716,7 +997,7 @@ const renderLeadRequestForm = (config, context = {}) => {
   return `
     <article class="request-panel request-panel--lead">
       <div class="section-head section-head--compact">
-        <p class="eyebrow">${config.eyebrow}</p>
+        ${config.eyebrow ? `<p class="eyebrow">${config.eyebrow}</p>` : ""}
         <h2>${config.title}</h2>
         <p>${config.text}</p>
       </div>
@@ -727,11 +1008,21 @@ const renderLeadRequestForm = (config, context = {}) => {
               `<input type="hidden" name="${name}" value="${escapeAttribute(value)}" />`,
           )
           .join("")}
-        <div class="request-form__grid request-form__grid--contact">
+        <div class="request-form__grid request-form__grid--lead-primary">
           <label>
             <span>Ваше имя</span>
             <input type="text" name="name" autocomplete="name" placeholder="Как к вам обращаться" required />
           </label>
+          <label>
+            <span>Как удобнее связаться</span>
+            <select name="contact_preferred">
+              ${config.preferredContacts
+                .map((item) => `<option value="${item.value}">${item.label}</option>`)
+                .join("")}
+            </select>
+          </label>
+        </div>
+        <div class="request-form__grid request-form__grid--lead-secondary">
           <div class="request-form__contact-slot" data-contact-slot data-active-contact="phone">
             <label class="request-form__contact-panel is-active" data-contact-field="phone">
               <span>Телефон</span>
@@ -746,8 +1037,6 @@ const renderLeadRequestForm = (config, context = {}) => {
               <input type="text" name="telegram_username" autocomplete="off" placeholder="@username" disabled />
             </label>
           </div>
-        </div>
-        <div class="request-form__grid">
           <label>
             <span>Что вас интересует</span>
             <select name="topic" required>
@@ -756,19 +1045,11 @@ const renderLeadRequestForm = (config, context = {}) => {
                 .join("")}
             </select>
           </label>
-          <label>
-            <span>Как удобнее связаться</span>
-            <select name="contact_preferred">
-              ${config.preferredContacts
-                .map((item) => `<option value="${item.value}">${item.label}</option>`)
-                .join("")}
-            </select>
-          </label>
         </div>
         <p class="request-form__hint" data-contact-helper>
-          Укажите основной канал связи. Остальные данные можно сообщить менеджеру после первого контакта.
+          Укажите основной канал связи. Остальное можно уточнить одним сообщением.
         </p>
-        <label>
+        <label class="request-form__field request-form__field--full">
           <span>Комментарий</span>
           <textarea name="message" placeholder="Например: хочу узнать цену, формат поставки или условия покупки."></textarea>
         </label>
@@ -778,7 +1059,7 @@ const renderLeadRequestForm = (config, context = {}) => {
         </label>
         <div class="request-form__actions">
           <button class="button" type="submit">${config.submitLabel}</button>
-          <a class="text-link text-link--inline" href="${config.secondaryCta.href}"${externalAttrs(config.secondaryCta.href)}>${config.secondaryCta.label}</a>
+          <a class="text-link text-link--inline request-form__action-link" href="${config.secondaryCta.href}"${externalAttrs(config.secondaryCta.href)}>${config.secondaryCta.label}</a>
         </div>
         <p class="request-form__note">${config.note}</p>
         <p class="request-form__status" data-request-status aria-live="polite"></p>
@@ -947,141 +1228,146 @@ const renderContactQuoteForm = (config, context = {}) => {
             <li>Подтвердим условия и следующий шаг.</li>
           </ol>
         </div>
-        <fieldset class="request-form__section">
-          <legend>Контактные данные</legend>
-          <div class="request-form__grid request-form__grid--contact">
-            <label>
-              <span>Контактное лицо</span>
-              <input type="text" name="name" autocomplete="name" placeholder="Как к вам обращаться" required />
-            </label>
-            <div class="request-form__contact-slot" data-contact-slot data-active-contact="phone">
-              <label class="request-form__contact-panel is-active" data-contact-field="phone">
-                <span>Телефон</span>
-                <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" required />
+        <div class="request-form__frame">
+          <div class="request-form__main">
+            <fieldset class="request-form__section">
+              <legend>Контактные данные</legend>
+              <div class="request-form__grid request-form__grid--contact">
+                <label>
+                  <span>Контактное лицо</span>
+                  <input type="text" name="name" autocomplete="name" placeholder="Как к вам обращаться" required />
+                </label>
+                <div class="request-form__contact-slot" data-contact-slot data-active-contact="phone">
+                  <label class="request-form__contact-panel is-active" data-contact-field="phone">
+                    <span>Телефон</span>
+                    <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" required />
+                  </label>
+                  <label class="request-form__contact-panel" data-contact-field="email" aria-hidden="true">
+                    <span>Email</span>
+                    <input type="email" name="email" autocomplete="email" placeholder="name@example.com" disabled />
+                  </label>
+                  <label class="request-form__contact-panel" data-contact-field="telegram" aria-hidden="true">
+                    <span>Telegram</span>
+                    <input type="text" name="telegram_username" autocomplete="off" placeholder="@username" disabled />
+                  </label>
+                </div>
+              </div>
+              <div class="request-form__grid">
+                <label>
+                  <span>Как удобнее связаться</span>
+                  <select name="contact_preferred">
+                    ${config.preferredContacts
+                      .map((item) => `<option value="${item.value}">${item.label}</option>`)
+                      .join("")}
+                  </select>
+                </label>
+              </div>
+              <p class="request-form__hint" data-contact-helper>
+                Выберите основной канал связи. Поле для контакта переключится автоматически.
+              </p>
+            </fieldset>
+            <fieldset class="request-form__section">
+              <legend>Данные компании</legend>
+              <div class="request-form__grid">
+                <label>
+                  <span>Юридическое лицо / ИП</span>
+                  <input type="text" name="company_name" autocomplete="organization" placeholder="Название компании или ИП" required />
+                </label>
+                <label>
+                  <span>ИНН</span>
+                  <input type="text" name="company_inn" inputmode="numeric" placeholder="Если есть" />
+                </label>
+              </div>
+            </fieldset>
+            <fieldset class="request-form__section">
+              <legend>Параметры запроса</legend>
+              <div class="request-form__grid">
+                <label>
+                  <span>Что вас интересует</span>
+                  <select name="topic" required>
+                    ${config.topics
+                      .map((item) => `<option value="${item.value}">${item.label}</option>`)
+                      .join("")}
+                  </select>
+                </label>
+                <label>
+                  <span>Формат закупки</span>
+                  <select name="purchase_format">
+                    ${config.purchaseFormats
+                      .map((item) => `<option value="${item.value}">${item.label}</option>`)
+                      .join("")}
+                  </select>
+                </label>
+              </div>
+              <div class="request-form__grid">
+                <label>
+                  <span>Сколько килограммов нужно</span>
+                  <input type="number" name="quantity_kg" min="1" step="1" value="1" inputmode="numeric" required data-quote-quantity />
+                </label>
+                <article class="request-form__distance-card" data-distance-card data-distance-state="idle" aria-live="polite">
+                  <span class="request-form__distance-label">Расстояние от Москвы</span>
+                  <strong data-distance-value>Определим автоматически</strong>
+                  <p data-distance-helper>Введите адрес доставки, и система посчитает расстояние по нему автоматически.</p>
+                </article>
+              </div>
+            </fieldset>
+            <fieldset class="request-form__section">
+              <legend>Доставка</legend>
+              <label>
+                <span>Адрес доставки</span>
+                <input type="text" name="delivery_address" autocomplete="street-address" placeholder="Город, улица, склад или точка доставки" required data-distance-source />
               </label>
-              <label class="request-form__contact-panel" data-contact-field="email" aria-hidden="true">
-                <span>Email</span>
-                <input type="email" name="email" autocomplete="email" placeholder="name@example.com" disabled />
+            </fieldset>
+            <input type="hidden" name="distance_km" value="" data-quote-distance />
+            <fieldset class="request-form__section">
+              <legend>Комментарий</legend>
+              <label>
+                <span>Что важно учесть</span>
+                <textarea name="message" placeholder="Например: нужен ежемесячный объём, тестовая партия или особые условия доставки."></textarea>
               </label>
-              <label class="request-form__contact-panel" data-contact-field="telegram" aria-hidden="true">
-                <span>Telegram</span>
-                <input type="text" name="telegram_username" autocomplete="off" placeholder="@username" disabled />
-              </label>
-            </div>
+            </fieldset>
           </div>
-          <div class="request-form__grid">
-            <label>
-              <span>Как удобнее связаться</span>
-              <select name="contact_preferred">
-                ${config.preferredContacts
-                  .map((item) => `<option value="${item.value}">${item.label}</option>`)
-                  .join("")}
-              </select>
-            </label>
-          </div>
-          <p class="request-form__hint" data-contact-helper>
-            Выберите основной канал связи. Поле для контакта переключится автоматически.
-          </p>
-        </fieldset>
-        <fieldset class="request-form__section">
-          <legend>Данные компании</legend>
-          <div class="request-form__grid">
-            <label>
-              <span>Юридическое лицо / ИП</span>
-              <input type="text" name="company_name" autocomplete="organization" placeholder="Название компании или ИП" required />
-            </label>
-            <label>
-              <span>ИНН</span>
-              <input type="text" name="company_inn" inputmode="numeric" placeholder="Если есть" />
-            </label>
-          </div>
-        </fieldset>
-        <fieldset class="request-form__section">
-          <legend>Параметры запроса</legend>
-          <div class="request-form__grid">
-            <label>
-              <span>Что вас интересует</span>
-              <select name="topic" required>
-                ${config.topics
-                  .map((item) => `<option value="${item.value}">${item.label}</option>`)
-                  .join("")}
-              </select>
-            </label>
-            <label>
-              <span>Формат закупки</span>
-              <select name="purchase_format">
-                ${config.purchaseFormats
-                  .map((item) => `<option value="${item.value}">${item.label}</option>`)
-                  .join("")}
-              </select>
-            </label>
-          </div>
-          <div class="request-form__grid">
-            <label>
-              <span>Сколько килограммов нужно</span>
-              <input type="number" name="quantity_kg" min="1" step="1" value="1" inputmode="numeric" required data-quote-quantity />
-            </label>
-            <article class="request-form__distance-card" data-distance-card data-distance-state="idle" aria-live="polite">
-              <span class="request-form__distance-label">Расстояние от Москвы</span>
-              <strong data-distance-value>Определим автоматически</strong>
-              <p data-distance-helper>Введите адрес доставки, и система посчитает расстояние по нему автоматически.</p>
-            </article>
-          </div>
-        </fieldset>
-        <fieldset class="request-form__section">
-          <legend>Доставка</legend>
-          <label>
-            <span>Адрес доставки</span>
-            <input type="text" name="delivery_address" autocomplete="street-address" placeholder="Город, улица, склад или точка доставки" required data-distance-source />
-          </label>
-        </fieldset>
-        <input type="hidden" name="distance_km" value="" data-quote-distance />
-        <fieldset class="request-form__section">
-          <legend>Комментарий</legend>
-          <label>
-            <span>Комментарий</span>
-            <textarea name="message" placeholder="Например: нужен ежемесячный объём, тестовая партия или особые условия доставки."></textarea>
-          </label>
-        </fieldset>
-        <fieldset class="request-form__section request-form__section--summary">
-          <legend>Предварительный расчёт</legend>
-          <article class="quote-summary" data-quote-summary aria-live="polite">
-            <div class="quote-summary__head">
-              <strong>Предварительный расчёт</strong>
-              <p>Сводка по объёму и доставке обновляется автоматически по мере заполнения формы.</p>
-            </div>
-            <dl class="quote-summary__list">
-              <div class="quote-summary__row">
-                <dt>Базовая цена</dt>
-                <dd data-quote-base>${formatRub(CONTACT_BASE_PRICE_PER_KG)} / кг</dd>
+          <aside class="request-form__aside">
+            <section class="request-form__section request-form__section--summary">
+              <div class="quote-summary" data-quote-summary aria-live="polite">
+                <div class="quote-summary__head">
+                  <strong>Предварительный расчёт</strong>
+                  <p>Сводка по объёму и доставке обновляется автоматически по мере заполнения формы.</p>
+                </div>
+                <dl class="quote-summary__list">
+                  <div class="quote-summary__row">
+                    <dt>Базовая цена</dt>
+                    <dd data-quote-base>${formatRub(CONTACT_BASE_PRICE_PER_KG)} / кг</dd>
+                  </div>
+                  <div class="quote-summary__row">
+                    <dt>Объём</dt>
+                    <dd data-quote-weight>${initialQuote.quantityKg} кг</dd>
+                  </div>
+                  <div class="quote-summary__row">
+                    <dt>Скидка</dt>
+                    <dd data-quote-discount>0%</dd>
+                  </div>
+                  <div class="quote-summary__row">
+                    <dt>Надбавка за расстояние</dt>
+                    <dd data-quote-distance-markup>+0%</dd>
+                  </div>
+                  <div class="quote-summary__row">
+                    <dt>Цена за кг после расчёта</dt>
+                    <dd data-quote-price-per-kg>${formatRub(initialQuote.estimatedPricePerKg)} / кг</dd>
+                  </div>
+                  <div class="quote-summary__row quote-summary__row--total">
+                    <dt>Предварительная сумма</dt>
+                    <dd data-quote-total>${formatRub(initialQuote.totalEstimate)}</dd>
+                  </div>
+                </dl>
+                <details class="quote-summary__details">
+                  <summary>Как считается стоимость</summary>
+                  <p>${config.pricingHint}</p>
+                </details>
               </div>
-              <div class="quote-summary__row">
-                <dt>Объём</dt>
-                <dd data-quote-weight>${initialQuote.quantityKg} кг</dd>
-              </div>
-              <div class="quote-summary__row">
-                <dt>Скидка</dt>
-                <dd data-quote-discount>0%</dd>
-              </div>
-              <div class="quote-summary__row">
-                <dt>Надбавка за расстояние</dt>
-                <dd data-quote-distance-markup>+0%</dd>
-              </div>
-              <div class="quote-summary__row">
-                <dt>Цена за кг после расчёта</dt>
-                <dd data-quote-price-per-kg>${formatRub(initialQuote.estimatedPricePerKg)} / кг</dd>
-              </div>
-              <div class="quote-summary__row quote-summary__row--total">
-                <dt>Предварительная сумма</dt>
-                <dd data-quote-total>${formatRub(initialQuote.totalEstimate)}</dd>
-              </div>
-            </dl>
-            <details class="quote-summary__details">
-              <summary>Как считается стоимость</summary>
-              <p>${config.pricingHint}</p>
-            </details>
-          </article>
-        </fieldset>
+            </section>
+          </aside>
+        </div>
         <fieldset class="request-form__section request-form__section--actions">
           <legend>Согласие и отправка</legend>
           <label class="request-form__consent">
@@ -1090,7 +1376,7 @@ const renderContactQuoteForm = (config, context = {}) => {
           </label>
           <div class="request-form__actions">
             <button class="button" type="submit">${config.submitLabel}</button>
-            <a class="text-link text-link--inline" href="${config.quickContactHref}"${externalAttrs(config.quickContactHref)}>${config.quickContactLabel}</a>
+            <a class="text-link text-link--inline request-form__action-link" href="${config.quickContactHref}"${externalAttrs(config.quickContactHref)}>${config.quickContactLabel}</a>
           </div>
           <p class="request-form__note">${config.note}</p>
           <p class="request-form__status" data-request-status aria-live="polite"></p>
@@ -1104,10 +1390,10 @@ const renderHome = () => {
   const hero = $("#home-hero");
   if (hero) {
     hero.innerHTML = `
-      <article class="hero-stage hero-stage--lead">
+      <article class="hero-stage hero-stage--lead hero-stage--home">
         <div class="hero-stage__copy">
-          <p class="eyebrow">${store.home.hero.eyebrow}</p>
-          <h1>${store.home.hero.title}</h1>
+          ${store.home.hero.eyebrow ? `<p class="eyebrow">${store.home.hero.eyebrow}</p>` : ""}
+          <h1>${trimHeadingPeriod(store.home.hero.title)}</h1>
           <div class="hero-stage__body">
             ${store.home.hero.paragraphs.map((item) => `<p>${item}</p>`).join("")}
           </div>
@@ -1120,7 +1406,13 @@ const renderHome = () => {
         </div>
         <div class="hero-stage__media">
           <article class="media-stage media-stage--lifestyle">
-            <img src="${product.images.lifestyle}" alt="Очищенная макадамия Global Basket в домашней подаче" loading="lazy" decoding="async" />
+            <img
+              src="${store.home.hero.image?.src || product.images.lifestyle}"
+              alt="${store.home.hero.image?.alt || "Очищенная макадамия Global Basket в домашней подаче"}"
+              loading="eager"
+              decoding="async"
+              fetchpriority="high"
+            />
           </article>
         </div>
       </article>
@@ -1135,10 +1427,10 @@ const renderHome = () => {
   const featured = $("#home-featured");
   if (featured) {
     featured.innerHTML = `
-      <article class="feature-split">
+      <article class="feature-split feature-split--home">
         <div class="feature-split__copy">
-          <p class="eyebrow">${store.home.featured.title}</p>
-          <h2>${store.home.featured.heading}</h2>
+          ${store.home.featured.title ? `<p class="eyebrow">${store.home.featured.title}</p>` : ""}
+          <h2>${trimHeadingPeriod(store.home.featured.heading)}</h2>
           <p>${store.home.featured.text}</p>
           <ul class="feature-points">
             ${store.home.featured.points.map((item) => `<li>${item}</li>`).join("")}
@@ -1393,8 +1685,8 @@ const renderProductPage = () => {
 
     if (actionsTitle) {
       actionsTitle.textContent = useMarketplaceMode
-        ? productItem.actionsSectionTitle || "Маркетплейсы дают дополнительный канал доверия и покупки."
-        : "Уточните наличие, фасовку и следующий шаг по выбранному варианту.";
+        ? trimHeadingPeriod(productItem.actionsSectionTitle || "Маркетплейсы дают дополнительный канал доверия и покупки")
+        : "Уточните наличие, фасовку и следующий шаг по выбранному варианту";
     }
 
     if (marketplaces) {
@@ -1440,6 +1732,27 @@ const renderProductPage = () => {
         </div>
         <div class="purchase-panel__actions">
           <a class="button" href="${buildContactHref(productItem, "pdp", variant)}">Уточнить условия</a>
+          <button
+            class="button button--ghost"
+            type="button"
+            data-cart-add
+            data-product-id="${escapeAttribute(productItem.id || productItem.slug || "")}"
+            data-product-variant="${escapeAttribute(getStoredVariantLabel(variant))}"
+            data-action-source="product-page"
+          >
+            В корзину
+          </button>
+          <button
+            class="text-link text-link--inline"
+            type="button"
+            data-favorite-toggle
+            data-product-id="${escapeAttribute(productItem.id || productItem.slug || "")}"
+            data-product-variant="${escapeAttribute(getStoredVariantLabel(variant))}"
+            data-action-source="product-page"
+            aria-pressed="false"
+          >
+            В избранное
+          </button>
           <a class="text-link text-link--inline" href="/sait-/catalog/">Вернуться в каталог</a>
         </div>
       </div>
@@ -1464,6 +1777,7 @@ const renderProductPage = () => {
         if (summary) {
           summary.innerHTML = renderSummary(selectedVariant);
           bindVariantChoices();
+          bindStoredProductActions(summary);
         }
         updateActionSection(selectedVariant);
       });
@@ -1505,9 +1819,10 @@ const renderProductPage = () => {
 
   const benefitsTitle = $("#product-benefits-title");
   if (benefitsTitle) {
-    benefitsTitle.textContent =
+    benefitsTitle.textContent = trimHeadingPeriod(
       productItem.benefitSectionTitle ||
-      "Ключевые свойства товара собраны так, чтобы позиция читалась спокойно и убедительно.";
+        "Ключевые свойства товара собраны так, чтобы позиция читалась спокойно и убедительно",
+    );
   }
 
   const benefits = $("#product-benefits");
@@ -1524,8 +1839,8 @@ const renderProductPage = () => {
         (item, index) => `
           <article class="faq-item ${index === 0 ? "is-open" : ""}">
             <button type="button" aria-expanded="${index === 0 ? "true" : "false"}">
-              <span>${item.question}</span>
-              <span>${index === 0 ? "−" : "+"}</span>
+              <span class="faq-item__label">${item.question}</span>
+              <span class="faq-item__icon" data-faq-icon aria-hidden="true">${index === 0 ? "−" : "+"}</span>
             </button>
             <p>${item.answer}</p>
           </article>
@@ -1563,14 +1878,14 @@ const renderContactsPage = () => {
         meta: "Поставка для магазина, офиса или постоянных закупок",
         body: `
           <p>${wholesaleCard.text}</p>
-          <p>Форма справа остаётся основным сценарием для запроса на поставку и следующего шага по условиям.</p>
+          <p>Форма запроса помогает сразу передать объём, формат поставки и адрес доставки без лишней переписки.</p>
         `,
       },
       {
         title: "Контакты",
         meta: "Телефон, email, Telegram и часы работы",
         body: `
-          <p>Форма справа — основной сценарий для запроса на поставку. Телефон, email и Telegram остаются резервными каналами.</p>
+          <p>Телефон, email и Telegram остаются резервными каналами связи, если удобнее уточнить детали напрямую.</p>
           <div class="contact-direct__list">
             <p><a href="${store.contact.phoneHref}">${store.contact.phone}</a></p>
             <p><a href="${store.contact.emailHref}">${store.contact.email}</a></p>
@@ -2056,19 +2371,21 @@ const renderAboutPage = () => {
   const facts = $("#about-facts");
   if (facts) {
     facts.innerHTML = `
-      <div class="section-head about-section-head" data-reveal>
-        <p class="eyebrow">Факты о бренде</p>
-        <h2>${about.facts.title}</h2>
-        <p>${about.facts.text}</p>
-      </div>
       <section class="about-carousel" data-about-carousel aria-roledescription="carousel" aria-label="${about.facts.title}">
-        <div class="about-carousel__controls" data-reveal>
-          <button class="about-carousel__arrow about-carousel__arrow--prev" type="button" data-about-prev aria-label="Предыдущий факт">
-            <span aria-hidden="true">←</span>
-          </button>
-          <button class="about-carousel__arrow" type="button" data-about-next aria-label="Следующий факт">
-            <span aria-hidden="true">→</span>
-          </button>
+        <div class="about-carousel__top">
+          <div class="section-head about-section-head" data-reveal>
+            <p class="eyebrow">Факты о бренде</p>
+            <h2>${about.facts.title}</h2>
+            <p>${about.facts.text}</p>
+          </div>
+          <div class="about-carousel__controls" data-reveal>
+            <button class="about-carousel__arrow about-carousel__arrow--prev" type="button" data-about-prev aria-label="Предыдущий факт">
+              <span class="about-carousel__arrow-icon" aria-hidden="true">${renderIcon("arrow")}</span>
+            </button>
+            <button class="about-carousel__arrow" type="button" data-about-next aria-label="Следующий факт">
+              <span class="about-carousel__arrow-icon" aria-hidden="true">${renderIcon("arrow")}</span>
+            </button>
+          </div>
         </div>
         <div class="about-carousel__viewport">
           <div class="about-carousel__track" data-about-track>
@@ -2325,7 +2642,7 @@ const renderCategoryPage = () => {
     related.innerHTML = `
       <div class="section-head">
         <p class="eyebrow">В наличии</p>
-        <h2>Товары раздела «${category.title || category.name}».</h2>
+        <h2>Товары раздела «${category.title || category.name}»</h2>
       </div>
       <div class="catalog-grid">
         ${relatedProducts.map((item) => renderEnterpriseProductCard(item)).join("")}
@@ -2479,10 +2796,409 @@ const renderArticlePage = () => {
   }
 };
 
+const formatDateShort = (value = "") => {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+};
+
+const formatPreferredContactLabel = (value = "") => {
+  const key = resolvePreferredContactKey(value);
+  if (key === "email") return "Email";
+  if (key === "telegram") return "Telegram";
+  return "Телефон";
+};
+
+const getPreferredContactFieldValue = (profile = null) => {
+  const key = resolvePreferredContactKey(profile?.preferredContact || "");
+  if (key === "email") return "Email";
+  if (key === "telegram") return "Telegram";
+  return "Телефон";
+};
+
+const getProfileContactValue = (profile = null) => {
+  const key = resolvePreferredContactKey(profile?.preferredContact || "");
+  if (key === "email") return profile?.email || "";
+  if (key === "telegram") return profile?.telegramUsername || "";
+  return profile?.phone || "";
+};
+
+const renderSavedSelectionCard = (entry, mode = "cart") => {
+  const productItem = resolveStoredProduct(entry);
+  const href = productItem?.href || entry.href || "/sait-/catalog/";
+  const variantLabel = entry.variantLabel ? `Фасовка: ${entry.variantLabel}` : "";
+  const subtitle = entry.subtitle || productItem?.subtitle || "";
+  const category = entry.categoryName || productItem?.category || "";
+  const defaultVariant = productItem ? resolveProductVariant(productItem, entry.variantLabel || "") : null;
+
+  return `
+    <article class="saved-item-card">
+      <a class="saved-item-card__media" href="${href}">
+        <img src="${entry.image || productItem?.images?.packshot || "/sait-/assets/logo.jpg"}" alt="${entry.fullName || entry.shortName}" loading="lazy" decoding="async" />
+      </a>
+      <div class="saved-item-card__body">
+        <div class="saved-item-card__meta">
+          ${category ? renderBadge(category, "service") : ""}
+          ${variantLabel ? `<span class="saved-item-card__variant">${variantLabel}</span>` : ""}
+        </div>
+        <h2><a href="${href}">${entry.shortName || entry.fullName}</a></h2>
+        ${subtitle ? `<p>${subtitle}</p>` : ""}
+        <div class="saved-item-card__actions">
+          <a class="button button--small" href="${href}">Открыть товар</a>
+          ${
+            mode === "cart"
+              ? `
+                <div class="quantity-stepper" aria-label="Количество">
+                  <button type="button" data-cart-quantity-action="decrease" data-entry-id="${escapeAttribute(entry.entryId)}" aria-label="Уменьшить количество">−</button>
+                  <span>${Math.max(1, Number(entry.quantity) || 1)}</span>
+                  <button type="button" data-cart-quantity-action="increase" data-entry-id="${escapeAttribute(entry.entryId)}" aria-label="Увеличить количество">+</button>
+                </div>
+                <button
+                  class="text-link text-link--inline"
+                  type="button"
+                  data-favorite-toggle
+                  data-product-id="${escapeAttribute(entry.productId || "")}"
+                  data-product-variant="${escapeAttribute(entry.variantLabel || "")}"
+                  data-action-source="cart-page"
+                  aria-pressed="${isFavoriteSaved(productItem || entry) ? "true" : "false"}"
+                >
+                  В избранное
+                </button>
+                <button class="text-link text-link--inline" type="button" data-cart-remove data-entry-id="${escapeAttribute(entry.entryId)}">Удалить</button>
+              `
+              : `
+                <button
+                  class="button button--ghost button--small"
+                  type="button"
+                  data-cart-add
+                  data-product-id="${escapeAttribute(entry.productId || "")}"
+                  data-product-variant="${escapeAttribute(entry.variantLabel || getStoredVariantLabel(defaultVariant))}"
+                  data-action-source="favorites-page"
+                >
+                  В корзину
+                </button>
+                <button class="text-link text-link--inline" type="button" data-favorite-remove data-product-id="${escapeAttribute(entry.productId || "")}">Убрать</button>
+              `
+          }
+        </div>
+      </div>
+    </article>
+  `;
+};
+
+const renderAccountSummaryPanel = (profile = null) => {
+  const summary = derivePreferenceSummary(profile);
+  const contactValue = getProfileContactValue(profile);
+  const contactLabel = profile ? formatPreferredContactLabel(profile.preferredContact) : "Контакт";
+  const categoryText = summary.categoryNames.length ? summary.categoryNames.join(", ") : "Предпочтения появятся после выбора товаров.";
+  const items = [
+    {
+      label: contactLabel,
+      value: contactValue || "Телефон, email или Telegram",
+    },
+    {
+      label: "Корзина",
+      value: `${summary.cartLineCount || 0} поз. / ${summary.cartCount || 0} шт.`,
+    },
+    {
+      label: "Избранное",
+      value: `${summary.favoriteCount || 0} поз.`,
+    },
+    {
+      label: "Интересующие разделы",
+      value: categoryText,
+      wide: true,
+    },
+    {
+      label: "Последнее обновление",
+      value: formatDateShort(profile?.updatedAt || profile?.registeredAt || ""),
+    },
+  ];
+
+  return `
+    <article class="request-panel account-summary-card">
+      <div class="section-head section-head--compact">
+        <p class="eyebrow">Профиль</p>
+        <h2>${profile ? store.utilityPages.account.registeredTitle : "Что сохранится после регистрации"}</h2>
+        <p>${profile ? store.utilityPages.account.registeredText : "После сохранения профиля в этом браузере останутся контакт, корзина, избранное и выбранные разделы каталога."}</p>
+      </div>
+      <dl class="account-summary-card__list">
+        ${items
+          .map(
+            (item) => `
+              <div class="account-summary-card__item ${item.wide ? "account-summary-card__item--wide" : ""}">
+                <dt>${item.label}</dt>
+                <dd>${item.value}</dd>
+              </div>
+            `,
+          )
+          .join("")}
+      </dl>
+      <div class="account-summary-card__actions">
+        <a class="button button--ghost button--small" href="/sait-/cart/">Открыть корзину</a>
+        <a class="button button--ghost button--small" href="/sait-/favorites/">Открыть избранное</a>
+      </div>
+    </article>
+  `;
+};
+
+const renderAccountRegistrationPanel = (profile = null) => {
+  const contactKey = resolvePreferredContactKey(profile?.preferredContact || "phone");
+  const contactValue = getProfileContactValue(profile);
+  const selectedInterests = new Set(Array.isArray(profile?.interestIds) ? profile.interestIds : []);
+  const interestOptions = buildInterestOptions();
+
+  return `
+    <article class="request-panel account-register-panel" id="account-register">
+      <div class="section-head section-head--compact">
+        <p class="eyebrow">Регистрация</p>
+        <h2>${store.utilityPages.account.formTitle}</h2>
+        <p>${store.utilityPages.account.formText}</p>
+      </div>
+      <form class="request-form request-form--account" data-account-registration-form novalidate>
+        <fieldset class="request-form__section">
+          <legend>Контакт для аккаунта</legend>
+          <div class="request-form__grid">
+            <label>
+              <span>Какой контакт сохранить</span>
+              <select name="contact_preferred">
+                <option value="Телефон" ${contactKey === "phone" ? "selected" : ""}>Телефон</option>
+                <option value="Telegram" ${contactKey === "telegram" ? "selected" : ""}>Telegram</option>
+                <option value="Email" ${contactKey === "email" ? "selected" : ""}>Email</option>
+              </select>
+            </label>
+            <div class="request-form__contact-slot" data-contact-slot data-active-contact="${contactKey}">
+              <label class="request-form__contact-panel ${contactKey === "phone" ? "is-active" : ""}" data-contact-field="phone" aria-hidden="${contactKey === "phone" ? "false" : "true"}">
+                <span>Телефон</span>
+                <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" value="${contactKey === "phone" ? escapeAttribute(contactValue) : ""}" ${contactKey === "phone" ? "" : "disabled"} required />
+              </label>
+              <label class="request-form__contact-panel ${contactKey === "email" ? "is-active" : ""}" data-contact-field="email" aria-hidden="${contactKey === "email" ? "false" : "true"}">
+                <span>Email</span>
+                <input type="email" name="email" autocomplete="email" placeholder="name@example.com" value="${contactKey === "email" ? escapeAttribute(contactValue) : ""}" ${contactKey === "email" ? "" : "disabled"} required />
+              </label>
+              <label class="request-form__contact-panel ${contactKey === "telegram" ? "is-active" : ""}" data-contact-field="telegram" aria-hidden="${contactKey === "telegram" ? "false" : "true"}">
+                <span>Telegram</span>
+                <input type="text" name="telegram_username" autocomplete="off" placeholder="@username" value="${contactKey === "telegram" ? escapeAttribute(contactValue) : ""}" ${contactKey === "telegram" ? "" : "disabled"} required />
+              </label>
+            </div>
+          </div>
+          <p class="request-form__hint" data-contact-helper>
+            ${contactKey === "email" ? "Сохраним email для входа и связи по заказу." : contactKey === "telegram" ? "Сохраним Telegram для быстрого контакта и регистрации." : "Сохраним телефон для входа и связи по заказу."}
+          </p>
+        </fieldset>
+        <fieldset class="request-form__section">
+          <legend>Предпочтения</legend>
+          <div class="account-interest-grid">
+            ${interestOptions
+              .map(
+                (item) => `
+                  <label class="choice-chip ${selectedInterests.has(item.id) ? "is-selected" : ""}">
+                    <input type="checkbox" name="interest_categories" value="${escapeAttribute(item.id)}" ${selectedInterests.has(item.id) ? "checked" : ""} />
+                    <span>${item.label}</span>
+                  </label>
+                `,
+              )
+              .join("")}
+          </div>
+          <p class="request-form__hint">Разделы ниже помогут сохранить интересы пользователя, даже если корзина пока пустая.</p>
+        </fieldset>
+        <fieldset class="request-form__section request-form__section--actions">
+          <legend>Согласие и сохранение</legend>
+          <label class="request-form__consent">
+            <input type="checkbox" name="consent" ${profile ? "checked" : ""} required />
+            <span>${store.utilityPages.account.consent}</span>
+          </label>
+          <div class="request-form__actions">
+            <button class="button" type="submit">${store.utilityPages.account.submitLabel}</button>
+            <a class="text-link text-link--inline request-form__action-link" href="/sait-/catalog/">Сначала выбрать товары</a>
+          </div>
+          <p class="request-form__note">Профиль сохранится в этом браузере и подтянет корзину, избранное и выбранные интересы.</p>
+          <p class="request-form__status" data-request-status aria-live="polite"></p>
+        </fieldset>
+      </form>
+    </article>
+  `;
+};
+
+const renderAccountPage = () => {
+  const hero = $("#utility-page");
+  const page = store.utilityPages.account;
+  const profile = getAccountProfile();
+
+  if (!hero || !page) return;
+
+  hero.innerHTML = `
+    <div class="breadcrumb">
+      <a href="/sait-/">Главная</a>
+      <span>/</span>
+      <span>${page.title}</span>
+    </div>
+    <div class="utility-stack utility-stack--account">
+      <div class="utility-grid utility-grid--account-top">
+        <article class="request-panel utility-page utility-page--account account-hero-card">
+          <div class="section-head section-head--compact">
+            <p class="eyebrow">Раздел</p>
+            <h1>${page.title}</h1>
+            <p>${page.text}</p>
+          </div>
+          <ul class="account-hero-card__highlights">
+            ${(page.highlights || [])
+              .map((item) => `<li>${item}</li>`)
+              .join("")}
+          </ul>
+          <div class="hero-product__actions account-hero-card__actions">
+            <a class="button" href="${page.primary.href}">${page.primary.label}</a>
+            <a class="button button--ghost" href="${page.secondary.href}">${page.secondary.label}</a>
+          </div>
+        </article>
+        ${renderAccountSummaryPanel(profile)}
+      </div>
+      <div class="utility-grid utility-grid--account-main">
+        ${renderAccountRegistrationPanel(profile)}
+      </div>
+    </div>
+  `;
+};
+
+const renderFavoritesPage = () => {
+  const hero = $("#utility-page");
+  const page = store.utilityPages.favorites;
+  const items = getFavoriteItems();
+  const profile = getAccountProfile();
+
+  if (!hero || !page) return;
+
+  hero.innerHTML = `
+    <div class="breadcrumb">
+      <a href="/sait-/">Главная</a>
+      <span>/</span>
+      <span>${page.title}</span>
+    </div>
+    <div class="utility-stack">
+      <div class="utility-grid utility-grid--utility-top">
+        <article class="request-panel utility-page">
+          <div class="section-head section-head--compact">
+            <p class="eyebrow">Раздел</p>
+            <h1>${page.title}</h1>
+            <p>${page.text}</p>
+          </div>
+          <div class="hero-product__actions">
+            <a class="button" href="${page.primary.href}">${page.primary.label}</a>
+            <a class="button button--ghost" href="${profile ? "/sait-/account/" : "/sait-/account/#account-register"}">${profile ? "Открыть аккаунт" : "Сохранить аккаунт"}</a>
+          </div>
+        </article>
+        <article class="request-panel utility-summary-card">
+          <div class="section-head section-head--compact">
+            <p class="eyebrow">Сводка</p>
+            <h2>Сохранённые позиции</h2>
+            <p>${items.length ? "Выбранные товары уже лежат в личной подборке и могут быть добавлены в корзину." : "Подборка пока пустая. Сохраняйте понравившиеся позиции из каталога и со страницы товара."}</p>
+          </div>
+          <dl class="account-summary-card__list">
+            <div><dt>Позиций</dt><dd>${items.length}</dd></div>
+            <div><dt>Аккаунт</dt><dd>${profile ? "Сохранён" : "Пока не сохранён"}</dd></div>
+          </dl>
+        </article>
+      </div>
+      <div class="saved-item-list">
+        ${
+          items.length
+            ? items.map((entry) => renderSavedSelectionCard(entry, "favorites")).join("")
+            : `
+              <article class="empty-state">
+                <strong>В избранном пока ничего нет.</strong>
+                <p>Откройте каталог или карточку товара и добавьте позиции в личную подборку.</p>
+                <a class="button button--small" href="/sait-/catalog/">Перейти в каталог</a>
+              </article>
+            `
+        }
+      </div>
+    </div>
+  `;
+};
+
+const renderCartPage = () => {
+  const hero = $("#utility-page");
+  const page = store.utilityPages.cart;
+  const items = getCartItems();
+  const profile = getAccountProfile();
+  const totalUnits = items.reduce((sum, entry) => sum + Math.max(1, Number(entry.quantity) || 1), 0);
+
+  if (!hero || !page) return;
+
+  hero.innerHTML = `
+    <div class="breadcrumb">
+      <a href="/sait-/">Главная</a>
+      <span>/</span>
+      <span>${page.title}</span>
+    </div>
+    <div class="utility-stack">
+      <div class="utility-grid utility-grid--utility-top">
+        <article class="request-panel utility-page">
+          <div class="section-head section-head--compact">
+            <p class="eyebrow">Раздел</p>
+            <h1>${page.title}</h1>
+            <p>${page.text}</p>
+          </div>
+          <div class="hero-product__actions">
+            <a class="button" href="${page.primary.href}">${page.primary.label}</a>
+            <a class="button button--ghost" href="/sait-/contacts/?source=cart">Добавить в запрос</a>
+          </div>
+        </article>
+        <article class="request-panel utility-summary-card">
+          <div class="section-head section-head--compact">
+            <p class="eyebrow">Сводка</p>
+            <h2>Текущее наполнение корзины</h2>
+            <p>${items.length ? "Корзина хранится локально и будет прикреплена к аккаунту при регистрации." : "Корзина пока пустая. Добавьте товары из каталога или со страницы продукта."}</p>
+          </div>
+          <dl class="account-summary-card__list">
+            <div><dt>Строк</dt><dd>${items.length}</dd></div>
+            <div><dt>Единиц</dt><dd>${totalUnits}</dd></div>
+            <div><dt>Аккаунт</dt><dd>${profile ? "Сохранён" : "Пока не сохранён"}</dd></div>
+          </dl>
+        </article>
+      </div>
+      <div class="saved-item-list">
+        ${
+          items.length
+            ? items.map((entry) => renderSavedSelectionCard(entry, "cart")).join("")
+            : `
+              <article class="empty-state">
+                <strong>Корзина пока пустая.</strong>
+                <p>Добавьте товары из каталога. После регистрации эта подборка сохранится в аккаунте на устройстве.</p>
+                <a class="button button--small" href="/sait-/catalog/">Перейти в каталог</a>
+              </article>
+            `
+        }
+      </div>
+    </div>
+  `;
+};
+
 const renderUtilityPage = () => {
   const slug = document.body.dataset.utility;
   const page = store.utilityPages[slug];
   if (!page) return;
+
+  if (slug === "account") {
+    renderAccountPage();
+    return;
+  }
+
+  if (slug === "favorites") {
+    renderFavoritesPage();
+    return;
+  }
+
+  if (slug === "cart") {
+    renderCartPage();
+    return;
+  }
 
   const hero = $("#utility-page");
   if (hero) {
@@ -2512,9 +3228,38 @@ const bindMobileNav = () => {
   const nav = $("[data-mobile-nav]");
   if (!toggle || !nav) return;
 
+  const close = () => {
+    nav.classList.remove("is-open");
+    document.body.classList.remove("has-mobile-nav");
+    toggle.setAttribute("aria-expanded", "false");
+  };
+
   toggle.addEventListener("click", () => {
-    const isOpen = nav.classList.toggle("is-open");
-    toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    const isOpen = nav.classList.contains("is-open");
+    if (isOpen) {
+      close();
+      return;
+    }
+
+    nav.classList.add("is-open");
+    document.body.classList.add("has-mobile-nav");
+    toggle.setAttribute("aria-expanded", "true");
+  });
+
+  $$("a", nav).forEach((link) => {
+    link.addEventListener("click", close);
+  });
+
+  window.addEventListener("resize", () => {
+    if (window.matchMedia("(min-width: 1181px)").matches) {
+      close();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      close();
+    }
   });
 };
 
@@ -2554,6 +3299,7 @@ const applyCatalogToolbarState = () => {
             <a class="button button--small" href="/sait-/catalog/">В каталог</a>
           </article>
         `;
+    bindStoredProductActions(grid);
 
     $$("[data-filter]", toolbar).forEach((button) => {
       button.classList.toggle("is-active", button.dataset.filter === filter);
@@ -2677,12 +3423,14 @@ const bindFaq = () => {
         const toggle = $("button", entry);
         if (!toggle) return;
         toggle.setAttribute("aria-expanded", "false");
-        $("span:last-child", toggle).textContent = "+";
+        const icon = $("[data-faq-icon]", toggle);
+        if (icon) icon.textContent = "+";
       });
       if (!isOpen) {
         item.classList.add("is-open");
         button.setAttribute("aria-expanded", "true");
-        $("span:last-child", button).textContent = "−";
+        const icon = $("[data-faq-icon]", button);
+        if (icon) icon.textContent = "−";
       }
     });
   });
@@ -2723,6 +3471,64 @@ const hydrateLeadMeta = (form) => {
   Object.entries(meta).forEach(([name, value]) => setFormFieldValue(form, name, value));
 };
 
+const buildBitrixComment = (payload) => {
+  const summary = derivePreferenceSummary(payload.account || getAccountProfile());
+  const lines = [
+    payload.lead?.message ? `Комментарий: ${payload.lead.message}` : "",
+    payload.product?.name ? `Товар: ${payload.product.name}` : "",
+    payload.product?.category ? `Категория: ${payload.product.category}` : "",
+    payload.product?.variant ? `Вариант: ${payload.product.variant}` : "",
+    payload.order?.quantityKg ? `Количество: ${payload.order.quantityKg} кг` : "",
+    payload.delivery?.address ? `Адрес доставки: ${payload.delivery.address}` : "",
+    payload.account?.cartItems?.length
+      ? `Корзина: ${payload.account.cartItems
+          .map((item) => `${item.shortName} x ${Math.max(1, Number(item.quantity) || 1)}`)
+          .join(", ")}`
+      : "",
+    payload.account?.favoriteItems?.length
+      ? `Избранное: ${payload.account.favoriteItems.map((item) => item.shortName).join(", ")}`
+      : "",
+    summary.categoryNames?.length ? `Предпочтения: ${summary.categoryNames.join(", ")}` : "",
+    payload.context?.landingUrl ? `URL: ${payload.context.landingUrl}` : "",
+    payload.context?.sessionId ? `Session ID: ${payload.context.sessionId}` : "",
+  ].filter(Boolean);
+
+  return lines.join("\n");
+};
+
+const buildBitrixLeadEnvelope = (payload) => {
+  const topic = payload.lead?.topic || payload.integration?.crmPipelineSeed || "site_request";
+  const leadTitle =
+    topic === "account_registration"
+      ? "Регистрация аккаунта Global Basket"
+      : `Заявка Global Basket: ${payload.lead?.topic || "Новый запрос"}`;
+
+  return {
+    entityType: "lead",
+    title: leadTitle,
+    sourceCode: payload.context?.source || "site",
+    pipelineSeed: payload.integration?.crmPipelineSeed || "site_request",
+    statusSeed: payload.integration?.crmStatusSeed || "new",
+    contact: {
+      name: payload.lead?.name || DEFAULT_ACCOUNT_NAME,
+      phone: payload.lead?.phone || "",
+      email: payload.lead?.email || "",
+      telegram: payload.lead?.telegramUsername || "",
+      preferredChannel: payload.lead?.preferredContact || "",
+    },
+    product: payload.product || {},
+    account: payload.account || {},
+    fields: {
+      TITLE: leadTitle,
+      NAME: payload.lead?.name || DEFAULT_ACCOUNT_NAME,
+      PHONE: payload.lead?.phone ? [{ VALUE: payload.lead.phone, VALUE_TYPE: "WORK" }] : [],
+      EMAIL: payload.lead?.email ? [{ VALUE: payload.lead.email, VALUE_TYPE: "WORK" }] : [],
+      COMMENTS: buildBitrixComment(payload),
+      SOURCE_DESCRIPTION: payload.context?.landingUrl || "",
+    },
+  };
+};
+
 const buildLeadPayload = (form) => {
   hydrateLeadMeta(form);
 
@@ -2731,7 +3537,7 @@ const buildLeadPayload = (form) => {
   const hasDistance = data.has("distance_km");
   const quantityKg = hasQuantity ? normalizePositiveNumber(data.get("quantity_kg")) : null;
   const distanceKm = hasDistance ? parseOptionalPositiveNumber(data.get("distance_km")) : null;
-  return {
+  const payload = {
     lead: {
       name: (data.get("name") || "").toString().trim(),
       phone: (data.get("phone") || "").toString().trim(),
@@ -2805,6 +3611,9 @@ const buildLeadPayload = (form) => {
       payloadVersion: (data.get("payload_version") || "").toString().trim(),
     },
   };
+
+  payload.integration.bitrixLead = buildBitrixLeadEnvelope(payload);
+  return payload;
 };
 
 const buildLeadMailto = (payload) => {
@@ -2848,6 +3657,18 @@ const buildLeadMailto = (payload) => {
     payload.utm.campaign ? `UTM Campaign: ${payload.utm.campaign}` : "",
     payload.utm.content ? `UTM Content: ${payload.utm.content}` : "",
     payload.utm.term ? `UTM Term: ${payload.utm.term}` : "",
+    payload.account?.profileId ? `Профиль: ${payload.account.profileId}` : "",
+    payload.account?.cartItems?.length
+      ? `Корзина: ${payload.account.cartItems
+          .map((item) => `${item.shortName} x ${Math.max(1, Number(item.quantity) || 1)}`)
+          .join(", ")}`
+      : "",
+    payload.account?.favoriteItems?.length
+      ? `Избранное: ${payload.account.favoriteItems.map((item) => item.shortName).join(", ")}`
+      : "",
+    payload.account?.interestLabels?.length
+      ? `Предпочтения: ${payload.account.interestLabels.join(", ")}`
+      : "",
     "",
     "Комментарий:",
     payload.lead.message || "—",
@@ -2856,6 +3677,137 @@ const buildLeadMailto = (payload) => {
   const body = encodeURIComponent(lines.join("\n"));
 
   return `${store.contact.emailHref}?subject=${subject}&body=${body}`;
+};
+
+const buildRuntimeMeta = () => {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    landingUrl: window.location.href,
+    pageTitle: document.title,
+    referrer: document.referrer || "",
+    submittedAt: new Date().toISOString(),
+    sessionId: getLeadSessionId(),
+    utm: {
+      source: params.get("utm_source") || "",
+      medium: params.get("utm_medium") || "",
+      campaign: params.get("utm_campaign") || "",
+      content: params.get("utm_content") || "",
+      term: params.get("utm_term") || "",
+    },
+  };
+};
+
+const isGithubPagesRuntime = () =>
+  /github\.io$/i.test(window.location.hostname) || window.location.pathname.startsWith("/sait-/");
+
+const buildAccountRegistrationPayload = (form) => {
+  const data = new FormData(form);
+  const existingProfile = getAccountProfile();
+  const preferredContactRaw = (data.get("contact_preferred") || "").toString().trim();
+  const preferredContact = resolvePreferredContactKey(preferredContactRaw);
+  const interestIds = data.getAll("interest_categories").map((item) => String(item).trim()).filter(Boolean);
+  const runtime = buildRuntimeMeta();
+  const cartItems = getCartItems();
+  const favoriteItems = getFavoriteItems();
+  const profile = {
+    id: existingProfile?.id || createLocalId("gbacct"),
+    registeredAt: existingProfile?.registeredAt || runtime.submittedAt,
+    updatedAt: runtime.submittedAt,
+    preferredContact,
+    phone: (data.get("phone") || existingProfile?.phone || "").toString().trim(),
+    email: (data.get("email") || existingProfile?.email || "").toString().trim(),
+    telegramUsername: (data.get("telegram_username") || existingProfile?.telegramUsername || "")
+      .toString()
+      .trim(),
+    interestIds,
+    cartSnapshot: cartItems,
+    favoriteSnapshot: favoriteItems,
+  };
+
+  const preferenceSummary = derivePreferenceSummary(profile);
+  profile.preferenceCategoryIds = preferenceSummary.categoryIds;
+  profile.preferenceCategoryNames = preferenceSummary.categoryNames;
+
+  const payload = {
+    lead: {
+      name: existingProfile?.name || DEFAULT_ACCOUNT_NAME,
+      phone: profile.phone,
+      email: profile.email,
+      telegramUsername: profile.telegramUsername,
+      preferredContact,
+      topic: "Регистрация аккаунта",
+      message:
+        "Пользователь сохранил аккаунт на сайте. Корзина, избранное и предпочтения добавлены в CRM snapshot.",
+      consent: data.get("consent") === "on",
+    },
+    company: {
+      name: "",
+      inn: "",
+      purchaseFormat: "",
+    },
+    context: {
+      source: "account-registration",
+      page: "account",
+      landingUrl: runtime.landingUrl,
+      pageTitle: runtime.pageTitle,
+      referrer: runtime.referrer,
+      submittedAt: runtime.submittedAt,
+      sessionId: runtime.sessionId,
+    },
+    product: {
+      id: "",
+      name: "",
+      category: preferenceSummary.categoryNames[0] || "",
+      variant: "",
+      marketplaceInterest: "",
+    },
+    order: {
+      quantityKg: null,
+      topic: "Регистрация аккаунта",
+    },
+    delivery: {
+      address: "",
+      distanceKm: null,
+      distanceBlocks1000: null,
+    },
+    pricing: {
+      basePricePerKg: 0,
+      discountRate: 0,
+      discountTier: "",
+      distanceMarkupRate: 0,
+      subtotalBase: 0,
+      subtotalAfterDiscount: 0,
+      totalEstimate: 0,
+      estimatedPricePerKg: 0,
+      currency: "RUB",
+      isEstimate: false,
+    },
+    utm: runtime.utm,
+    account: {
+      profileId: profile.id,
+      registeredAt: profile.registeredAt,
+      updatedAt: profile.updatedAt,
+      preferredContact,
+      interestIds,
+      interestLabels: preferenceSummary.categoryNames,
+      cartItems,
+      favoriteItems,
+      cartCount: preferenceSummary.cartCount,
+      favoriteCount: preferenceSummary.favoriteCount,
+      storageMode: isGithubPagesRuntime() ? "browser-local" : "server-sync",
+    },
+    integration: {
+      channelOrigin: "site",
+      targets: ["bitrix24", "telegram"],
+      crmStatusSeed: "new",
+      crmPipelineSeed: "account_registration",
+      payloadVersion: "v2",
+    },
+  };
+
+  payload.integration.bitrixLead = buildBitrixLeadEnvelope(payload);
+
+  return { profile, payload };
 };
 
 const setRequestStatus = (form, message, tone = "") => {
@@ -3157,6 +4109,179 @@ const bindRequestForms = () => {
   });
 };
 
+const syncChoiceChips = (root = document) => {
+  $$("input[type='checkbox']", root).forEach((input) => {
+    const chip = input.closest(".choice-chip");
+    if (!chip) return;
+    chip.classList.toggle("is-selected", input.checked);
+  });
+};
+
+const updateStoredActionState = (root = document) => {
+  $$("[data-favorite-toggle]", root).forEach((button) => {
+    const productItem = findProduct(button.dataset.productId || "");
+    if (!productItem) return;
+    const active = isFavoriteSaved(productItem);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+    button.textContent = active ? "В избранном" : "В избранное";
+  });
+
+  $$("[data-cart-add]", root).forEach((button) => {
+    const productItem = findProduct(button.dataset.productId || "");
+    if (!productItem) return;
+    const quantity = getCartQuantityForProduct(productItem, button.dataset.productVariant || "");
+    button.textContent = quantity > 0 ? `В корзине ×${quantity}` : "В корзину";
+  });
+};
+
+const refreshStatefulUi = ({ accountMessage = "", accountTone = "" } = {}) => {
+  updateHeaderState();
+
+  if (
+    document.body.dataset.page === "utility" &&
+    ["account", "cart", "favorites"].includes(document.body.dataset.utility || "")
+  ) {
+    renderUtilityPage();
+  }
+
+  bindStoredProductActions();
+  bindAccountRegistrationForms();
+  syncChoiceChips();
+  updateStoredActionState();
+
+  if (accountMessage && document.body.dataset.utility === "account") {
+    const form = $("[data-account-registration-form]");
+    if (form) setRequestStatus(form, accountMessage, accountTone);
+  }
+};
+
+const bindStoredProductActions = (root = document) => {
+  $$("[data-cart-add]", root).forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const productItem = findProduct(button.dataset.productId || "");
+      if (!productItem) return;
+      const variant = resolveProductVariant(productItem, button.dataset.productVariant || "");
+      addProductToCart(productItem, variant, button.dataset.actionSource || "site");
+      refreshStatefulUi();
+    });
+  });
+
+  $$("[data-favorite-toggle]", root).forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const productItem = findProduct(button.dataset.productId || "");
+      if (!productItem) return;
+      const variant = resolveProductVariant(productItem, button.dataset.productVariant || "");
+      toggleFavoriteProduct(productItem, variant, button.dataset.actionSource || "site");
+      refreshStatefulUi();
+    });
+  });
+
+  $$("[data-cart-quantity-action]", root).forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      const entryId = button.dataset.entryId || "";
+      const entry = getCartItems().find((item) => item.entryId === entryId);
+      if (!entry) return;
+      const delta = button.dataset.cartQuantityAction === "decrease" ? -1 : 1;
+      updateCartItemQuantity(entryId, Math.max(0, Math.max(1, Number(entry.quantity) || 1) + delta));
+      refreshStatefulUi();
+    });
+  });
+
+  $$("[data-cart-remove]", root).forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      removeCartItem(button.dataset.entryId || "");
+      refreshStatefulUi();
+    });
+  });
+
+  $$("[data-favorite-remove]", root).forEach((button) => {
+    if (button.dataset.bound === "true") return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      removeFavoriteItem(button.dataset.productId || "");
+      refreshStatefulUi();
+    });
+  });
+
+  updateStoredActionState(root);
+};
+
+const bindAccountRegistrationForms = (root = document) => {
+  $$("[data-account-registration-form]", root).forEach((form) => {
+    if (form.dataset.bound === "true") return;
+    form.dataset.bound = "true";
+    syncPreferredContactField(form);
+    syncChoiceChips(form);
+
+    const preferredField = form.elements.namedItem("contact_preferred");
+    preferredField?.addEventListener("change", () => {
+      syncPreferredContactField(form);
+    });
+
+    $$("input[name='interest_categories']", form).forEach((input) => {
+      input.addEventListener("change", () => syncChoiceChips(form));
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      if (form.dataset.submitting === "true") return;
+      if (!form.reportValidity()) return;
+
+      const { profile, payload } = buildAccountRegistrationPayload(form);
+      form.dataset.submitting = "true";
+      setFormSubmittingState(form, true);
+      setRequestStatus(form, "Сохраняем аккаунт…", "loading");
+
+      setAccountProfile(profile);
+      writeJsonStorage(STORAGE_KEYS.lastAccountPayload, payload);
+
+      try {
+        if (isGithubPagesRuntime()) {
+          refreshStatefulUi({
+            accountMessage:
+              "Аккаунт сохранён в браузере. Корзина, избранное и предпочтения теперь привязаны к этому профилю, а CRM-ready payload собран для Bitrix24.",
+            accountTone: "success",
+          });
+          return;
+        }
+
+        const result = await submitLeadPayload(payload);
+        const syncedProfile = {
+          ...profile,
+          crmRequestId: result.requestId,
+          syncedAt: toIsoNow(),
+        };
+        setAccountProfile(syncedProfile);
+        refreshStatefulUi({
+          accountMessage:
+            result?.bitrix?.ok === true
+              ? `Аккаунт сохранён. CRM-снимок отправлен в Telegram и подготовлен для Bitrix24, номер обращения: ${result.requestId}.`
+              : `Аккаунт сохранён. CRM-снимок отправлен, номер обращения: ${result.requestId}.`,
+          accountTone: "success",
+        });
+      } catch (error) {
+        refreshStatefulUi({
+          accountMessage:
+            "Аккаунт сохранён локально, но серверный маршрут сейчас недоступен. Профиль, корзина и предпочтения всё равно сохранены в этом браузере, а CRM-ready payload подготовлен.",
+          accountTone: "error",
+        });
+      } finally {
+        form.dataset.submitting = "false";
+        setFormSubmittingState(form, false);
+      }
+    });
+  });
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   renderHeader();
   renderFooter();
@@ -3202,5 +4327,9 @@ document.addEventListener("DOMContentLoaded", () => {
   bindFaq();
   bindQuoteCalculators();
   bindRequestForms();
+  bindStoredProductActions();
+  bindAccountRegistrationForms();
+  syncChoiceChips();
+  updateHeaderState();
   applyCatalogToolbarState();
 });
