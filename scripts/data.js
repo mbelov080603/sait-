@@ -227,15 +227,10 @@ window.GlobalBasketData = {
     leadForm: {
       eyebrow: "",
       title: "Оставить запрос",
-      text:
-        "Оставьте один удобный контакт, и мы ответим по покупке, наличию, цене или оптовому запросу.",
+      text: "",
       submitLabel: "Отправить запрос",
-      secondaryCta: {
-        label: "Написать в Telegram",
-        href: "https://t.me/global_basket_bot?start=site_home_lead",
-      },
-      note:
-        "Ответим в ближайшее рабочее время. Если удобнее, можно сразу написать нам в Telegram.",
+      secondaryCta: null,
+      note: "",
       consent:
         'Согласен(а) на обработку контактных данных для ответа по моему запросу. <a href="/privacy/">Политика обработки персональных данных</a>.',
       topics: [

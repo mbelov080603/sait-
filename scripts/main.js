@@ -999,7 +999,7 @@ const renderLeadRequestForm = (config, context = {}) => {
       <div class="section-head section-head--compact">
         ${config.eyebrow ? `<p class="eyebrow">${config.eyebrow}</p>` : ""}
         <h2>${config.title}</h2>
-        <p>${config.text}</p>
+        ${config.text ? `<p>${config.text}</p>` : ""}
       </div>
       <form class="request-form request-form--lead" data-request-form data-request-adapter="crm-ready" novalidate>
         ${Object.entries(hiddenFields)
@@ -1059,9 +1059,11 @@ const renderLeadRequestForm = (config, context = {}) => {
         </label>
         <div class="request-form__actions">
           <button class="button" type="submit">${config.submitLabel}</button>
-          <a class="text-link text-link--inline request-form__action-link" href="${config.secondaryCta.href}"${externalAttrs(config.secondaryCta.href)}>${config.secondaryCta.label}</a>
+          ${config.secondaryCta
+            ? `<a class="text-link text-link--inline request-form__action-link" href="${config.secondaryCta.href}"${externalAttrs(config.secondaryCta.href)}>${config.secondaryCta.label}</a>`
+            : ""}
         </div>
-        <p class="request-form__note">${config.note}</p>
+        ${config.note ? `<p class="request-form__note">${config.note}</p>` : ""}
         <p class="request-form__status" data-request-status aria-live="polite"></p>
       </form>
     </article>
