@@ -3406,6 +3406,7 @@ const bindCompactHeader = () => {
   const searchRoot = $("[data-header-search]");
   if (!header) return;
 
+  const allowCompactMode = document.body.dataset.page === "catalog";
   const prefersDesktop = () => window.matchMedia("(min-width: 1181px)").matches;
 
   const closeSearch = () => {
@@ -3418,12 +3419,14 @@ const bindCompactHeader = () => {
   };
 
   const sync = () => {
-    const isCondensed = prefersDesktop() && window.scrollY > 56;
+    const isCondensed = allowCompactMode && prefersDesktop() && window.scrollY > 56;
     header.classList.toggle("is-condensed", isCondensed);
     document.body.classList.toggle("has-condensed-header", isCondensed);
 
     if (isCondensed) {
       closeSearch();
+    } else {
+      searchRoot?.classList.remove("is-open");
     }
   };
 
