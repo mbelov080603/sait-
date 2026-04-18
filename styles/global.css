@@ -3608,6 +3608,15 @@ body.has-mobile-nav {
   padding-top: max(56px, calc(var(--section-space) - 24px));
 }
 
+.page-section.page-section--home-featured {
+  padding-top: 20px;
+  padding-bottom: 0;
+}
+
+.page-section.page-section--compact.page-section--home-categories {
+  padding-top: 0;
+}
+
 .hero-copy h1,
 .section-head h2,
 .hero-product h1,
