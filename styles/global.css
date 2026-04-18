@@ -529,11 +529,11 @@ textarea {
 
 .page-section--home-featured {
   padding-top: 20px;
-  padding-bottom: 28px;
+  padding-bottom: 12px;
 }
 
 .page-section--home-categories {
-  padding-top: 24px;
+  padding-top: 8px;
 }
 
 .page-section--home-categories .section-head {
@@ -3949,8 +3949,8 @@ body.has-mobile-nav {
 
 .request-panel--lead {
   width: min(100%, 456px);
-  gap: 16px;
-  padding: 22px 24px;
+  gap: 10px;
+  padding: 18px 24px 16px;
 }
 
 .request-panel--lead .section-head {
@@ -4054,7 +4054,7 @@ body.has-mobile-nav {
 }
 
 .request-form--lead {
-  gap: 16px;
+  gap: 12px;
 }
 
 .request-form--lead .request-form__grid {
