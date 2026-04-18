@@ -3406,7 +3406,7 @@ const bindCompactHeader = () => {
   const searchRoot = $("[data-header-search]");
   if (!header) return;
 
-  const allowCompactMode = document.body.dataset.page === "catalog";
+  const allowCompactMode = document.body.dataset.page !== "about";
   const prefersDesktop = () => window.matchMedia("(min-width: 1181px)").matches;
 
   const closeSearch = () => {
