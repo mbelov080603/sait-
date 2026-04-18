@@ -3419,7 +3419,7 @@ const bindCompactHeader = () => {
   };
 
   const sync = () => {
-    const isCondensed = allowCompactMode && prefersDesktop() && window.scrollY > 56;
+    const isCondensed = allowCompactMode && prefersDesktop() && window.scrollY > 18;
     header.classList.toggle("is-condensed", isCondensed);
     document.body.classList.toggle("has-condensed-header", isCondensed);
 

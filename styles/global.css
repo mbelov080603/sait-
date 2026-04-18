@@ -3712,10 +3712,16 @@ body.has-mobile-nav {
   }
 
   .site-header.is-condensed {
+    position: fixed;
     background: transparent;
     border-bottom-color: transparent;
     backdrop-filter: none;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 90;
     padding-top: 18px;
+    animation: header-slide-down 180ms ease;
   }
 
   .site-header.is-condensed .header-main {
@@ -3759,6 +3765,18 @@ body.has-mobile-nav {
 
   .site-header.is-condensed .main-nav a {
     font-size: 0.78rem;
+  }
+}
+
+@keyframes header-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
