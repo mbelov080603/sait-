@@ -21,7 +21,6 @@ window.GlobalBasketData = {
   searchScopes: [
     { value: "catalog", label: "Каталог" },
     { value: "nuts", label: "Орехи" },
-    { value: "sections", label: "Разделы" },
   ],
   primaryNav: [
     { label: "Каталог", href: "/catalog/", match: ["/catalog/", "/categories/"] },
@@ -39,25 +38,28 @@ window.GlobalBasketData = {
     {
       name: "Премиальные орехи",
       description: "Основной раздел каталога с очищенной макадамией.",
-      href: "/categories/premium-nuts/",
+      href: "/catalog/?category=premium-nuts",
       status: "active",
       statusLabel: "В наличии",
     },
     {
       name: "Сухофрукты",
       description: "Натуральные сухофрукты для следующего расширения витрины.",
+      href: "/catalog/?category=dried-fruits",
       status: "coming",
       statusLabel: "Скоро",
     },
     {
       name: "Ореховые смеси",
       description: "Смеси для повседневной подачи и подарочных сценариев.",
+      href: "/catalog/?category=nut-mixes",
       status: "coming",
       statusLabel: "Скоро",
     },
     {
       name: "Подарочные наборы",
       description: "Подборки для сезонного спроса и аккуратной премиальной подачи.",
+      href: "/catalog/?category=gift-sets",
       status: "coming",
       statusLabel: "Скоро",
     },
@@ -211,7 +213,6 @@ window.GlobalBasketData = {
       },
       paragraphs: [
         "Global Basket — это бренд натуральных и высококачественных продуктов питания, собранных из разных уголков мира и доступных широкому кругу покупателей. Мы не просто поставляем продукты из разных стран, а тщательно отбираем то, что действительно достойно оказаться на столе покупателя.",
-        "Для покупателя Global Basket — это проводник в мире качественных и натуральных продуктов, фильтр, который отсеивает сомнительное и оставляет достойное, и знак доверия, за которым стоит понятная система ценностей.",
       ],
       chips: [
         "Натуральные продукты",
@@ -280,11 +281,10 @@ window.GlobalBasketData = {
   },
   catalogPage: {
     intro:
-      "В каталоге собраны товар и разделы, которые помогают быстро перейти от выбора к обращению.",
+      "В каталоге собраны товарные позиции с прямым переходом в карточки товаров и к запросу условий.",
     filters: [
       { label: "Все", value: "all" },
       { label: "В наличии", value: "active" },
-      { label: "Разделы", value: "sections" },
     ],
     sorts: [
       { value: "featured", label: "Сначала главное" },
@@ -868,7 +868,7 @@ window.GlobalBasketData = {
         title: "Каталог",
         links: [
           { label: "В каталог", href: "/catalog/" },
-          { label: "Премиальные орехи", href: "/categories/premium-nuts/" },
+          { label: "Премиальные орехи", href: "/catalog/?category=premium-nuts" },
           { label: "Очищенная макадамия", href: "/catalog/macadamia/" },
         ],
       },
@@ -2226,7 +2226,7 @@ const productsFromPack = catalogPayload.products_cards
       badgeTone: cleanText(card.status) === "В наличии" ? "active" : "service",
       category: cleanText(card.category),
       categorySlug: cleanText(card.category_slug),
-      categoryHref: cleanText(card.category_url),
+      categoryHref: `/catalog/?category=${cleanText(card.category_slug)}`,
       subtitle: cleanText(card.card_subtitle),
       baseSubtitle: cleanText(card.card_subtitle),
       defaultVariantLabel: cleanText(page.default_variant) || defaultVariant?.label || "",
@@ -2331,7 +2331,7 @@ const categoriesFromPack = catalogPayload.categories
     title: cleanText(item.category_title),
     description: cleanText(item.card_description),
     intro: cleanText(item.page_intro),
-    href: cleanText(item.category_url),
+    href: `/catalog/?category=${cleanText(item.category_slug)}`,
     status: cleanText(item.status) === "В наличии" ? "active" : "request",
     statusLabel: cleanText(item.status) || "В наличии",
     badge: "Раздел",
@@ -2348,9 +2348,8 @@ if (primaryProduct) {
 gb.products = productsFromPack;
 gb.categories = categoriesFromPack;
 gb.catalogPage.intro =
-  "В каталоге собраны 11 товарных позиций и 4 реальные категории с понятным переходом к детальным страницам и запросу условий.";
+  "В каталоге собраны 11 товарных позиций без промежуточных страниц категорий: сразу выбор товара и переход к запросу условий.";
 gb.catalogPage.sorts = [
   { value: "featured", label: "Сначала по каталогу" },
   { value: "available", label: "Сначала товары" },
-  { value: "sections", label: "Сначала разделы" },
 ];

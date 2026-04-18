@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Каталог Global Basket: товарные карточки и разделы с готовым HTML-контентом, характеристиками и понятным переходом к запросу условий." />
+    <meta name="description" content="Каталог Global Basket: товарные карточки с прямым переходом к подробному описанию и понятным запросом условий без промежуточных страниц категорий." />
     <title>Global Basket | Каталог</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,16 +12,16 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles/global.css" />
-                              <!-- prerender-seo:start -->
+                                    <!-- prerender-seo:start -->
     <link rel="canonical" href="https://globalbasket.ru/catalog/" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Global Basket | Каталог" />
-    <meta property="og:description" content="Каталог Global Basket: товарные карточки и разделы с готовым HTML-контентом, характеристиками и понятным переходом к запросу условий." />
+    <meta property="og:description" content="Каталог Global Basket: товарные карточки с прямым переходом к подробному описанию и понятным запросом условий без промежуточных страниц категорий." />
     <meta property="og:url" content="https://globalbasket.ru/catalog/" />
     <meta property="og:image" content="https://globalbasket.ru/assets/catalog/products/macadamia-ozon-front.png" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Global Basket | Каталог" />
-    <meta name="twitter:description" content="Каталог Global Basket: товарные карточки и разделы с готовым HTML-контентом, характеристиками и понятным переходом к запросу условий." />
+    <meta name="twitter:description" content="Каталог Global Basket: товарные карточки с прямым переходом к подробному описанию и понятным запросом условий без промежуточных страниц категорий." />
     <meta name="twitter:image" content="https://globalbasket.ru/assets/catalog/products/macadamia-ozon-front.png" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Global Basket","url":"https://globalbasket.ru","logo":"https://globalbasket.ru/assets/logo.jpg","email":"hello@globalbasket.ru","telephone":"+79773384640","contactPoint":[{"@type":"ContactPoint","contactType":"sales","telephone":"+79773384640","email":"hello@globalbasket.ru","availableLanguage":["ru"],"url":"https://globalbasket.ru/contacts/"}],"sameAs":["https://t.me/Global_Basket","https://t.me/global_basket_bot?start=site_contact"]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Главная","item":"https://globalbasket.ru/"},{"@type":"ListItem","position":2,"name":"Каталог","item":"https://globalbasket.ru/catalog/"}]}</script>
@@ -233,8 +233,7 @@
           <div class="hero-copy">
             <h1>Каталог</h1>
             <p>
-              В каталоге собраны 11 товарных позиций и 4 реальные категории,
-              чтобы путь к выбору, сравнению и переходу к запросу условий оставался простым и понятным.
+              В каталоге собраны товарные позиции с прямым переходом в карточки товаров и к запросу условий.
             </p>
           </div>
         </div>
@@ -245,7 +244,7 @@
           <aside class="catalog-sidebar" id="catalog-sidebar">
       <article class="sidebar-card">
         <strong>Категории</strong>
-        <a href="/categories/premium-nuts/"><span>Премиальные орехи</span><span>В наличии</span></a><a href="/categories/dried-fruits/"><span>Сухофрукты</span><span>В наличии</span></a><a href="/categories/nut-mixes/"><span>Ореховые смеси</span><span>В наличии</span></a><a href="/categories/gift-sets/"><span>Подарочные наборы</span><span>В наличии</span></a>
+        <a href="/catalog/?category=premium-nuts"><span>Премиальные орехи</span><span>В наличии</span></a><a href="/catalog/?category=dried-fruits"><span>Сухофрукты</span><span>В наличии</span></a><a href="/catalog/?category=nut-mixes"><span>Ореховые смеси</span><span>В наличии</span></a><a href="/catalog/?category=gift-sets"><span>Подарочные наборы</span><span>В наличии</span></a>
       </article>
       <article class="sidebar-card">
         <strong>Покупателям</strong>
@@ -256,7 +255,7 @@
     </aside>
           <div class="catalog-main">
             <div class="section-head section-head--compact">
-              <h2>Товары в наличии и разделы каталога</h2>
+              <h2>Товары каталога</h2>
             </div>
             <div class="catalog-toolbar" id="catalog-toolbar">
       <div class="catalog-toolbar__filters">
@@ -269,17 +268,13 @@
                 В наличии
               </button>
             
-              <button class="filter-pill " type="button" data-filter="sections">
-                Разделы
-              </button>
-            
       </div>
       <div class="catalog-toolbar__meta">
         <span class="catalog-toolbar__count" data-count></span>
         <label class="catalog-toolbar__sort">
           <span>Сортировка</span>
           <select data-sort>
-            <option value="featured">Сначала по каталогу</option><option value="available">Сначала товары</option><option value="sections">Сначала разделы</option>
+            <option value="featured">Сначала по каталогу</option><option value="available">Сначала товары</option>
           </select>
         </label>
       </div>
@@ -757,39 +752,7 @@
         </div>
       </div>
     </article>
-  
-  <article class="section-card  section-card--catalog-start">
-    <a class="section-card__media" href="/categories/premium-nuts/"><img src="/assets/catalog/categories/premium-nuts-cover.png" alt="Премиальные орехи" loading="lazy" decoding="async" /></a>
-    <span class="meta-badge meta-badge--active">Раздел</span>
-    <h3><a href="/categories/premium-nuts/">Премиальные орехи</a></h3>
-    <p>Орехи в наличии с детальными страницами и выбором фасовки по запросу.</p>
-    <a class="text-link section-card__cta" href="/categories/premium-nuts/">Смотреть раздел</a>
-  </article>
-
-  <article class="section-card  ">
-    <a class="section-card__media" href="/categories/dried-fruits/"><img src="/assets/catalog/categories/dried-fruits-cover.png" alt="Сухофрукты" loading="lazy" decoding="async" /></a>
-    <span class="meta-badge meta-badge--active">Раздел</span>
-    <h3><a href="/categories/dried-fruits/">Сухофрукты</a></h3>
-    <p>Реальный раздел с курагой, финиками, клюквой и манго вместо заглушки «Скоро».</p>
-    <a class="text-link section-card__cta" href="/categories/dried-fruits/">Смотреть раздел</a>
-  </article>
-
-  <article class="section-card  ">
-    <a class="section-card__media" href="/categories/nut-mixes/"><img src="/assets/catalog/categories/nut-mixes-cover.png" alt="Ореховые смеси" loading="lazy" decoding="async" /></a>
-    <span class="meta-badge meta-badge--service">Раздел</span>
-    <h3><a href="/categories/nut-mixes/">Ореховые смеси</a></h3>
-    <p>Раздел с готовыми смесями и переходом в детальные страницы.</p>
-    <a class="text-link section-card__cta" href="/categories/nut-mixes/">Смотреть раздел</a>
-  </article>
-
-  <article class="section-card  ">
-    <a class="section-card__media" href="/categories/gift-sets/"><img src="/assets/catalog/categories/gift-sets-cover.png" alt="Подарочные наборы" loading="lazy" decoding="async" /></a>
-    <span class="meta-badge meta-badge--editorial">Раздел</span>
-    <h3><a href="/categories/gift-sets/">Подарочные наборы</a></h3>
-    <p>Реальный раздел с подарочными форматами вместо пустой плитки «Скоро».</p>
-    <a class="text-link section-card__cta" href="/categories/gift-sets/">Смотреть раздел</a>
-  </article>
-</div>
+  </div>
           </div>
         </div>
       </section>
@@ -843,7 +806,7 @@
           
                 <div class="footer-column">
                   <strong>Каталог</strong>
-                  <a href="/catalog/">В каталог</a><a href="/categories/premium-nuts/">Премиальные орехи</a><a href="/catalog/macadamia/">Очищенная макадамия</a>
+                  <a href="/catalog/">В каталог</a><a href="/catalog/?category=premium-nuts">Премиальные орехи</a><a href="/catalog/macadamia/">Очищенная макадамия</a>
                 </div>
               
                 <div class="footer-column">

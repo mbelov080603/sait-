@@ -649,6 +649,10 @@ textarea {
   margin-top: 0;
 }
 
+.hero-stage--home .hero-stage__body {
+  gap: var(--space-3);
+}
+
 .hero-stage--lead .hero-stage__copy h1 {
   font-size: clamp(2.8rem, 4vw, 4.2rem);
 }
@@ -679,6 +683,10 @@ textarea {
   padding: 0;
 }
 
+.hero-stage--home .hero-stage__meta {
+  margin-top: var(--space-3);
+}
+
 .hero-stage__meta li,
 .hero-product__pills li {
   padding: 10px 14px;
@@ -698,6 +706,10 @@ textarea {
   flex-wrap: wrap;
   gap: var(--space-3);
   margin-top: var(--space-5);
+}
+
+.hero-stage--home .hero-stage__actions {
+  margin-top: var(--space-3);
 }
 
 .text-link--inline {
@@ -3897,9 +3909,18 @@ body.has-mobile-nav {
   gap: 24px;
 }
 
+.hero-stage--home.hero-stage--lead {
+  grid-template-columns: minmax(0, 1.02fr) minmax(380px, 520px);
+  gap: 20px;
+}
+
 .hero-stage--lead .hero-stage__media {
   width: min(100%, 480px);
   justify-self: end;
+}
+
+.hero-stage--home.hero-stage--lead .hero-stage__media {
+  width: min(100%, 520px);
 }
 
 .media-stage--lifestyle {
@@ -3907,6 +3928,10 @@ body.has-mobile-nav {
   max-width: 480px;
   aspect-ratio: var(--hero-portrait-ratio);
   padding: 0;
+}
+
+.hero-stage--home .media-stage--lifestyle {
+  max-width: 520px;
 }
 
 .media-stage--lifestyle img {

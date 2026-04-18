@@ -798,7 +798,7 @@ const renderCategoryCard = (item) => `
     <p>${item.description}</p>
     ${
       item.href
-        ? `<a class="text-link text-link--inline category-card__cta" href="${item.href}">Смотреть раздел</a>`
+        ? `<a class="text-link text-link--inline category-card__cta" href="${item.href}">Смотреть товары</a>`
         : `<span class="card-note">Скоро откроем.</span>`
     }
   </article>
@@ -1479,42 +1479,31 @@ const renderHome = () => {
 };
 
 const buildCatalogItems = () => {
-  return [
-    ...activeProducts.map((item) => ({
-      type: "product",
-      title: item.shortName,
-      keywords: [
-        item.shortName,
-        item.fullName,
-        item.h1,
-        item.subtitle,
-        item.origin,
-        item.weight,
-        item.packaging,
-        item.category,
-        item.catalogDescription,
-        item.annotation,
-        item.shortDescription,
-        item.fullDescription,
-        item.composition,
-        item.seoKeywords,
-      ]
-        .filter(Boolean)
-        .join(" "),
-      html: renderEnterpriseProductCard(item),
-      status: "active",
-    })),
-    ...activeCategories.map((item, index) => ({
-      type: "section",
-      title: item.name,
-      keywords: `${item.name} ${item.description} ${item.intro || ""} ${item.statusLabel}`,
-      html: renderSectionCard({
-        ...item,
-        className: index === 0 ? "section-card--catalog-start" : "",
-      }),
-      status: "active",
-    })),
-  ];
+  return activeProducts.map((item) => ({
+    type: "product",
+    title: item.shortName,
+    categorySlug: item.categorySlug || "",
+    keywords: [
+      item.shortName,
+      item.fullName,
+      item.h1,
+      item.subtitle,
+      item.origin,
+      item.weight,
+      item.packaging,
+      item.category,
+      item.catalogDescription,
+      item.annotation,
+      item.shortDescription,
+      item.fullDescription,
+      item.composition,
+      item.seoKeywords,
+    ]
+      .filter(Boolean)
+      .join(" "),
+    html: renderEnterpriseProductCard(item),
+    status: "active",
+  }));
 };
 
 const matchesCatalogSearch = (entry, query, scope = "catalog") => {
@@ -1522,10 +1511,42 @@ const matchesCatalogSearch = (entry, query, scope = "catalog") => {
   if (!tokens.length) return true;
 
   if (scope === "nuts" && entry.type !== "product") return false;
-  if (scope === "sections" && entry.type !== "section") return false;
 
   const haystack = escapeQuery(entry.keywords || "");
   return tokens.every((token) => haystack.includes(token));
+};
+
+const resolveCatalogCategoryParam = (params = new URLSearchParams(window.location.search)) => {
+  const category = params.get("category") || "";
+  return categories.some((item) => item?.id === category) ? category : "";
+};
+
+const getCatalogGridItems = ({
+  query = "",
+  scope = "catalog",
+  filter = "all",
+  sort = "featured",
+  category = "",
+} = {}) => {
+  let items = buildCatalogItems();
+
+  if (category) {
+    items = items.filter((entry) => entry.categorySlug === category);
+  }
+
+  if (query) {
+    items = items.filter((entry) => matchesCatalogSearch(entry, query, scope));
+  }
+
+  if (filter === "active") {
+    items = items.filter((item) => item.status === "active");
+  }
+
+  if (sort === "available") {
+    items = items.sort((a, b) => (a.status === "active" ? -1 : 1) - (b.status === "active" ? -1 : 1));
+  }
+
+  return items;
 };
 
 const renderCatalog = () => {
@@ -1584,10 +1605,8 @@ const renderCatalog = () => {
     const params = new URLSearchParams(window.location.search);
     const query = escapeQuery(params.get("q") || "");
     const scope = params.get("scope") || "catalog";
-    const items = buildCatalogItems().filter((entry) => {
-      if (!query) return true;
-      return matchesCatalogSearch(entry, query, scope);
-    });
+    const category = resolveCatalogCategoryParam(params);
+    const items = getCatalogGridItems({ query, scope, category });
 
     grid.innerHTML = items.length
       ? items.map((item) => item.html).join("")
@@ -1605,6 +1624,8 @@ const renderCatalog = () => {
     support.innerHTML = store.catalogPage.support.map(renderSectionCard).join("");
   }
 };
+
+const renderStaticPage = () => {};
 
 const renderProductPage = () => {
   const productItem = product;
@@ -3259,26 +3280,17 @@ const applyCatalogToolbarState = () => {
   if (!grid || !toolbar) return;
 
   const params = new URLSearchParams(window.location.search);
-  let filter = params.get("filter") || "all";
-  let sort = params.get("sort") || "featured";
+  const allowedFilters = new Set((store.catalogPage.filters || []).map((item) => item.value));
+  const allowedSorts = new Set((store.catalogPage.sorts || []).map((item) => item.value));
+  let filter = allowedFilters.has(params.get("filter")) ? params.get("filter") : "all";
+  let sort = allowedSorts.has(params.get("sort")) ? params.get("sort") : "featured";
 
   const rerender = () => {
     const params = new URLSearchParams(window.location.search);
     const query = escapeQuery(params.get("q") || "");
     const scope = params.get("scope") || "catalog";
-    let items = buildCatalogItems().filter((entry) => {
-      if (!query) return true;
-      return matchesCatalogSearch(entry, query, scope);
-    });
-    if (filter === "active") items = items.filter((item) => item.type === "product");
-    if (filter === "sections") items = items.filter((item) => item.type === "section");
-
-    if (sort === "available") {
-      items = items.sort((a, b) => (a.status === "active" ? -1 : 1) - (b.status === "active" ? -1 : 1));
-    }
-    if (sort === "sections") {
-      items = items.sort((a, b) => (a.type === "section" ? -1 : 1) - (b.type === "section" ? -1 : 1));
-    }
+    const category = resolveCatalogCategoryParam(params);
+    const items = getCatalogGridItems({ query, scope, filter, sort, category });
 
     grid.innerHTML = items.length
       ? items.map((item) => item.html).join("")
