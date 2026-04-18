@@ -829,11 +829,11 @@ const renderSectionCard = (item) => `
   </article>
 `;
 
-const renderJournalCard = (post, featured = false) => `
+const renderJournalCard = (post, { featured = false, showBadge = true } = {}) => `
   <article class="journal-card ${featured ? "journal-card--featured" : ""}">
     ${post.image ? `<a class="journal-card__media" href="${post.href}"><img src="${post.image}" alt="${post.title}" loading="lazy" decoding="async" /></a>` : ""}
     <div class="journal-card__body">
-      ${renderBadge("Материал", "editorial")}
+      ${showBadge ? renderBadge("Материал", "editorial") : ""}
       <h3><a href="${post.href}">${post.title}</a></h3>
       <p>${featured ? post.lead : post.excerpt}</p>
       <a class="text-link text-link--inline journal-card__cta" href="${post.href}">Читать</a>
@@ -1467,12 +1467,14 @@ const renderHome = () => {
   const [featuredPost, ...otherPosts] = store.journal.posts;
   const journalFeatured = $("#home-journal-featured");
   if (journalFeatured && featuredPost) {
-    journalFeatured.innerHTML = renderJournalCard(featuredPost, true);
+    journalFeatured.innerHTML = renderJournalCard(featuredPost, { featured: true, showBadge: false });
   }
 
   const journalList = $("#home-journal-list");
   if (journalList) {
-    journalList.innerHTML = otherPosts.map((item) => renderJournalCard(item)).join("");
+    journalList.innerHTML = otherPosts
+      .map((item) => renderJournalCard(item, { showBadge: false }))
+      .join("");
   }
 };
 
@@ -2646,7 +2648,7 @@ const renderJournalPage = () => {
   const [featuredPost, ...otherPosts] = store.journal.posts;
   const featured = $("#journal-featured");
   if (featured && featuredPost) {
-    featured.innerHTML = renderJournalCard(featuredPost, true);
+    featured.innerHTML = renderJournalCard(featuredPost, { featured: true });
   }
 
   const list = $("#journal-list");
