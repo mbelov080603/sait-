@@ -818,7 +818,7 @@ const renderSectionCard = (item) => `
         ? `<a class="section-card__media" href="${item.href || "#"}"><img src="${item.image}" alt="${item.title || item.name}" loading="lazy" decoding="async" /></a>`
         : ""
     }
-    ${renderBadge(item.badge || item.statusLabel, item.tone || item.status || "service")}
+    ${item.badge || item.statusLabel ? renderBadge(item.badge || item.statusLabel, item.tone || item.status || "service") : ""}
     <h3>${item.href ? `<a href="${item.href}">${item.title || item.name}</a>` : item.title || item.name}</h3>
     <p>${item.description}</p>
     ${
@@ -2558,7 +2558,6 @@ const renderDeliveryPage = () => {
     returns.innerHTML = `
       <article class="request-panel request-panel--compact">
         <div class="section-head section-head--compact">
-          <p class="eyebrow">Возвраты</p>
           <h2>${store.deliveryPage.returns.title}</h2>
           <p>${store.deliveryPage.returns.text}</p>
         </div>
@@ -2648,12 +2647,12 @@ const renderJournalPage = () => {
   const [featuredPost, ...otherPosts] = store.journal.posts;
   const featured = $("#journal-featured");
   if (featured && featuredPost) {
-    featured.innerHTML = renderJournalCard(featuredPost, { featured: true });
+    featured.innerHTML = renderJournalCard(featuredPost, { featured: true, showBadge: false });
   }
 
   const list = $("#journal-list");
   if (!list) return;
-  list.innerHTML = otherPosts.map((post) => renderJournalCard(post)).join("");
+  list.innerHTML = otherPosts.map((post) => renderJournalCard(post, { showBadge: false })).join("");
 };
 
 const renderArticleCards = (cards = [], tone = "default") => {
@@ -2714,7 +2713,6 @@ const renderArticlePage = () => {
         <span>${post.title}</span>
       </div>
       <div class="hero-copy">
-        <p class="eyebrow">Материал</p>
         <h1>${post.title}</h1>
         <p>${post.lead}</p>
       </div>
@@ -2747,7 +2745,6 @@ const renderArticlePage = () => {
     const productPanel = `
       <article class="request-panel request-panel--compact article-product-panel">
         <div class="section-head section-head--compact">
-          <p class="eyebrow">Товар</p>
           <h2>${product.shortName}</h2>
           <p>${product.lead}</p>
         </div>
