@@ -120,40 +120,38 @@ const checks = [
   {
     path: "/categories/premium-nuts/",
     includes: [
-      'id="category-title">Премиальные орехи</h1>',
-      "Очищенная макадамия",
-      "Кешью сырой сушеный",
+      "Переходим в каталог",
+      'http-equiv="refresh"',
+      "/catalog/?category=premium-nuts",
       '"@type":"BreadcrumbList"',
     ],
-    excludes: ["Описание раздела появится здесь автоматически."],
   },
   {
     path: "/categories/dried-fruits/",
     includes: [
-      'id="category-title">Сухофрукты</h1>',
-      "Курага монетка",
-      "Манго сушеное",
+      "Переходим в каталог",
+      'http-equiv="refresh"',
+      "/catalog/?category=dried-fruits",
       '"@type":"BreadcrumbList"',
     ],
-    excludes: ["Описание раздела появится здесь автоматически."],
   },
   {
     path: "/categories/nut-mixes/",
     includes: [
-      'id="category-title">Ореховые смеси</h1>',
-      "Ореховая смесь с изюмом",
+      "Переходим в каталог",
+      'http-equiv="refresh"',
+      "/catalog/?category=nut-mixes",
       '"@type":"BreadcrumbList"',
     ],
-    excludes: ["Описание раздела появится здесь автоматически."],
   },
   {
     path: "/categories/gift-sets/",
     includes: [
-      'id="category-title">Подарочные наборы</h1>',
-      "Подарочный набор орехов",
+      "Переходим в каталог",
+      'http-equiv="refresh"',
+      "/catalog/?category=gift-sets",
       '"@type":"BreadcrumbList"',
     ],
-    excludes: ["Описание раздела появится здесь автоматически."],
   },
   {
     path: "/catalog/macadamia/",

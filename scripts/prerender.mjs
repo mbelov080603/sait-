@@ -281,6 +281,7 @@ this.__GB_EXPORTS__ = {
   renderFooter,
   renderHome,
   renderCatalog,
+  renderStaticPage,
   renderProductPage,
   renderContactsPage,
   renderAboutPage,
@@ -487,6 +488,15 @@ const applyCommonFrame = (html, rendered) => {
   );
 };
 
+const replaceBodyAttributes = (html, attributes) =>
+  html.replace(/<body\b[^>]*>/i, `<body ${attributes}>`);
+
+const replaceMainContent = (html, content) =>
+  html.replace(/<main>[\s\S]*?<\/main>/i, `<main>\n${content}\n    </main>`);
+
+const injectBeforeClosingHead = (html, content) =>
+  html.replace(/<\/head>/i, `${content}\n  </head>`);
+
 const loadTemplateHtml = async (file) => {
   try {
     return await fs.readFile(path.join(ROOT, file), "utf8");
@@ -509,6 +519,7 @@ const writeRenderedPage = async ({
   htmlMounts = [],
   textMounts = [],
   seo,
+  transformHtml,
 }) => {
   const fullPath = path.join(ROOT, file);
   let html = await loadTemplateHtml(file);
@@ -524,6 +535,10 @@ const writeRenderedPage = async ({
     const mount = rendered.document.mounts.get(id);
     html = replaceElementContents(html, id, mount?.textContent || "", "text");
   });
+
+  if (transformHtml) {
+    html = transformHtml(html);
+  }
 
   await fs.writeFile(fullPath, html);
 };
@@ -724,7 +739,7 @@ await writeRenderedPage({
     path: "/catalog/",
     title: "Каталог",
     description:
-      "Каталог Global Basket: товарные карточки и разделы с готовым HTML-контентом, характеристиками и понятным переходом к запросу условий.",
+      "Каталог Global Basket: товарные карточки с прямым переходом к подробному описанию и понятным запросом условий без промежуточных страниц категорий.",
     image: featuredProduct?.images?.main || "/assets/logo.jpg",
     schemas: [
       buildOrganizationSchema(),
@@ -737,25 +752,17 @@ await writeRenderedPage({
 });
 
 for (const category of categories) {
+  const targetPath = `/catalog/?category=${category.id}`;
   await writeRenderedPage({
     file: `categories/${category.id}/index.html`,
     rendered: renderMounts({
       path: `/categories/${category.id}/`,
-      bodyDataset: { page: "category", category: category.id, nav: "category" },
-      mountKeys: [
-        "category-breadcrumb-current",
-        "category-title",
-        "category-description",
-        "category-intro-cards",
-        "category-shelf",
-        "category-related",
-      ],
-      renderMethod: "renderCategoryPage",
+      bodyDataset: { page: "catalog-redirect", category: category.id, nav: "catalog" },
+      mountKeys: [],
+      renderMethod: "renderStaticPage",
     }),
-    htmlMounts: ["category-intro-cards", "category-shelf", "category-related"],
-    textMounts: ["category-breadcrumb-current", "category-title", "category-description"],
     seo: {
-      path: `/categories/${category.id}/`,
+      path: targetPath,
       title: category.title || category.name,
       description: category.intro || category.description || "",
       image: category.image || featuredProduct?.images?.main || "/assets/logo.jpg",
@@ -764,9 +771,40 @@ for (const category of categories) {
         buildBreadcrumbSchema([
           { name: "Главная", path: "/" },
           { name: "Каталог", path: "/catalog/" },
-          { name: category.title || category.name, path: `/categories/${category.id}/` },
+          { name: category.title || category.name, path: targetPath },
         ]),
       ],
+    },
+    transformHtml: (html) => {
+      const redirectBlock = `
+      <section class="page-hero">
+        <div class="shell">
+          <div class="hero-copy">
+            <h1>Переходим в каталог</h1>
+            <p>Промежуточные страницы категорий убраны. Открываем каталог сразу на товарах категории «${escapeHtml(category.title || category.name)}».</p>
+            <div class="hero-stage__actions">
+              <a class="button button--small" href="${targetPath}">Открыть товары</a>
+            </div>
+          </div>
+        </div>
+      </section>`;
+      const headRedirect = [
+        `    <meta http-equiv="refresh" content="0; url=${escapeAttribute(targetPath)}" />`,
+        "    <script>",
+        `      window.location.replace(${JSON.stringify(targetPath)});`,
+        "    </script>",
+      ].join("\n");
+
+      let next = html
+        .replace(/\s*<meta\s+http-equiv=["']refresh["'][^>]*>\n?/gi, "")
+        .replace(/\s*<script>\s*window\.location\.replace\([\s\S]*?<\/script>\n?/gi, "");
+      next = replaceBodyAttributes(
+        next,
+        `data-page="catalog-redirect" data-category="${escapeAttribute(category.id)}" data-nav="catalog"`,
+      );
+      next = injectBeforeClosingHead(next, headRedirect);
+      next = replaceMainContent(next, redirectBlock);
+      return next;
     },
   });
 }
