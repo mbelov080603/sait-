@@ -66,11 +66,22 @@ const replaceInternalPrefixes = (text) => {
   return result;
 };
 
+const replaceMetaRefreshUrls = (text) => {
+  let result = text;
+
+  for (const prefix of internalPrefixes) {
+    result = result.replaceAll(`url=/${prefix}/`, `url=${basePath}/${prefix}/`);
+  }
+
+  return result;
+};
+
 const transformText = (text) => {
   let result = String(text);
 
   result = result.replaceAll("https://globalbasket.ru", publicUrl);
   result = replaceInternalPrefixes(result);
+  result = replaceMetaRefreshUrls(result);
   result = replaceRootHomeLinks(result);
   result = result.replaceAll("url(/", `url(${basePath}/`);
 
