@@ -1211,7 +1211,7 @@ const renderContactQuoteForm = (config, context = {}) => {
   return `
     <article class="request-panel request-panel--contact-form">
       <div class="section-head section-head--compact">
-        <p class="eyebrow">${config.eyebrow}</p>
+        ${config.eyebrow ? `<p class="eyebrow">${config.eyebrow}</p>` : ""}
         <h2>${config.title}</h2>
         <p>${config.text}</p>
       </div>
@@ -1883,7 +1883,7 @@ const renderContactsPage = () => {
   const requestedVariant = requestedProduct
     ? resolveProductVariant(requestedProduct, params.get("variant") || "")
     : null;
-  const [retailCard, wholesaleCard, marketplacesCard, telegramCard] = store.contactsPage.leftCards;
+  const [retailCard, wholesaleCard, marketplacesCard] = store.contactsPage.leftCards;
   const intro = $("#contacts-intro");
   if (intro) {
     const contactDisclosures = [
@@ -1938,7 +1938,6 @@ const renderContactsPage = () => {
 
     intro.innerHTML = `
       <div class="hero-copy contacts-copy">
-        <p class="eyebrow">Контакты</p>
         <h1>Связаться с Global Basket</h1>
         <p>${store.contactsPage.intro}</p>
       </div>
@@ -1960,32 +1959,6 @@ const renderContactsPage = () => {
           )
           .join("")}
       </div>
-      <div class="contacts-disclosures contacts-disclosures--secondary">
-        <details class="contact-disclosure">
-          <summary>
-            <span class="contact-disclosure__title">Telegram и быстрые сообщения</span>
-            <span class="contact-disclosure__meta">Бот, жалобы и канал бренда</span>
-          </summary>
-          <div class="contact-disclosure__body">
-            <p>${telegramCard.text}</p>
-            <div class="contact-disclosure__links">
-              <a class="text-link text-link--inline" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>Открыть бота</a>
-              <a class="text-link text-link--inline" href="${store.contact.telegramComplaintHref}"${externalAttrs(store.contact.telegramComplaintHref)}>Оставить жалобу</a>
-              <a class="text-link text-link--inline" href="${store.contact.channelHref}"${externalAttrs(store.contact.channelHref)}>${store.contact.channel}</a>
-            </div>
-          </div>
-        </details>
-        <details class="contact-disclosure">
-          <summary>
-            <span class="contact-disclosure__title">Подсказки по запросу</span>
-            <span class="contact-disclosure__meta">Когда использовать форму и что указать</span>
-          </summary>
-          <div class="contact-disclosure__body">
-            <p>${retailCard.text}</p>
-            <p>${wholesaleCard.text}</p>
-          </div>
-        </details>
-      </div>
     `;
   }
 
@@ -2005,7 +1978,6 @@ const renderContactsPage = () => {
         <details class="request-panel request-panel--compact request-panel--secondary contact-fallback-panel">
           <summary class="contact-fallback-panel__summary">
             <div>
-              <p class="eyebrow">Telegram и резервные каналы</p>
               <strong>${store.contactsPage.telegramPanel.title}</strong>
             </div>
             <span class="contact-fallback-panel__toggle" aria-hidden="true"></span>
