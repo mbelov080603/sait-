@@ -1151,7 +1151,10 @@ const catalogPayload = {
       "cover_image": "media/products/macadamia-cover.png",
       "detail_image": "media/products/macadamia-detail.png",
       "variant_type": "Вес",
-      "default_variant": "250 г"
+      "default_variant": "250 г",
+      "hideDetailBadge": true,
+      "hidePurchaseLabel": true,
+      "hideFavoriteAction": true
     },
     {
       "category": "Премиальные орехи",
@@ -2270,6 +2273,9 @@ const productsFromPack = catalogPayload.products_cards
           : "Уточните наличие, фасовку и следующий шаг по выбранному варианту.",
       quickLinksLabel: card.product_slug === "macadamia" ? "Где купить" : "Следующий шаг",
       actionMode: card.product_slug === "macadamia" ? "marketplace-default" : "request",
+      hideDetailBadge: Boolean(page.hideDetailBadge),
+      hidePurchaseLabel: Boolean(page.hidePurchaseLabel),
+      hideFavoriteAction: Boolean(page.hideFavoriteAction),
       imageKind: card.product_slug === "macadamia" ? "photo" : "illustration",
       images,
       gallery: [

@@ -1729,7 +1729,7 @@ const renderProductPage = () => {
         : productItem.priceNote;
 
     return `
-      ${renderBadge(productItem.badge, productItem.badgeTone)}
+      ${productItem.hideDetailBadge ? "" : renderBadge(productItem.badge, productItem.badgeTone)}
       <h1>${productItem.h1 || productItem.shortName}</h1>
       <p class="product-summary__subtitle">${subtitle}</p>
       <p class="product-page__lead">${productItem.annotation || productItem.lead}</p>
@@ -1751,7 +1751,7 @@ const renderProductPage = () => {
       </dl>
       <div class="purchase-panel">
         <div>
-          <span class="purchase-panel__label">Стоимость</span>
+          ${productItem.hidePurchaseLabel ? "" : '<span class="purchase-panel__label">Стоимость</span>'}
           <strong>${productItem.price}</strong>
           <p>${variantNote}</p>
         </div>
@@ -1767,6 +1767,9 @@ const renderProductPage = () => {
           >
             В корзину
           </button>
+          ${productItem.hideFavoriteAction
+            ? ""
+            : `
           <button
             class="text-link text-link--inline"
             type="button"
@@ -1777,7 +1780,7 @@ const renderProductPage = () => {
             aria-pressed="false"
           >
             В избранное
-          </button>
+          </button>`}
           <a class="text-link text-link--inline" href="/catalog/">Вернуться в каталог</a>
         </div>
       </div>
