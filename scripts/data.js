@@ -88,24 +88,28 @@ window.GlobalBasketData = {
     description:
       "Макадамия — центральный товар витрины Global Basket: спокойная подача, аккуратная упаковка и собранный интерфейс без визуального шума.",
     images: {
-      hero: "/assets/catalog/products/macadamia-ozon-front.png",
-      packshot: "/assets/catalog/products/macadamia-ozon-packshot.png",
-      main: "/assets/catalog/products/macadamia-ozon-front.png",
-      lifestyle: "/assets/catalog/products/macadamia-ozon-lifestyle.png",
-      poster: "/assets/catalog/products/macadamia-ozon-front.png",
+      hero: "/assets/catalog/products/macadamia-gallery-packshot-spill-white.png",
+      packshot: "/assets/catalog/products/macadamia-gallery-packshot-white.png",
+      main: "/assets/catalog/products/macadamia-gallery-packshot-spill-white.png",
+      lifestyle: "/assets/catalog/products/macadamia-gallery-packshot-white.png",
+      poster: "/assets/catalog/products/macadamia-gallery-packshot-spill-white.png",
     },
     gallery: [
       {
-        src: "/assets/catalog/products/macadamia-ozon-front.png",
-        alt: "Очищенная макадамия Global Basket в упаковке с россыпью орехов",
+        src: "/assets/catalog/products/macadamia-gallery-packshot-spill-white.png",
+        alt: "Очищенная макадамия Global Basket в прозрачной упаковке на белом фоне",
       },
       {
-        src: "/assets/catalog/products/macadamia-ozon-packshot.png",
-        alt: "Фронтальный packshot очищенной макадамии Global Basket",
+        src: "/assets/catalog/products/macadamia-gallery-packshot-white.png",
+        alt: "Фронтальный packshot очищенной макадамии Global Basket на белом фоне",
       },
       {
-        src: "/assets/catalog/products/macadamia-ozon-lifestyle.png",
-        alt: "Очищенная макадамия Global Basket в домашней подаче",
+        src: "/assets/catalog/products/macadamia-gallery-kernels-pile-white.png",
+        alt: "Очищенные ядра макадамии крупным планом на белом фоне",
+      },
+      {
+        src: "/assets/catalog/products/macadamia-gallery-kernels-scatter-white.png",
+        alt: "Очищенные ядра макадамии россыпью на белом фоне",
       },
     ],
     pills: ["Кения", "250 г", "Вакуумная упаковка", "Только очищенные ядра"],
@@ -2208,9 +2212,12 @@ const productsFromPack = catalogPayload.products_cards
       main: mapCatalogMediaPath(page.cover_image || card.cover_image),
       lifestyle:
         card.product_slug === "macadamia"
-          ? "/assets/catalog/products/macadamia-ozon-lifestyle.png"
+          ? "/assets/catalog/products/macadamia-gallery-packshot-white.png"
           : mapCatalogMediaPath(page.detail_image || card.detail_image),
-      poster: "/assets/catalog/products/macadamia-ozon-front.png",
+      poster:
+        card.product_slug === "macadamia"
+          ? "/assets/catalog/products/macadamia-gallery-packshot-spill-white.png"
+          : mapCatalogMediaPath(page.cover_image || card.cover_image),
     };
     const factCards = buildFactCards(specs, defaultVariant, variantType);
 
@@ -2283,35 +2290,35 @@ const productsFromPack = catalogPayload.products_cards
     };
   })
   .map((item) =>
-    item.slug !== "macadamia"
+        item.slug !== "macadamia"
       ? item
       : {
           ...item,
           imageKind: "photo",
           images: {
             ...item.images,
-            hero: "/assets/catalog/products/macadamia-ozon-front.png",
-            packshot: "/assets/catalog/products/macadamia-ozon-packshot.png",
-            main: "/assets/catalog/products/macadamia-ozon-front.png",
-            lifestyle: "/assets/catalog/products/macadamia-ozon-lifestyle.png",
-            poster: "/assets/catalog/products/macadamia-ozon-front.png",
+            hero: "/assets/catalog/products/macadamia-gallery-packshot-spill-white.png",
+            packshot: "/assets/catalog/products/macadamia-gallery-packshot-white.png",
+            main: "/assets/catalog/products/macadamia-gallery-packshot-spill-white.png",
+            lifestyle: "/assets/catalog/products/macadamia-gallery-packshot-white.png",
+            poster: "/assets/catalog/products/macadamia-gallery-packshot-spill-white.png",
           },
           gallery: [
             {
-              src: "/assets/catalog/products/macadamia-ozon-front.png",
-              alt: "Очищенная макадамия Global Basket в упаковке с россыпью орехов",
+              src: "/assets/catalog/products/macadamia-gallery-packshot-spill-white.png",
+              alt: "Очищенная макадамия Global Basket в прозрачной упаковке на белом фоне",
             },
             {
-              src: "/assets/catalog/products/macadamia-ozon-packshot.png",
-              alt: "Фронтальный packshot очищенной макадамии Global Basket",
+              src: "/assets/catalog/products/macadamia-gallery-packshot-white.png",
+              alt: "Фронтальный packshot очищенной макадамии Global Basket на белом фоне",
             },
             {
-              src: "/assets/catalog/products/macadamia-ozon-kernels-pile.png",
-              alt: "Очищенные ядра макадамии крупным планом",
+              src: "/assets/catalog/products/macadamia-gallery-kernels-pile-white.png",
+              alt: "Очищенные ядра макадамии крупным планом на белом фоне",
             },
             {
-              src: "/assets/catalog/products/macadamia-ozon-kernels-scatter.png",
-              alt: "Очищенные ядра макадамии на белом фоне",
+              src: "/assets/catalog/products/macadamia-gallery-kernels-scatter-white.png",
+              alt: "Очищенные ядра макадамии россыпью на белом фоне",
             },
           ],
         },
