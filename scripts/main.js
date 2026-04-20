@@ -564,8 +564,13 @@ const renderIcon = (name) => `
   </svg>
 `;
 
-const renderBadge = (label, tone = "active") =>
-  `<span class="meta-badge meta-badge--${tone}">${label}</span>`;
+const renderBadge = (label, tone = "active") => {
+  if (tone === "service" || tone === "editorial") {
+    return "";
+  }
+
+  return `<span class="meta-badge meta-badge--${tone}">${label}</span>`;
+};
 
 const renderHeaderIconLink = (item) => {
   const state = getHeaderState();
