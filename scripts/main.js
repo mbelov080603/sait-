@@ -1752,16 +1752,9 @@ const renderProductPage = () => {
           .join("")}
       </dl>
       <div class="purchase-panel">
-        <div class="purchase-panel__header">
-          <div>
-            ${productItem.hidePurchaseLabel ? "" : '<span class="purchase-panel__label">Стоимость</span>'}
-            <strong>${productItem.price}</strong>
-            <p>${variantNote}</p>
-          </div>
-          <a class="icon-button purchase-panel__cart-link" href="/sait-/cart/" aria-label="Открыть корзину" title="Открыть корзину">
-            ${renderIcon("bag")}
-          </a>
-        </div>
+        ${productItem.hidePurchaseLabel ? "" : '<span class="purchase-panel__label">Стоимость</span>'}
+        <strong>${productItem.price}</strong>
+        <p>${variantNote}</p>
         <div class="purchase-panel__actions">
           <a class="button" href="${buildContactHref(productItem, "pdp", variant)}">Уточнить условия</a>
           <button

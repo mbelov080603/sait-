@@ -2412,6 +2412,18 @@ productsFromPack.forEach((item) => {
   productCountByCategory.set(item.categorySlug, (productCountByCategory.get(item.categorySlug) || 0) + 1);
 });
 
+const categoryPreviewImageBySlug = new Map();
+productsFromPack.forEach((item) => {
+  if (categoryPreviewImageBySlug.has(item.categorySlug)) {
+    return;
+  }
+
+  const previewImage = item.gallery?.[0]?.src || item.images?.hero || item.images?.main || "";
+  if (previewImage) {
+    categoryPreviewImageBySlug.set(item.categorySlug, previewImage);
+  }
+});
+
 const categoriesFromPack = catalogPayload.categories
   .slice()
   .sort((a, b) => Number(a.catalog_order) - Number(b.catalog_order))
@@ -2426,7 +2438,8 @@ const categoriesFromPack = catalogPayload.categories
     statusLabel: cleanText(item.status) || "В наличии",
     badge: "Раздел",
     tone: categoryTone(item.category_slug),
-    image: mapCatalogMediaPath(item.cover_image),
+    image:
+      categoryPreviewImageBySlug.get(cleanText(item.category_slug)) || mapCatalogMediaPath(item.cover_image),
     productCount: productCountByCategory.get(item.category_slug) || 0,
   }));
 
