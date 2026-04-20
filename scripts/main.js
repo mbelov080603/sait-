@@ -1752,9 +1752,28 @@ const renderProductPage = () => {
           .join("")}
       </dl>
       <div class="purchase-panel">
-        ${productItem.hidePurchaseLabel ? "" : '<span class="purchase-panel__label">Стоимость</span>'}
-        <strong>${productItem.price}</strong>
-        <p>${variantNote}</p>
+        <div class="purchase-panel__header">
+          <div class="purchase-panel__copy">
+            ${productItem.hidePurchaseLabel ? "" : '<span class="purchase-panel__label">Стоимость</span>'}
+            <strong>${productItem.price}</strong>
+            <p>${variantNote}</p>
+          </div>
+          <button
+            class="icon-button product-favorite-toggle"
+            type="button"
+            data-favorite-toggle
+            data-favorite-ui="heart"
+            data-product-id="${escapeAttribute(productItem.id || productItem.slug || "")}"
+            data-product-variant="${escapeAttribute(getStoredVariantLabel(variant))}"
+            data-action-source="product-page"
+            aria-pressed="false"
+            aria-label="Добавить в избранное"
+            title="Добавить в избранное"
+          >
+            <span class="sr-only">Добавить в избранное</span>
+            ${renderIcon("heart")}
+          </button>
+        </div>
         <div class="purchase-panel__actions">
           <a class="button" href="${buildContactHref(productItem, "pdp", variant)}">Уточнить условия</a>
           <button
@@ -1767,22 +1786,6 @@ const renderProductPage = () => {
           >
             В корзину
           </button>
-          ${productItem.hideFavoriteAction
-            ? ""
-            : `
-          <button
-            class="text-link text-link--inline text-link--icon"
-            type="button"
-            data-favorite-toggle
-            data-favorite-icon="bag"
-            data-product-id="${escapeAttribute(productItem.id || productItem.slug || "")}"
-            data-product-variant="${escapeAttribute(getStoredVariantLabel(variant))}"
-            data-action-source="product-page"
-            aria-pressed="false"
-          >
-            <span>В избранное</span>
-            <span class="text-link__icon" aria-hidden="true">${renderIcon("bag")}</span>
-          </button>`}
         </div>
       </div>
       <div class="market-links market-links--summary">
@@ -4141,11 +4144,25 @@ const updateStoredActionState = (root = document) => {
     if (!productItem) return;
     const active = isFavoriteSaved(productItem);
     button.setAttribute("aria-pressed", active ? "true" : "false");
-    const label = active ? "В избранном" : "В избранное";
-    if (button.dataset.favoriteIcon === "bag") {
-      button.innerHTML = `<span>${label}</span><span class="text-link__icon" aria-hidden="true">${renderIcon("bag")}</span>`;
+    if (button.dataset.favoriteUi === "heart") {
+      const label = active ? "Убрать из избранного" : "Добавить в избранное";
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-label", label);
+      button.setAttribute("title", label);
+      const helper = button.querySelector(".sr-only");
+      if (helper) helper.textContent = label;
     } else {
-      button.textContent = label;
+      const label = active ? "В избранном" : "В избранное";
+      button.classList.remove("is-active");
+      button.setAttribute("aria-label", label);
+      button.setAttribute("title", label);
+      const helper = button.querySelector(".sr-only");
+      if (helper) helper.textContent = label;
+      if (button.dataset.favoriteIcon === "bag") {
+      button.innerHTML = `<span>${label}</span><span class="text-link__icon" aria-hidden="true">${renderIcon("bag")}</span>`;
+      } else {
+        button.textContent = label;
+      }
     }
   });
 

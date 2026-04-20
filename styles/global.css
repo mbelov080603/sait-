@@ -2335,6 +2335,24 @@ textarea {
   border: 1px solid rgba(201, 122, 43, 0.16);
 }
 
+.purchase-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.purchase-panel__copy {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.purchase-panel__copy p {
+  margin: 0;
+}
+
 .purchase-panel__label {
   display: block;
   color: var(--muted);
@@ -2346,9 +2364,38 @@ textarea {
 
 .purchase-panel strong {
   display: block;
-  margin-top: var(--space-1);
   font-family: "Rubik", sans-serif;
   font-size: 1.22rem;
+}
+
+.product-favorite-toggle {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 auto;
+  padding: 0;
+  border-radius: 18px;
+  color: var(--text);
+  box-shadow: 0 14px 28px rgba(52, 30, 17, 0.08);
+  cursor: pointer;
+  appearance: none;
+}
+
+.product-favorite-toggle svg {
+  width: 24px;
+  height: 24px;
+}
+
+.product-favorite-toggle.is-active {
+  color: #e8b63c;
+  background: #fff4ca;
+  border-color: rgba(201, 122, 43, 0.3);
+  box-shadow: 0 16px 34px rgba(201, 122, 43, 0.18);
+}
+
+.product-favorite-toggle.is-active:hover,
+.product-favorite-toggle.is-active:focus-visible {
+  background: #ffefb6;
+  border-color: rgba(201, 122, 43, 0.38);
 }
 
 .product-detail-card,
