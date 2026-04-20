@@ -1158,7 +1158,9 @@ const catalogPayload = {
       "cover_image": "media/products/macadamia-cover.png",
       "detail_image": "media/products/macadamia-detail.png",
       "variant_type": "Вес",
-      "default_variant": "250 г"
+      "default_variant": "250 г",
+      "hideVariantRequestLabel": true,
+      "uniformVariantChipWidth": true
     },
     {
       "category": "Премиальные орехи",
@@ -2049,7 +2051,7 @@ const catalogPayload = {
 };
 
 const mapCatalogMediaPath = (relativePath = "") =>
-  relativePath ? `/${String(relativePath).replace(/^media\//, "assets/catalog/")}` : "";
+  relativePath ? `/sait-/${String(relativePath).replace(/^media\//, "assets/catalog/")}` : "";
 
 const cleanText = (value = "") => String(value || "").trim();
 
@@ -2274,7 +2276,13 @@ const productsFromPack = catalogPayload.products_cards
           : "Уточните наличие, фасовку и следующий шаг по выбранному варианту.",
       quickLinksLabel: card.product_slug === "macadamia" ? "Где купить" : "Следующий шаг",
       actionMode: card.product_slug === "macadamia" ? "marketplace-default" : "request",
-      imageKind: card.product_slug === "macadamia" ? "photo" : "illustration",
+      hideVariantRequestLabel: Boolean(page.hideVariantRequestLabel),
+      uniformVariantChipWidth: Boolean(page.uniformVariantChipWidth),
+      imageKind:
+        card.product_slug === "macadamia" ||
+        card.product_slug === "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg"
+          ? "photo"
+          : "illustration",
       images,
       gallery: [
         {
@@ -2285,6 +2293,14 @@ const productsFromPack = catalogPayload.products_cards
           src: mapCatalogMediaPath(page.detail_image || card.detail_image),
           alt: `${cleanText(card.product_title)} — дополнительный вид товара Global Basket`,
         },
+        ...(card.product_slug === "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg"
+          ? [
+              {
+                src: "/sait-/assets/catalog/products/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg-extra.png",
+                alt: "Орех макадамия в скорлупе с ключом — крупный план",
+              },
+            ]
+          : []),
       ],
       pills: buildPills(card, specs, defaultVariant),
       factCards,

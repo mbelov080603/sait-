@@ -1154,7 +1154,9 @@ const catalogPayload = {
       "default_variant": "250 г",
       "hideDetailBadge": true,
       "hidePurchaseLabel": true,
-      "hideFavoriteAction": true
+      "hideFavoriteAction": true,
+      "hideVariantRequestLabel": true,
+      "uniformVariantChipWidth": true
     },
     {
       "category": "Премиальные орехи",
@@ -2276,7 +2278,13 @@ const productsFromPack = catalogPayload.products_cards
       hideDetailBadge: Boolean(page.hideDetailBadge),
       hidePurchaseLabel: Boolean(page.hidePurchaseLabel),
       hideFavoriteAction: Boolean(page.hideFavoriteAction),
-      imageKind: card.product_slug === "macadamia" ? "photo" : "illustration",
+      hideVariantRequestLabel: Boolean(page.hideVariantRequestLabel),
+      uniformVariantChipWidth: Boolean(page.uniformVariantChipWidth),
+      imageKind:
+        card.product_slug === "macadamia" ||
+        card.product_slug === "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg"
+          ? "photo"
+          : "illustration",
       images,
       gallery: [
         {
@@ -2287,6 +2295,14 @@ const productsFromPack = catalogPayload.products_cards
           src: mapCatalogMediaPath(page.detail_image || card.detail_image),
           alt: `${cleanText(card.product_title)} — дополнительный вид товара Global Basket`,
         },
+        ...(card.product_slug === "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg"
+          ? [
+              {
+                src: "/assets/catalog/products/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg-extra.png",
+                alt: "Орех макадамия в скорлупе с ключом — крупный план",
+              },
+            ]
+          : []),
       ],
       pills: buildPills(card, specs, defaultVariant),
       factCards,
