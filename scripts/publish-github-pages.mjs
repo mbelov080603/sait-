@@ -10,6 +10,7 @@ const repoName = "sait-";
 const basePath = `/${repoName}`;
 const publicUrl = `https://mbelov080603.github.io/${repoName}`;
 const outputDir = path.join(repoRoot, "output", "github-pages");
+const scriptVersion = new Date().toISOString().replace(/\D/g, "").slice(0, 14);
 
 const publishEntries = [
   ".nojekyll",
@@ -84,6 +85,15 @@ const transformText = (text) => {
   result = replaceMetaRefreshUrls(result);
   result = replaceRootHomeLinks(result);
   result = result.replaceAll("url(/", `url(${basePath}/`);
+  result = result
+    .replaceAll(`${basePath}/scripts/data.js"`, `${basePath}/scripts/data.js?v=${scriptVersion}"`)
+    .replaceAll(`${basePath}/scripts/main.js"`, `${basePath}/scripts/main.js?v=${scriptVersion}"`)
+    .replaceAll(`${basePath}/scripts/data.js'`, `${basePath}/scripts/data.js?v=${scriptVersion}'`)
+    .replaceAll(`${basePath}/scripts/main.js'`, `${basePath}/scripts/main.js?v=${scriptVersion}'`)
+    .replaceAll('/scripts/data.js"', `/scripts/data.js?v=${scriptVersion}"`)
+    .replaceAll('/scripts/main.js"', `/scripts/main.js?v=${scriptVersion}"`)
+    .replaceAll("/scripts/data.js'", `/scripts/data.js?v=${scriptVersion}'`)
+    .replaceAll("/scripts/main.js'", `/scripts/main.js?v=${scriptVersion}'`);
 
   return result;
 };
