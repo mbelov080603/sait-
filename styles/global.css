@@ -2459,6 +2459,35 @@ textarea {
   min-width: 0;
 }
 
+.contacts-layout:has(#contact-panel:empty) {
+  grid-template-columns: minmax(0, 480px);
+  justify-content: center;
+}
+
+.contacts-layout:has(#contact-panel:empty) #contacts-intro {
+  width: 100%;
+}
+
+.contacts-layout:has(#contact-panel:empty) #contact-panel {
+  display: none;
+}
+
+.contacts-hero-form {
+  width: 100%;
+}
+
+.contacts-hero-form > h1 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 #contact-panel {
   position: sticky;
   top: 146px;

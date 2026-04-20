@@ -1890,90 +1890,12 @@ const renderContactsPage = () => {
   const requestedVariant = requestedProduct
     ? resolveProductVariant(requestedProduct, params.get("variant") || "")
     : null;
-  const [retailCard, wholesaleCard, marketplacesCard] = store.contactsPage.leftCards;
   const intro = $("#contacts-intro");
   if (intro) {
-    const contactDisclosures = [
-      {
-        title: retailCard.title,
-        meta: "Подскажем по товару, наличию и каналу покупки",
-        body: `
-          <p>${retailCard.text}</p>
-          <div class="contact-disclosure__links">
-            <a class="text-link text-link--inline" href="/sait-/catalog/">Перейти в каталог</a>
-            <a class="text-link text-link--inline" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>Написать в Telegram</a>
-          </div>
-        `,
-      },
-      {
-        title: wholesaleCard.title,
-        meta: "Поставка для магазина, офиса или постоянных закупок",
-        body: `
-          <p>${wholesaleCard.text}</p>
-          <p>Форма запроса помогает сразу передать объём, формат поставки и адрес доставки без лишней переписки.</p>
-        `,
-      },
-      {
-        title: "Контакты",
-        meta: "Телефон, email, Telegram и часы работы",
-        body: `
-          <p>Телефон, email и Telegram остаются резервными каналами связи, если удобнее уточнить детали напрямую.</p>
-          <div class="contact-direct__list">
-            <p><a href="${store.contact.phoneHref}">${store.contact.phone}</a></p>
-            <p><a href="${store.contact.emailHref}">${store.contact.email}</a></p>
-            <p><a href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>${store.contact.telegram}</a></p>
-            <p>${store.contact.hours}</p>
-          </div>
-        `,
-      },
-      {
-        title: "Где купить",
-        meta: "Ozon, Wildberries и Яндекс.Маркет",
-        body: `
-          <p>${marketplacesCard.text}</p>
-          <div class="contact-marketplaces__links">
-            ${store.marketplaces
-              .map(
-                (item) =>
-                  `<a href="${item.href}"${externalAttrs(item.href)}>${item.name}</a>`,
-              )
-              .join("")}
-          </div>
-        `,
-      },
-    ];
-
     intro.innerHTML = `
-      <div class="hero-copy contacts-copy">
+      <div class="contacts-hero-form">
         <h1>Связаться с Global Basket</h1>
-        <p>${store.contactsPage.intro}</p>
-      </div>
-      <div class="contacts-disclosures contacts-disclosures--lead">
-        ${contactDisclosures
-          .map(
-            (item) => `
-              <details class="contact-disclosure contact-disclosure--lead">
-                <summary>
-                  <span class="contact-disclosure__title">${item.title}</span>
-                  <span class="contact-disclosure__meta">${item.meta}</span>
-                  <span class="contact-disclosure__chevron" aria-hidden="true"></span>
-                </summary>
-                <div class="contact-disclosure__body">
-                  ${item.body}
-                </div>
-              </details>
-            `,
-          )
-          .join("")}
-      </div>
-    `;
-  }
-
-  const panel = $("#contact-panel");
-  if (panel) {
-    panel.innerHTML = `
-      <div class="contact-panel__stack">
-        ${renderContactQuoteForm(store.contactsPage.quoteForm, {
+        ${renderLeadRequestForm(store.home.leadForm, {
           source: requestedSource,
           page: "contacts",
           pageTitle: buildDocumentTitle("Контакты"),
@@ -1982,24 +1904,13 @@ const renderContactsPage = () => {
           productCategory: requestedProduct?.category || requestedCategory?.title || requestedCategory?.name || "",
           productVariant: requestedVariant?.label || "",
         })}
-        <details class="request-panel request-panel--compact request-panel--secondary contact-fallback-panel">
-          <summary class="contact-fallback-panel__summary">
-            <div>
-              <strong>${store.contactsPage.telegramPanel.title}</strong>
-            </div>
-            <span class="contact-fallback-panel__toggle" aria-hidden="true"></span>
-          </summary>
-          <div class="contact-fallback-panel__body">
-            <p>${store.contactsPage.telegramPanel.text}</p>
-            <div class="contact-fallback-panel__actions">
-              <a class="button button--ghost button--small" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>${store.contactsPage.telegramPanel.primary}</a>
-              <a class="text-link text-link--inline" href="${store.contact.telegramComplaintHref}"${externalAttrs(store.contact.telegramComplaintHref)}>${store.contactsPage.telegramPanel.secondary}</a>
-            </div>
-            <p class="request-form__note">Бот: <a href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>${store.contact.telegram}</a>. Канал: <a href="${store.contact.channelHref}"${externalAttrs(store.contact.channelHref)}>${store.contact.channel}</a>. Резервный контакт: <a href="${store.contact.phoneHref}">${store.contact.phone}</a> / <a href="${store.contact.emailHref}">${store.contact.email}</a>.</p>
-          </div>
-        </details>
       </div>
     `;
+  }
+
+  const panel = $("#contact-panel");
+  if (panel) {
+    panel.innerHTML = "";
   }
 };
 
