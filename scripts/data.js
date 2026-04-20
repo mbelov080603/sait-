@@ -2201,6 +2201,71 @@ const pagesBySlug = new Map(
   catalogPayload.product_pages.map((item) => [item.product_slug, item]),
 );
 
+const photoGalleryOverrides = {
+  "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg": [
+    "/sait-/assets/catalog/products/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg-photo-1.webp",
+    "/sait-/assets/catalog/products/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg-photo-2.webp",
+    "/sait-/assets/catalog/products/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg-photo-3.webp",
+  ],
+  "pekan-ochishchennyy-syroy-500-g": [
+    "/sait-/assets/catalog/products/pekan-ochishchennyy-syroy-500-g-photo-1.jpeg",
+    "/sait-/assets/catalog/products/pekan-ochishchennyy-syroy-500-g-photo-2.jpeg",
+    "/sait-/assets/catalog/products/pekan-ochishchennyy-syroy-500-g-photo-3.jpeg",
+    "/sait-/assets/catalog/products/pekan-ochishchennyy-syroy-500-g-photo-4.jpg",
+  ],
+  "gretskiy-oreh-ochishchennyy-polovinki-1-kg": [
+    "/sait-/assets/catalog/products/gretskiy-oreh-ochishchennyy-polovinki-1-kg-photo-1.jpeg",
+    "/sait-/assets/catalog/products/gretskiy-oreh-ochishchennyy-polovinki-1-kg-photo-2.jpeg",
+    "/sait-/assets/catalog/products/gretskiy-oreh-ochishchennyy-polovinki-1-kg-photo-3.jpg",
+    "/sait-/assets/catalog/products/gretskiy-oreh-ochishchennyy-polovinki-1-kg-photo-4.webp",
+  ],
+  "keshyu-syroy-sushenyy-1-kg": [
+    "/sait-/assets/catalog/products/keshyu-syroy-sushenyy-1-kg-photo-1.jpg",
+    "/sait-/assets/catalog/products/keshyu-syroy-sushenyy-1-kg-photo-2.jpg",
+    "/sait-/assets/catalog/products/keshyu-syroy-sushenyy-1-kg-photo-3.jpeg",
+    "/sait-/assets/catalog/products/keshyu-syroy-sushenyy-1-kg-photo-4.jpeg",
+  ],
+  "kuraga-monetka-bez-sahara-150-g": [
+    "/sait-/assets/catalog/products/kuraga-monetka-bez-sahara-150-g-photo-1.jpeg",
+    "/sait-/assets/catalog/products/kuraga-monetka-bez-sahara-150-g-photo-2.jpeg",
+    "/sait-/assets/catalog/products/kuraga-monetka-bez-sahara-150-g-photo-3.jpeg",
+    "/sait-/assets/catalog/products/kuraga-monetka-bez-sahara-150-g-photo-4.jpg",
+  ],
+  "finiki-bez-sahara-iran-1-kg": [
+    "/sait-/assets/catalog/products/finiki-bez-sahara-iran-1-kg-photo-1.jpg",
+    "/sait-/assets/catalog/products/finiki-bez-sahara-iran-1-kg-photo-2.jpg",
+    "/sait-/assets/catalog/products/finiki-bez-sahara-iran-1-kg-photo-3.jpeg",
+    "/sait-/assets/catalog/products/finiki-bez-sahara-iran-1-kg-photo-4.jpg",
+  ],
+  "klyukva-sushenaya-150-g": [
+    "/sait-/assets/catalog/products/klyukva-sushenaya-150-g-photo-1.jpg",
+    "/sait-/assets/catalog/products/klyukva-sushenaya-150-g-photo-2.png",
+    "/sait-/assets/catalog/products/klyukva-sushenaya-150-g-photo-3.jpg",
+    "/sait-/assets/catalog/products/klyukva-sushenaya-150-g-photo-4.jpg",
+  ],
+  "mango-sushenoe-naturalnoe-200-g": [
+    "/sait-/assets/catalog/products/mango-sushenoe-naturalnoe-200-g-photo-1.jpg",
+    "/sait-/assets/catalog/products/mango-sushenoe-naturalnoe-200-g-photo-2.jpg",
+    "/sait-/assets/catalog/products/mango-sushenoe-naturalnoe-200-g-photo-3.webp",
+  ],
+  "orehovaya-smes-s-izyumom-1-kg": [
+    "/sait-/assets/catalog/products/orehovaya-smes-s-izyumom-1-kg-photo-1.jpeg",
+    "/sait-/assets/catalog/products/orehovaya-smes-s-izyumom-1-kg-photo-2.jpeg",
+    "/sait-/assets/catalog/products/orehovaya-smes-s-izyumom-1-kg-photo-3.jpg",
+    "/sait-/assets/catalog/products/orehovaya-smes-s-izyumom-1-kg-photo-4.jpeg",
+  ],
+  "podarochnyy-nabor-orehov": [
+    "/sait-/assets/catalog/products/podarochnyy-nabor-orehov-photo-1.jpg",
+    "/sait-/assets/catalog/products/podarochnyy-nabor-orehov-photo-2.jpg",
+  ],
+};
+
+const buildPhotoGallery = (slug = "", title = "") =>
+  (photoGalleryOverrides[slug] || []).map((src, index) => ({
+    src,
+    alt: `${cleanText(title)} — фото товара ${index + 1}`,
+  }));
+
 const productsFromPack = catalogPayload.products_cards
   .slice()
   .sort((a, b) => Number(a.catalog_order) - Number(b.catalog_order))
@@ -2211,18 +2276,24 @@ const productsFromPack = catalogPayload.products_cards
     const variants = (variantsBySlug.get(card.product_slug) || []).slice();
     const defaultVariant = variants.find((item) => item.isDefault) || variants[0] || null;
     const variantType = cleanText(page.variant_type) || defaultVariant?.type || "Вес";
+    const photoGallery = buildPhotoGallery(
+      cleanText(card.product_slug),
+      cleanText(page.h1) || cleanText(card.product_title),
+    );
+    const primaryPhoto = photoGallery[0]?.src || "";
+    const secondaryPhoto = photoGallery[1]?.src || primaryPhoto;
     const images = {
-      hero: mapCatalogMediaPath(page.cover_image || card.cover_image),
-      packshot: mapCatalogMediaPath(card.cover_image),
-      main: mapCatalogMediaPath(page.cover_image || card.cover_image),
+      hero: primaryPhoto || mapCatalogMediaPath(page.cover_image || card.cover_image),
+      packshot: primaryPhoto || mapCatalogMediaPath(card.cover_image),
+      main: primaryPhoto || mapCatalogMediaPath(page.cover_image || card.cover_image),
       lifestyle:
         card.product_slug === "macadamia"
           ? "/sait-/assets/catalog/products/macadamia-gallery-packshot-white.png"
-          : mapCatalogMediaPath(page.detail_image || card.detail_image),
+          : secondaryPhoto || mapCatalogMediaPath(page.detail_image || card.detail_image),
       poster:
         card.product_slug === "macadamia"
           ? "/sait-/assets/catalog/products/macadamia-gallery-packshot-spill-white.png"
-          : mapCatalogMediaPath(page.cover_image || card.cover_image),
+          : primaryPhoto || mapCatalogMediaPath(page.cover_image || card.cover_image),
     };
     const factCards = buildFactCards(specs, defaultVariant, variantType);
 
@@ -2280,30 +2351,20 @@ const productsFromPack = catalogPayload.products_cards
       hideFavoriteAction: Boolean(page.hideFavoriteAction),
       hideVariantRequestLabel: Boolean(page.hideVariantRequestLabel),
       uniformVariantChipWidth: Boolean(page.uniformVariantChipWidth),
-      imageKind:
-        card.product_slug === "macadamia" ||
-        card.product_slug === "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg"
-          ? "photo"
-          : "illustration",
+      imageKind: card.product_slug === "macadamia" || photoGallery.length ? "photo" : "illustration",
       images,
-      gallery: [
-        {
-          src: mapCatalogMediaPath(card.cover_image),
-          alt: `${cleanText(card.product_title)} — основное изображение товара Global Basket`,
-        },
-        {
-          src: mapCatalogMediaPath(page.detail_image || card.detail_image),
-          alt: `${cleanText(card.product_title)} — дополнительный вид товара Global Basket`,
-        },
-        ...(card.product_slug === "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg"
-          ? [
-              {
-                src: "/sait-/assets/catalog/products/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg-extra.png",
-                alt: "Орех макадамия в скорлупе с ключом — крупный план",
-              },
-            ]
-          : []),
-      ],
+      gallery: photoGallery.length
+        ? photoGallery
+        : [
+            {
+              src: mapCatalogMediaPath(card.cover_image),
+              alt: `${cleanText(card.product_title)} — основное изображение товара Global Basket`,
+            },
+            {
+              src: mapCatalogMediaPath(page.detail_image || card.detail_image),
+              alt: `${cleanText(card.product_title)} — дополнительный вид товара Global Basket`,
+            },
+          ],
       pills: buildPills(card, specs, defaultVariant),
       factCards,
       benefitCards: buildBenefitCards(factCards, card, page),
