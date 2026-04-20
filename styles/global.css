@@ -1495,6 +1495,22 @@ textarea {
   content: "→";
 }
 
+.text-link--icon::after {
+  content: none;
+}
+
+.text-link__icon {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+}
+
+.text-link__icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 .category-grid,
 .advantage-grid,
 .info-grid,
@@ -1834,6 +1850,20 @@ textarea {
   white-space: nowrap;
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.sidebar-card--categories a,
+.sidebar-card--categories .sidebar-card__static {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+.sidebar-card--categories a span:first-child,
+.sidebar-card--categories .sidebar-card__static span:first-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
 }
 
 .sidebar-card a:last-child,
@@ -2204,6 +2234,11 @@ textarea {
     background 180ms ease,
     transform 180ms ease,
     box-shadow 180ms ease;
+}
+
+.variant-picker--uniform-chips .variant-chip {
+  min-width: 84px;
+  justify-content: center;
 }
 
 .variant-chip small {
@@ -4593,6 +4628,14 @@ body.has-mobile-nav {
   padding-top: 0;
   justify-content: center;
   text-align: center;
+}
+
+.product-card__utility button.text-link--button-reset {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
 }
 
 .utility-page {

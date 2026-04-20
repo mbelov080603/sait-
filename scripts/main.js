@@ -431,9 +431,11 @@ const updateFactCardsForVariant = (productItem, variant) => {
 const renderVariantPicker = (productItem, selectedVariant) => {
   const variants = Array.isArray(productItem?.variants) ? productItem.variants : [];
   if (variants.length < 2) return "";
+  const hideRequestLabel = Boolean(productItem?.hideVariantRequestLabel);
+  const uniformChipWidth = Boolean(productItem?.uniformVariantChipWidth);
 
   return `
-    <div class="variant-picker" data-variant-picker>
+    <div class="variant-picker ${uniformChipWidth ? "variant-picker--uniform-chips" : ""}" data-variant-picker>
       <div class="variant-picker__head">
         <span class="variant-picker__label">${productItem.variantUiText || productItem.variantType || "Доступные фасовки"}</span>
         <span class="variant-picker__current">${selectedVariant?.label || productItem.defaultVariantLabel || ""}</span>
@@ -450,7 +452,7 @@ const renderVariantPicker = (productItem, selectedVariant) => {
                 aria-pressed="${selectedVariant?.label === variant.label ? "true" : "false"}"
               >
                 <span>${variant.label}</span>
-                ${variant.status === "request" ? '<small>под запрос</small>' : ""}
+                ${variant.status === "request" && !hideRequestLabel ? '<small>под запрос</small>' : ""}
               </button>
             `,
           )
@@ -887,7 +889,7 @@ const renderEnterpriseProductCard = (productItem = product) => {
           </div>
           <div class="product-card__utility">
             <button
-              class="text-link text-link--inline"
+              class="text-link text-link--inline text-link--button-reset"
               type="button"
               data-favorite-toggle
               data-product-id="${escapeAttribute(productItem.id || productItem.slug || "")}"
@@ -1553,13 +1555,13 @@ const renderCatalog = () => {
   const sidebar = $("#catalog-sidebar");
   if (sidebar) {
     sidebar.innerHTML = `
-      <article class="sidebar-card">
+      <article class="sidebar-card sidebar-card--categories">
         <strong>Категории</strong>
         ${store.categories
           .map((item) =>
             item.href
-              ? `<a href="${item.href}"><span>${item.name}</span><span>${item.statusLabel}</span></a>`
-              : `<div class="sidebar-card__static"><span>${item.name}</span><span>${item.statusLabel}</span></div>`,
+              ? `<a href="${item.href}"><span>${item.name}</span></a>`
+              : `<div class="sidebar-card__static"><span>${item.name}</span></div>`,
           )
           .join("")}
       </article>
@@ -1729,7 +1731,7 @@ const renderProductPage = () => {
         : productItem.priceNote;
 
     return `
-      ${renderBadge(productItem.badge, productItem.badgeTone)}
+      ${productItem.hideDetailBadge ? "" : renderBadge(productItem.badge, productItem.badgeTone)}
       <h1>${productItem.h1 || productItem.shortName}</h1>
       <p class="product-summary__subtitle">${subtitle}</p>
       <p class="product-page__lead">${productItem.annotation || productItem.lead}</p>
@@ -1751,7 +1753,7 @@ const renderProductPage = () => {
       </dl>
       <div class="purchase-panel">
         <div>
-          <span class="purchase-panel__label">Стоимость</span>
+          ${productItem.hidePurchaseLabel ? "" : '<span class="purchase-panel__label">Стоимость</span>'}
           <strong>${productItem.price}</strong>
           <p>${variantNote}</p>
         </div>
@@ -1767,17 +1769,22 @@ const renderProductPage = () => {
           >
             В корзину
           </button>
+          ${productItem.hideFavoriteAction
+            ? ""
+            : `
           <button
-            class="text-link text-link--inline"
+            class="text-link text-link--inline text-link--icon"
             type="button"
             data-favorite-toggle
+            data-favorite-icon="bag"
             data-product-id="${escapeAttribute(productItem.id || productItem.slug || "")}"
             data-product-variant="${escapeAttribute(getStoredVariantLabel(variant))}"
             data-action-source="product-page"
             aria-pressed="false"
           >
-            В избранное
-          </button>
+            <span>В избранное</span>
+            <span class="text-link__icon" aria-hidden="true">${renderIcon("bag")}</span>
+          </button>`}
           <a class="text-link text-link--inline" href="/sait-/catalog/">Вернуться в каталог</a>
         </div>
       </div>
@@ -4137,7 +4144,12 @@ const updateStoredActionState = (root = document) => {
     if (!productItem) return;
     const active = isFavoriteSaved(productItem);
     button.setAttribute("aria-pressed", active ? "true" : "false");
-    button.textContent = active ? "В избранном" : "В избранное";
+    const label = active ? "В избранном" : "В избранное";
+    if (button.dataset.favoriteIcon === "bag") {
+      button.innerHTML = `<span>${label}</span><span class="text-link__icon" aria-hidden="true">${renderIcon("bag")}</span>`;
+    } else {
+      button.textContent = label;
+    }
   });
 
   $$("[data-cart-add]", root).forEach((button) => {
