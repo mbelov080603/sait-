@@ -1409,9 +1409,6 @@ const renderHome = () => {
           <ul class="hero-stage__meta hero-stage__meta--brand">
             ${store.home.hero.chips.map((item) => `<li>${item}</li>`).join("")}
           </ul>
-          <div class="hero-stage__actions">
-            <a class="text-link text-link--inline" href="${store.home.hero.secondaryCta.href}"${externalAttrs(store.home.hero.secondaryCta.href)}>${store.home.hero.secondaryCta.label}</a>
-          </div>
         </div>
         <div class="hero-stage__media">
           <article class="media-stage media-stage--lifestyle">
