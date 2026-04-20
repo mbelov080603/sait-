@@ -2825,7 +2825,6 @@ const renderAccountSummaryPanel = (profile = null) => {
   return `
     <article class="request-panel account-summary-card">
       <div class="section-head section-head--compact">
-        <p class="eyebrow">Профиль</p>
         <h2>${profile ? store.utilityPages.account.registeredTitle : "Что сохранится после регистрации"}</h2>
         <p>${profile ? store.utilityPages.account.registeredText : "После сохранения профиля в этом браузере останутся контакт, корзина, избранное и выбранные разделы каталога."}</p>
       </div>
@@ -2858,7 +2857,6 @@ const renderAccountRegistrationPanel = (profile = null) => {
   return `
     <article class="request-panel account-register-panel" id="account-register">
       <div class="section-head section-head--compact">
-        <p class="eyebrow">Регистрация</p>
         <h2>${store.utilityPages.account.formTitle}</h2>
         <p>${store.utilityPages.account.formText}</p>
       </div>
@@ -2944,7 +2942,6 @@ const renderAccountPage = () => {
       <div class="utility-grid utility-grid--account-top">
         <article class="request-panel utility-page utility-page--account account-hero-card">
           <div class="section-head section-head--compact">
-            <p class="eyebrow">Раздел</p>
             <h1>${page.title}</h1>
             <p>${page.text}</p>
           </div>
@@ -2985,7 +2982,6 @@ const renderFavoritesPage = () => {
       <div class="utility-grid utility-grid--utility-top">
         <article class="request-panel utility-page">
           <div class="section-head section-head--compact">
-            <p class="eyebrow">Раздел</p>
             <h1>${page.title}</h1>
             <p>${page.text}</p>
           </div>
@@ -2996,7 +2992,6 @@ const renderFavoritesPage = () => {
         </article>
         <article class="request-panel utility-summary-card">
           <div class="section-head section-head--compact">
-            <p class="eyebrow">Сводка</p>
             <h2>Сохранённые позиции</h2>
             <p>${items.length ? "Выбранные товары уже лежат в личной подборке и могут быть добавлены в корзину." : "Подборка пока пустая. Сохраняйте понравившиеся позиции из каталога и со страницы товара."}</p>
           </div>
@@ -3042,7 +3037,6 @@ const renderCartPage = () => {
       <div class="utility-grid utility-grid--utility-top">
         <article class="request-panel utility-page">
           <div class="section-head section-head--compact">
-            <p class="eyebrow">Раздел</p>
             <h1>${page.title}</h1>
             <p>${page.text}</p>
           </div>
@@ -3053,7 +3047,6 @@ const renderCartPage = () => {
         </article>
         <article class="request-panel utility-summary-card">
           <div class="section-head section-head--compact">
-            <p class="eyebrow">Сводка</p>
             <h2>Текущее наполнение корзины</h2>
             <p>${items.length ? "Корзина хранится локально и будет прикреплена к аккаунту при регистрации." : "Корзина пока пустая. Добавьте товары из каталога или со страницы продукта."}</p>
           </div>
@@ -3111,7 +3104,6 @@ const renderUtilityPage = () => {
       </div>
       <article class="request-panel utility-page">
         <div class="section-head section-head--compact">
-          <p class="eyebrow">Раздел</p>
           <h1>${page.title}</h1>
           <p>${page.text}</p>
         </div>
