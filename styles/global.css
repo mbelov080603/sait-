@@ -105,6 +105,7 @@ textarea {
 }
 
 .eyebrow {
+  display: none !important;
   background: rgba(201, 122, 43, 0.1);
   color: var(--primary-strong);
 }
