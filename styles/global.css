@@ -2335,6 +2335,13 @@ textarea {
   border: 1px solid rgba(201, 122, 43, 0.16);
 }
 
+.purchase-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
 .purchase-panel__label {
   display: block;
   color: var(--muted);
@@ -2349,6 +2356,20 @@ textarea {
   margin-top: var(--space-1);
   font-family: "Rubik", sans-serif;
   font-size: 1.22rem;
+}
+
+.purchase-panel__cart-link {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  color: var(--primary-strong);
+  box-shadow: 0 10px 22px rgba(177, 119, 66, 0.1);
+}
+
+.purchase-panel__cart-link svg {
+  width: 18px;
+  height: 18px;
 }
 
 .product-detail-card,
