@@ -497,6 +497,23 @@ const replaceMainContent = (html, content) =>
 const injectBeforeClosingHead = (html, content) =>
   html.replace(/<\/head>/i, `${content}\n  </head>`);
 
+const removeSectionByAnchor = (html, anchor) => {
+  const anchorIndex = html.indexOf(anchor);
+  if (anchorIndex === -1) return html;
+
+  const sectionStart = html.lastIndexOf("<section", anchorIndex);
+  const sectionEnd = html.indexOf("</section>", anchorIndex);
+  if (sectionStart === -1 || sectionEnd === -1) return html;
+
+  return `${html.slice(0, sectionStart)}${html.slice(sectionEnd + "</section>".length)}`;
+};
+
+const stripProductPageExtras = (html) =>
+  [ 'id="product-benefits-eyebrow"', 'id="marketplaces-pdp"', 'id="product-faq"' ].reduce(
+    (result, anchor) => removeSectionByAnchor(result, anchor),
+    html,
+  ).replace(/\n{3,}/g, "\n\n");
+
 const loadTemplateHtml = async (file) => {
   try {
     return await fs.readFile(path.join(ROOT, file), "utf8");
@@ -848,13 +865,6 @@ for (const product of products) {
         "product-gallery",
         "product-summary",
         "product-details",
-        "product-benefits-eyebrow",
-        "product-benefits-title",
-        "product-benefits",
-        "product-actions-eyebrow",
-        "product-actions-title",
-        "product-marketplaces",
-        "product-faq",
       ],
       renderMethod: "renderProductPage",
     }),
@@ -862,16 +872,9 @@ for (const product of products) {
       "product-gallery",
       "product-summary",
       "product-details",
-      "product-benefits",
-      "product-marketplaces",
-      "product-faq",
     ],
     textMounts: [
       "product-breadcrumb-current",
-      "product-benefits-eyebrow",
-      "product-benefits-title",
-      "product-actions-eyebrow",
-      "product-actions-title",
     ],
     seo: {
       path: product.href,
@@ -891,8 +894,8 @@ for (const product of products) {
           { name: product.shortName, path: product.href },
         ]),
         buildProductSchema(product),
-        buildFaqSchema(product.faq || []),
       ],
     },
+    transformHtml: stripProductPageExtras,
   });
 }

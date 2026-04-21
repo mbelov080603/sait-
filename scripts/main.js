@@ -1894,7 +1894,7 @@ const renderProductPage = () => {
       <article class="panel product-spec-card">
         <div class="section-head section-head--compact">
           <p class="eyebrow">Характеристики</p>
-          <h2>Ключевые данные по позиции</h2>
+          <h2>Ключевые данные о товаре</h2>
         </div>
         ${renderProductSpecs(productItem.specs || [])}
       </article>

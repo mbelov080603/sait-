@@ -157,10 +157,9 @@ const checks = [
     path: "/catalog/macadamia/",
     includes: [
       "<h1>Очищенная макадамия 250 г</h1>",
-      "Характеристики",
+      "Ключевые данные о товаре",
       "Состав",
       '"@type":"Product"',
-      '"@type":"FAQPage"',
       '"@type":"BreadcrumbList"',
     ],
   },
@@ -168,10 +167,8 @@ const checks = [
     path: "/catalog/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg/",
     includes: [
       "<h1>Орех макадамия в скорлупе с ключом 1 кг</h1>",
-      "Характеристики",
-      "Как открыть орех?",
+      "Ключевые данные о товаре",
       '"@type":"Product"',
-      '"@type":"FAQPage"',
       '"@type":"BreadcrumbList"',
     ],
   },
@@ -179,30 +176,24 @@ const checks = [
     path: "/catalog/pekan-ochishchennyy-syroy-500-g/",
     includes: [
       "<h1>Пекан очищенный сырой 500 г</h1>",
-      "Характеристики",
-      "Чем пекан отличается от грецкого ореха?",
+      "Ключевые данные о товаре",
       '"@type":"Product"',
-      '"@type":"FAQPage"',
     ],
   },
   {
     path: "/catalog/gretskiy-oreh-ochishchennyy-polovinki-1-kg/",
     includes: [
       "<h1>Грецкий орех очищенный половинки 1 кг</h1>",
-      "Характеристики",
-      "Это половинки или крошка?",
+      "Ключевые данные о товаре",
       '"@type":"Product"',
-      '"@type":"FAQPage"',
     ],
   },
   {
     path: "/catalog/keshyu-syroy-sushenyy-1-kg/",
     includes: [
       "<h1>Кешью сырой сушеный 1 кг</h1>",
-      "Характеристики",
-      "Можно ли использовать для растительного молока?",
+      "Ключевые данные о товаре",
       '"@type":"Product"',
-      '"@type":"FAQPage"',
     ],
   },
   {
