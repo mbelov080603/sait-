@@ -112,9 +112,11 @@ const STORAGE_KEYS = {
   cartItems: "gb-cart-items",
   favoriteItems: "gb-favorite-items",
   lastAccountPayload: "gb-last-account-payload",
+  cookieConsent: "gb-cookie-consent",
 };
 
 const DEFAULT_ACCOUNT_NAME = "Покупатель Global Basket";
+const COOKIE_CONSENT_VERSION = 1;
 
 const readJsonStorage = (key, fallback) => {
   try {
@@ -167,6 +169,21 @@ const setAccountProfile = (profile) => {
     return;
   }
   writeJsonStorage(STORAGE_KEYS.accountProfile, profile);
+};
+
+const getCookieConsent = () => readJsonStorage(STORAGE_KEYS.cookieConsent, null);
+
+const hasCookieConsent = () => {
+  const consent = getCookieConsent();
+  return consent?.status === "accepted" && consent?.version === COOKIE_CONSENT_VERSION;
+};
+
+const setCookieConsent = () => {
+  writeJsonStorage(STORAGE_KEYS.cookieConsent, {
+    status: "accepted",
+    version: COOKIE_CONSENT_VERSION,
+    acceptedAt: toIsoNow(),
+  });
 };
 
 const getStoredVariantLabel = (variant = null) =>
@@ -751,6 +768,44 @@ const renderFooter = () => {
       </div>
     </footer>
   `;
+};
+
+const renderCookieBanner = () => {
+  if (hasCookieConsent() || $("[data-cookie-banner]")) return;
+
+  const mount = document.createElement("div");
+  mount.className = "cookie-banner";
+  mount.dataset.cookieBanner = "true";
+  mount.innerHTML = `
+    <div class="cookie-banner__inner shell">
+      <div class="cookie-banner__copy">
+        <strong>Мы используем cookies и локальное хранилище</strong>
+        <p>
+          Global Basket сохраняет cookies, localStorage и sessionStorage, чтобы работали корзина,
+          избранное, профиль в браузере и формы сайта. Подробнее о составе данных и целях хранения
+          — в политике обработки персональных данных.
+        </p>
+      </div>
+      <div class="cookie-banner__actions">
+        <a class="button button--ghost button--small" href="/sait-/privacy/">Политика</a>
+        <button class="button button--small" type="button" data-cookie-accept>
+          Понятно
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.append(mount);
+};
+
+const dismissCookieBanner = () => {
+  const banner = $("[data-cookie-banner]");
+  if (!banner) return;
+
+  banner.classList.add("is-hidden");
+  window.setTimeout(() => {
+    banner.remove();
+  }, 220);
 };
 
 const renderFactCard = (item) => `
@@ -3096,6 +3151,37 @@ const renderUtilityPage = () => {
     return;
   }
 
+  const extraSections =
+    Array.isArray(page.sections) && page.sections.length
+      ? `
+        <section class="policy-sheet" aria-label="Подробности политики">
+          ${page.sections
+            .map(
+              (section) => `
+                <article class="request-panel policy-sheet__section">
+                  <div class="section-head section-head--compact">
+                    <h2>${section.title}</h2>
+                  </div>
+                  <div class="policy-sheet__body">
+                    ${(section.paragraphs || []).map((paragraph) => `<p>${paragraph}</p>`).join("")}
+                    ${
+                      Array.isArray(section.items) && section.items.length
+                        ? `
+                          <ul class="policy-list">
+                            ${section.items.map((item) => `<li>${item}</li>`).join("")}
+                          </ul>
+                        `
+                        : ""
+                    }
+                  </div>
+                </article>
+              `,
+            )
+            .join("")}
+        </section>
+      `
+      : "";
+
   const hero = $("#utility-page");
   if (hero) {
     hero.innerHTML = `
@@ -3114,6 +3200,7 @@ const renderUtilityPage = () => {
           <a class="button button--ghost" href="${page.secondary.href}">${page.secondary.label}</a>
         </div>
       </article>
+      ${extraSections}
     `;
   }
 };
@@ -4227,6 +4314,17 @@ const bindAccountRegistrationForms = (root = document) => {
   });
 };
 
+const bindCookieBanner = () => {
+  const banner = $("[data-cookie-banner]");
+  const acceptButton = $("[data-cookie-accept]", banner || document);
+  if (!banner || !acceptButton) return;
+
+  acceptButton.addEventListener("click", () => {
+    setCookieConsent();
+    dismissCookieBanner();
+  });
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   renderHeader();
   renderFooter();
@@ -4266,6 +4364,8 @@ document.addEventListener("DOMContentLoaded", () => {
       break;
   }
 
+  renderCookieBanner();
+
   bindMobileNav();
   bindHeaderSearch();
   bindCompactHeader();
@@ -4275,6 +4375,7 @@ document.addEventListener("DOMContentLoaded", () => {
   bindRequestForms();
   bindStoredProductActions();
   bindAccountRegistrationForms();
+  bindCookieBanner();
   syncChoiceChips();
   updateHeaderState();
   applyCatalogToolbarState();

@@ -25,6 +25,7 @@ const publishEntries = [
   "favorites",
   "index.html",
   "journal",
+  "privacy",
   "scripts",
   "styles",
 ];
@@ -40,6 +41,7 @@ const internalPrefixes = [
   "contacts",
   "delivery",
   "journal",
+  "privacy",
   "favorites",
   "account",
   "cart",
