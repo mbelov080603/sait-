@@ -10,6 +10,7 @@ const repoName = "sait-";
 const basePath = `/${repoName}`;
 const publicUrl = `https://mbelov080603.github.io/${repoName}`;
 const outputDir = path.join(repoRoot, "output", "github-pages");
+const scriptVersion = new Date().toISOString().replace(/\D/g, "").slice(0, 14);
 
 const publishEntries = [
   ".nojekyll",
@@ -24,6 +25,8 @@ const publishEntries = [
   "favorites",
   "index.html",
   "journal",
+  "legal",
+  "privacy",
   "scripts",
   "styles",
 ];
@@ -39,6 +42,8 @@ const internalPrefixes = [
   "contacts",
   "delivery",
   "journal",
+  "legal",
+  "privacy",
   "favorites",
   "account",
   "cart",
@@ -66,13 +71,33 @@ const replaceInternalPrefixes = (text) => {
   return result;
 };
 
+const replaceMetaRefreshUrls = (text) => {
+  let result = text;
+
+  for (const prefix of internalPrefixes) {
+    result = result.replaceAll(`url=/${prefix}/`, `url=${basePath}/${prefix}/`);
+  }
+
+  return result;
+};
+
 const transformText = (text) => {
   let result = String(text);
 
   result = result.replaceAll("https://globalbasket.ru", publicUrl);
   result = replaceInternalPrefixes(result);
+  result = replaceMetaRefreshUrls(result);
   result = replaceRootHomeLinks(result);
   result = result.replaceAll("url(/", `url(${basePath}/`);
+  result = result
+    .replaceAll(`${basePath}/scripts/data.js"`, `${basePath}/scripts/data.js?v=${scriptVersion}"`)
+    .replaceAll(`${basePath}/scripts/main.js"`, `${basePath}/scripts/main.js?v=${scriptVersion}"`)
+    .replaceAll(`${basePath}/scripts/data.js'`, `${basePath}/scripts/data.js?v=${scriptVersion}'`)
+    .replaceAll(`${basePath}/scripts/main.js'`, `${basePath}/scripts/main.js?v=${scriptVersion}'`)
+    .replaceAll('/scripts/data.js"', `/scripts/data.js?v=${scriptVersion}"`)
+    .replaceAll('/scripts/main.js"', `/scripts/main.js?v=${scriptVersion}"`)
+    .replaceAll("/scripts/data.js'", `/scripts/data.js?v=${scriptVersion}'`)
+    .replaceAll("/scripts/main.js'", `/scripts/main.js?v=${scriptVersion}'`);
 
   return result;
 };
@@ -108,6 +133,8 @@ mkdirSync(outputDir, { recursive: true });
 for (const entry of publishEntries) {
   copyEntry(entry);
 }
+
+rmSync(path.join(outputDir, "legal", "source"), { recursive: true, force: true });
 
 walkAndTransform(outputDir);
 

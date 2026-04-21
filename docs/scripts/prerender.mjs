@@ -29,6 +29,7 @@ const products =
     : [store.product].filter(Boolean);
 const categories = Array.isArray(store.categories) ? store.categories : [];
 const featuredProduct = products.find((item) => item?.status === "active") || products[0] || store.product;
+const journalPosts = Array.isArray(store.journal?.posts) ? store.journal.posts : [];
 
 const escapeHtml = (value = "") =>
   String(value)
@@ -113,6 +114,219 @@ const buildProductSchema = (product) => ({
     value: item.value,
   })),
 });
+
+const trimSlashes = (value = "") => String(value).trim().replace(/^\/+|\/+$/g, "");
+
+const humanizePathSegment = (value = "") =>
+  decodeURIComponent(String(value || ""))
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+
+const normalizeInternalPath = (value = "/") => {
+  const [pathname = "/"] = String(value || "").split(/[?#]/);
+  if (!pathname || pathname === "/") return "/";
+  const trimmed = trimSlashes(pathname);
+  return trimmed ? `/${trimmed}/` : "/";
+};
+
+const getPathSegments = (value = "/") => {
+  const normalized = trimSlashes(normalizeInternalPath(value));
+  return normalized ? normalized.split("/") : [];
+};
+
+const productIndex = new Map();
+products.forEach((item) => {
+  if (!item) return;
+  [item.id, item.slug, item.href].filter(Boolean).forEach((key) => {
+    productIndex.set(String(key), item);
+  });
+});
+
+const categoryIndex = new Map();
+categories.forEach((item) => {
+  if (!item) return;
+  [item.id, item.slug, item.href].filter(Boolean).forEach((key) => {
+    categoryIndex.set(String(key), item);
+  });
+});
+
+const journalPostIndex = new Map();
+journalPosts.forEach((item) => {
+  if (!item?.slug) return;
+  journalPostIndex.set(item.slug, item);
+});
+
+const legalDocumentRoutes = new Map([
+  [
+    "public-offer",
+    {
+      name: "Публичная оферта",
+      path: "/legal/public-offer/",
+    },
+  ],
+  [
+    "privacy-policy",
+    {
+      name: "Политика обработки персональных данных",
+      path: "/legal/privacy-policy/",
+    },
+  ],
+  [
+    "personal-data-consent",
+    {
+      name: "Согласие на обработку персональных данных",
+      path: "/legal/personal-data-consent/",
+    },
+  ],
+]);
+
+const normalizeLookupValue = (value = "") => trimSlashes(value);
+
+const findProduct = (value = "") => {
+  const normalized = normalizeLookupValue(value);
+  if (!normalized) return null;
+  return (
+    productIndex.get(normalized) ||
+    productIndex.get(`/${normalized}/`) ||
+    productIndex.get(`/catalog/${normalized}/`) ||
+    null
+  );
+};
+
+const findCategory = (value = "") => {
+  const normalized = normalizeLookupValue(value);
+  if (!normalized) return null;
+  return (
+    categoryIndex.get(normalized) ||
+    categoryIndex.get(`/${normalized}/`) ||
+    categoryIndex.get(`/categories/${normalized}/`) ||
+    null
+  );
+};
+
+const breadcrumbRouteBySegment = new Map();
+
+const registerBreadcrumbRoute = (path, label) => {
+  const normalizedPath = normalizeInternalPath(path);
+  const [segment] = getPathSegments(normalizedPath);
+  if (!segment || !label || breadcrumbRouteBySegment.has(segment)) return;
+  breadcrumbRouteBySegment.set(segment, {
+    name: label,
+    path: normalizedPath,
+  });
+};
+
+(store.primaryNav || []).forEach((item) => registerBreadcrumbRoute(item?.href, item?.label));
+Object.entries(store.utilityPages || {}).forEach(([slug, page]) => {
+  registerBreadcrumbRoute(`/${slug}/`, page?.title || humanizePathSegment(slug));
+});
+registerBreadcrumbRoute("/catalog/", "Каталог");
+registerBreadcrumbRoute("/journal/", "Журнал");
+registerBreadcrumbRoute("/legal/", "Юридические документы");
+
+const buildRouteBreadcrumbItems = (routePath = "/") => {
+  const location = new URL(routePath, SITE_URL);
+  const normalizedPath = normalizeInternalPath(location.pathname);
+  const segments = getPathSegments(normalizedPath);
+  const items = [{ name: "Главная", path: "/" }];
+
+  if (!segments.length) return items;
+
+  const [section, slug] = segments;
+
+  if (section === "catalog") {
+    const catalogRoute = breadcrumbRouteBySegment.get("catalog") || { name: "Каталог", path: "/catalog/" };
+    items.push(catalogRoute);
+
+    if (slug) {
+      const productItem = findProduct(slug) || findProduct(normalizedPath);
+      items.push({
+        name: productItem?.shortName || humanizePathSegment(slug),
+        path: routePath,
+      });
+      return items;
+    }
+
+    const categoryId = location.searchParams.get("category") || "";
+    const categoryItem = findCategory(categoryId);
+    if (categoryItem) {
+      items.push({
+        name: categoryItem.title || categoryItem.name || humanizePathSegment(categoryId),
+        path: `/catalog/?category=${categoryItem.id}`,
+      });
+    }
+
+    return items;
+  }
+
+  if (section === "categories") {
+    const catalogRoute = breadcrumbRouteBySegment.get("catalog") || { name: "Каталог", path: "/catalog/" };
+    const categoryItem = findCategory(slug);
+    const categoryId = categoryItem?.id || slug || "";
+    items.push(catalogRoute);
+    if (categoryId) {
+      items.push({
+        name: categoryItem?.title || categoryItem?.name || humanizePathSegment(categoryId),
+        path: `/catalog/?category=${categoryId}`,
+      });
+    }
+    return items;
+  }
+
+  if (section === "journal") {
+    const journalRoute = breadcrumbRouteBySegment.get("journal") || { name: "Журнал", path: "/journal/" };
+    items.push(journalRoute);
+    if (slug) {
+      const post = journalPostIndex.get(slug);
+      items.push({
+        name: post?.title || humanizePathSegment(slug),
+        path: routePath,
+      });
+    }
+    return items;
+  }
+
+  if (section === "legal") {
+    const legalRoute =
+      breadcrumbRouteBySegment.get("legal") || { name: "Юридические документы", path: "/legal/" };
+    items.push(legalRoute);
+
+    if (slug) {
+      const documentRoute = legalDocumentRoutes.get(slug);
+      items.push({
+        name: documentRoute?.name || humanizePathSegment(slug),
+        path: routePath,
+      });
+    }
+
+    return items;
+  }
+
+  const staticRoute = breadcrumbRouteBySegment.get(section);
+  if (staticRoute) {
+    items.push({
+      name: staticRoute.name,
+      path: routePath,
+    });
+    return items;
+  }
+
+  let accumulatedPath = "";
+  segments.forEach((segment) => {
+    accumulatedPath += `/${segment}`;
+    items.push({
+      name: humanizePathSegment(segment),
+      path: `${accumulatedPath}/`,
+    });
+  });
+
+  return items;
+};
+
+const buildRouteBreadcrumbSchema = (routePath = "/") =>
+  buildBreadcrumbSchema(buildRouteBreadcrumbItems(routePath));
 
 const buildFaqSchema = (items = []) => ({
   "@context": "https://schema.org",
@@ -281,6 +495,7 @@ this.__GB_EXPORTS__ = {
   renderFooter,
   renderHome,
   renderCatalog,
+  renderStaticPage,
   renderProductPage,
   renderContactsPage,
   renderAboutPage,
@@ -487,6 +702,52 @@ const applyCommonFrame = (html, rendered) => {
   );
 };
 
+const renderBreadcrumbHtml = (routePath = "/") => {
+  const items = buildRouteBreadcrumbItems(routePath);
+  return `
+<div class="breadcrumb" role="navigation" aria-label="Breadcrumbs">
+  ${items
+    .map((item, index) => {
+      const isCurrent = index === items.length - 1;
+      const content = !isCurrent ? `<a href="${escapeAttribute(item.path)}">${item.name}</a>` : `<span>${item.name}</span>`;
+      return `${index ? "\n  <span>/</span>\n  " : ""}${content}`;
+    })
+    .join("")}
+</div>`.trim();
+};
+
+const replaceFirstBreadcrumb = (html, routePath = "/") =>
+  html.replace(
+    /<div class="breadcrumb"(?:[^>]*)>[\s\S]*?<\/div>/i,
+    renderBreadcrumbHtml(routePath),
+  );
+
+const replaceBodyAttributes = (html, attributes) =>
+  html.replace(/<body\b[^>]*>/i, `<body ${attributes}>`);
+
+const replaceMainContent = (html, content) =>
+  html.replace(/<main>[\s\S]*?<\/main>/i, `<main>\n${content}\n    </main>`);
+
+const injectBeforeClosingHead = (html, content) =>
+  html.replace(/<\/head>/i, `${content}\n  </head>`);
+
+const removeSectionByAnchor = (html, anchor) => {
+  const anchorIndex = html.indexOf(anchor);
+  if (anchorIndex === -1) return html;
+
+  const sectionStart = html.lastIndexOf("<section", anchorIndex);
+  const sectionEnd = html.indexOf("</section>", anchorIndex);
+  if (sectionStart === -1 || sectionEnd === -1) return html;
+
+  return `${html.slice(0, sectionStart)}${html.slice(sectionEnd + "</section>".length)}`;
+};
+
+const stripProductPageExtras = (html) =>
+  [ 'id="product-benefits-eyebrow"', 'id="marketplaces-pdp"', 'id="product-faq"' ].reduce(
+    (result, anchor) => removeSectionByAnchor(result, anchor),
+    html,
+  ).replace(/\n{3,}/g, "\n\n");
+
 const loadTemplateHtml = async (file) => {
   try {
     return await fs.readFile(path.join(ROOT, file), "utf8");
@@ -509,11 +770,13 @@ const writeRenderedPage = async ({
   htmlMounts = [],
   textMounts = [],
   seo,
+  transformHtml,
 }) => {
   const fullPath = path.join(ROOT, file);
   let html = await loadTemplateHtml(file);
   html = applyCommonFrame(html, rendered);
   html = applySeo(html, seo);
+  html = replaceFirstBreadcrumb(html, seo?.path || "/");
 
   htmlMounts.forEach((id) => {
     const mount = rendered.document.mounts.get(id);
@@ -524,6 +787,10 @@ const writeRenderedPage = async ({
     const mount = rendered.document.mounts.get(id);
     html = replaceElementContents(html, id, mount?.textContent || "", "text");
   });
+
+  if (transformHtml) {
+    html = transformHtml(html);
+  }
 
   await fs.writeFile(fullPath, html);
 };
@@ -602,10 +869,7 @@ await writeRenderedPage({
     image: store.aboutPage.hero.image.src,
     schemas: [
       buildOrganizationSchema(),
-      buildBreadcrumbSchema([
-        { name: "Главная", path: "/" },
-        { name: "О бренде", path: "/about/" },
-      ]),
+      buildRouteBreadcrumbSchema("/about/"),
     ],
   },
 });
@@ -627,10 +891,7 @@ await writeRenderedPage({
     image: featuredProduct?.images?.main || "/assets/logo.jpg",
     schemas: [
       buildOrganizationSchema(),
-      buildBreadcrumbSchema([
-        { name: "Главная", path: "/" },
-        { name: "Доставка и оплата", path: "/delivery/" },
-      ]),
+      buildRouteBreadcrumbSchema("/delivery/"),
     ],
   },
 });
@@ -652,10 +913,7 @@ await writeRenderedPage({
     image: "/assets/logo.jpg",
     schemas: [
       buildOrganizationSchema(),
-      buildBreadcrumbSchema([
-        { name: "Главная", path: "/" },
-        { name: "Контакты", path: "/contacts/" },
-      ]),
+      buildRouteBreadcrumbSchema("/contacts/"),
     ],
   },
 });
@@ -677,10 +935,60 @@ for (const [slug, utilityPage] of Object.entries(store.utilityPages || {})) {
       image: "/assets/logo.jpg",
       schemas: [
         buildOrganizationSchema(),
-        buildBreadcrumbSchema([
-          { name: "Главная", path: "/" },
-          { name: utilityPage.title, path: `/${slug}/` },
-        ]),
+        buildRouteBreadcrumbSchema(`/${slug}/`),
+      ],
+    },
+  });
+}
+
+const legalPages = [
+  {
+    file: "legal/index.html",
+    routePath: "/legal/",
+    title: "Юридические документы",
+    description:
+      "Юридические документы Global Basket: публичная оферта, политика обработки персональных данных и согласие на обработку персональных данных в HTML и PDF.",
+  },
+  {
+    file: "legal/public-offer/index.html",
+    routePath: "/legal/public-offer/",
+    title: "Публичная оферта",
+    description:
+      "Публичная оферта Global Basket о продаже товаров дистанционным способом: оформление заказа, согласование существенных условий, доставка, возврат и реквизиты продавца.",
+  },
+  {
+    file: "legal/privacy-policy/index.html",
+    routePath: "/legal/privacy-policy/",
+    title: "Политика обработки персональных данных",
+    description:
+      "Политика обработки персональных данных и конфиденциальности сайта Global Basket: состав данных, цели обработки, cookies, localStorage и права пользователей.",
+  },
+  {
+    file: "legal/personal-data-consent/index.html",
+    routePath: "/legal/personal-data-consent/",
+    title: "Согласие на обработку персональных данных",
+    description:
+      "Согласие на обработку персональных данных для форм и обращений на сайте Global Basket: цели обработки, состав данных, срок действия и порядок отзыва согласия.",
+  },
+];
+
+for (const page of legalPages) {
+  await writeRenderedPage({
+    file: page.file,
+    rendered: renderMounts({
+      path: page.routePath,
+      bodyDataset: { page: "legal", legal: trimSlashes(page.routePath) || "index", nav: "utility" },
+      mountKeys: [],
+      renderMethod: "renderStaticPage",
+    }),
+    seo: {
+      path: page.routePath,
+      title: page.title,
+      description: page.description,
+      image: "/assets/logo.jpg",
+      schemas: [
+        buildOrganizationSchema(),
+        buildRouteBreadcrumbSchema(page.routePath),
       ],
     },
   });
@@ -703,10 +1011,7 @@ await writeRenderedPage({
     image: store.journal.posts[0]?.image || featuredProduct?.images?.main || "/assets/logo.jpg",
     schemas: [
       buildOrganizationSchema(),
-      buildBreadcrumbSchema([
-        { name: "Главная", path: "/" },
-        { name: "Журнал", path: "/journal/" },
-      ]),
+      buildRouteBreadcrumbSchema("/journal/"),
     ],
   },
 });
@@ -724,49 +1029,65 @@ await writeRenderedPage({
     path: "/catalog/",
     title: "Каталог",
     description:
-      "Каталог Global Basket: товарные карточки и разделы с готовым HTML-контентом, характеристиками и понятным переходом к запросу условий.",
+      "Каталог Global Basket: товарные карточки с прямым переходом к подробному описанию и понятным запросом условий без промежуточных страниц категорий.",
     image: featuredProduct?.images?.main || "/assets/logo.jpg",
     schemas: [
       buildOrganizationSchema(),
-      buildBreadcrumbSchema([
-        { name: "Главная", path: "/" },
-        { name: "Каталог", path: "/catalog/" },
-      ]),
+      buildRouteBreadcrumbSchema("/catalog/"),
     ],
   },
 });
 
 for (const category of categories) {
+  const targetPath = `/catalog/?category=${category.id}`;
   await writeRenderedPage({
     file: `categories/${category.id}/index.html`,
     rendered: renderMounts({
       path: `/categories/${category.id}/`,
-      bodyDataset: { page: "category", category: category.id, nav: "category" },
-      mountKeys: [
-        "category-breadcrumb-current",
-        "category-title",
-        "category-description",
-        "category-intro-cards",
-        "category-shelf",
-        "category-related",
-      ],
-      renderMethod: "renderCategoryPage",
+      bodyDataset: { page: "catalog-redirect", category: category.id, nav: "catalog" },
+      mountKeys: [],
+      renderMethod: "renderStaticPage",
     }),
-    htmlMounts: ["category-intro-cards", "category-shelf", "category-related"],
-    textMounts: ["category-breadcrumb-current", "category-title", "category-description"],
     seo: {
-      path: `/categories/${category.id}/`,
+      path: targetPath,
       title: category.title || category.name,
       description: category.intro || category.description || "",
       image: category.image || featuredProduct?.images?.main || "/assets/logo.jpg",
       schemas: [
         buildOrganizationSchema(),
-        buildBreadcrumbSchema([
-          { name: "Главная", path: "/" },
-          { name: "Каталог", path: "/catalog/" },
-          { name: category.title || category.name, path: `/categories/${category.id}/` },
-        ]),
+        buildRouteBreadcrumbSchema(targetPath),
       ],
+    },
+    transformHtml: (html) => {
+      const redirectBlock = `
+      <section class="page-hero">
+        <div class="shell">
+          <div class="hero-copy">
+            <h1>Переходим в каталог</h1>
+            <p>Промежуточные страницы категорий убраны. Открываем каталог сразу на товарах категории «${escapeHtml(category.title || category.name)}».</p>
+            <div class="hero-stage__actions">
+              <a class="button button--small" href="${targetPath}">Открыть товары</a>
+            </div>
+          </div>
+        </div>
+      </section>`;
+      const headRedirect = [
+        `    <meta http-equiv="refresh" content="0; url=${escapeAttribute(targetPath)}" />`,
+        "    <script>",
+        `      window.location.replace(${JSON.stringify(targetPath)});`,
+        "    </script>",
+      ].join("\n");
+
+      let next = html
+        .replace(/\s*<meta\s+http-equiv=["']refresh["'][^>]*>\n?/gi, "")
+        .replace(/\s*<script>\s*window\.location\.replace\([\s\S]*?<\/script>\n?/gi, "");
+      next = replaceBodyAttributes(
+        next,
+        `data-page="catalog-redirect" data-category="${escapeAttribute(category.id)}" data-nav="catalog"`,
+      );
+      next = injectBeforeClosingHead(next, headRedirect);
+      next = replaceMainContent(next, redirectBlock);
+      return next;
     },
   });
 }
@@ -789,11 +1110,7 @@ for (const post of store.journal.posts) {
       ogType: "article",
       schemas: [
         buildOrganizationSchema(),
-        buildBreadcrumbSchema([
-          { name: "Главная", path: "/" },
-          { name: "Журнал", path: "/journal/" },
-          { name: post.title, path: `/journal/${post.slug}/` },
-        ]),
+        buildRouteBreadcrumbSchema(`/journal/${post.slug}/`),
       ],
     },
   });
@@ -806,17 +1123,9 @@ for (const product of products) {
       path: product.href,
       bodyDataset: { page: "product", product: product.id, nav: "catalog" },
       mountKeys: [
-        "product-breadcrumb-current",
         "product-gallery",
         "product-summary",
         "product-details",
-        "product-benefits-eyebrow",
-        "product-benefits-title",
-        "product-benefits",
-        "product-actions-eyebrow",
-        "product-actions-title",
-        "product-marketplaces",
-        "product-faq",
       ],
       renderMethod: "renderProductPage",
     }),
@@ -824,16 +1133,6 @@ for (const product of products) {
       "product-gallery",
       "product-summary",
       "product-details",
-      "product-benefits",
-      "product-marketplaces",
-      "product-faq",
-    ],
-    textMounts: [
-      "product-breadcrumb-current",
-      "product-benefits-eyebrow",
-      "product-benefits-title",
-      "product-actions-eyebrow",
-      "product-actions-title",
     ],
     seo: {
       path: product.href,
@@ -847,14 +1146,10 @@ for (const product of products) {
       image: product.images?.main || product.gallery?.[0]?.src || "/assets/logo.jpg",
       schemas: [
         buildOrganizationSchema(),
-        buildBreadcrumbSchema([
-          { name: "Главная", path: "/" },
-          { name: "Каталог", path: "/catalog/" },
-          { name: product.shortName, path: product.href },
-        ]),
+        buildRouteBreadcrumbSchema(product.href),
         buildProductSchema(product),
-        buildFaqSchema(product.faq || []),
       ],
     },
+    transformHtml: stripProductPageExtras,
   });
 }

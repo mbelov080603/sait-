@@ -21,7 +21,6 @@ window.GlobalBasketData = {
   searchScopes: [
     { value: "catalog", label: "Каталог" },
     { value: "nuts", label: "Орехи" },
-    { value: "sections", label: "Разделы" },
   ],
   primaryNav: [
     { label: "Каталог", href: "/sait-/catalog/", match: ["/sait-/catalog/", "/sait-/categories/"] },
@@ -39,25 +38,28 @@ window.GlobalBasketData = {
     {
       name: "Премиальные орехи",
       description: "Основной раздел каталога с очищенной макадамией.",
-      href: "/sait-/categories/premium-nuts/",
+      href: "/sait-/catalog/?category=premium-nuts",
       status: "active",
       statusLabel: "В наличии",
     },
     {
       name: "Сухофрукты",
       description: "Натуральные сухофрукты для следующего расширения витрины.",
+      href: "/sait-/catalog/?category=dried-fruits",
       status: "coming",
       statusLabel: "Скоро",
     },
     {
       name: "Ореховые смеси",
       description: "Смеси для повседневной подачи и подарочных сценариев.",
+      href: "/sait-/catalog/?category=nut-mixes",
       status: "coming",
       statusLabel: "Скоро",
     },
     {
       name: "Подарочные наборы",
       description: "Подборки для сезонного спроса и аккуратной премиальной подачи.",
+      href: "/sait-/catalog/?category=gift-sets",
       status: "coming",
       statusLabel: "Скоро",
     },
@@ -86,24 +88,28 @@ window.GlobalBasketData = {
     description:
       "Макадамия — центральный товар витрины Global Basket: спокойная подача, аккуратная упаковка и собранный интерфейс без визуального шума.",
     images: {
-      hero: "/sait-/assets/catalog/products/macadamia-ozon-front.png",
-      packshot: "/sait-/assets/catalog/products/macadamia-ozon-packshot.png",
-      main: "/sait-/assets/catalog/products/macadamia-ozon-front.png",
-      lifestyle: "/sait-/assets/catalog/products/macadamia-ozon-lifestyle.png",
-      poster: "/sait-/assets/catalog/products/macadamia-ozon-front.png",
+      hero: "/sait-/assets/catalog/products/macadamia-gallery-packshot-spill-white.png",
+      packshot: "/sait-/assets/catalog/products/macadamia-gallery-packshot-white.png",
+      main: "/sait-/assets/catalog/products/macadamia-gallery-packshot-spill-white.png",
+      lifestyle: "/sait-/assets/catalog/products/macadamia-gallery-packshot-white.png",
+      poster: "/sait-/assets/catalog/products/macadamia-gallery-packshot-spill-white.png",
     },
     gallery: [
       {
-        src: "/sait-/assets/catalog/products/macadamia-ozon-front.png",
-        alt: "Очищенная макадамия Global Basket в упаковке с россыпью орехов",
+        src: "/sait-/assets/catalog/products/macadamia-gallery-packshot-spill-white.png",
+        alt: "Очищенная макадамия Global Basket в прозрачной упаковке на белом фоне",
       },
       {
-        src: "/sait-/assets/catalog/products/macadamia-ozon-packshot.png",
-        alt: "Фронтальный packshot очищенной макадамии Global Basket",
+        src: "/sait-/assets/catalog/products/macadamia-gallery-packshot-white.png",
+        alt: "Фронтальный packshot очищенной макадамии Global Basket на белом фоне",
       },
       {
-        src: "/sait-/assets/catalog/products/macadamia-ozon-lifestyle.png",
-        alt: "Очищенная макадамия Global Basket в домашней подаче",
+        src: "/sait-/assets/catalog/products/macadamia-gallery-kernels-pile-white.png",
+        alt: "Очищенные ядра макадамии крупным планом на белом фоне",
+      },
+      {
+        src: "/sait-/assets/catalog/products/macadamia-gallery-kernels-scatter-white.png",
+        alt: "Очищенные ядра макадамии россыпью на белом фоне",
       },
     ],
     pills: ["Кения", "250 г", "Вакуумная упаковка", "Только очищенные ядра"],
@@ -211,7 +217,6 @@ window.GlobalBasketData = {
       },
       paragraphs: [
         "Global Basket — это бренд натуральных и высококачественных продуктов питания, собранных из разных уголков мира и доступных широкому кругу покупателей. Мы не просто поставляем продукты из разных стран, а тщательно отбираем то, что действительно достойно оказаться на столе покупателя.",
-        "Для покупателя Global Basket — это проводник в мире качественных и натуральных продуктов, фильтр, который отсеивает сомнительное и оставляет достойное, и знак доверия, за которым стоит понятная система ценностей.",
       ],
       chips: [
         "Натуральные продукты",
@@ -227,17 +232,12 @@ window.GlobalBasketData = {
     leadForm: {
       eyebrow: "",
       title: "Оставить запрос",
-      text:
-        "Оставьте один удобный контакт, и мы ответим по покупке, наличию, цене или оптовому запросу.",
+      text: "",
       submitLabel: "Отправить запрос",
-      secondaryCta: {
-        label: "Написать в Telegram",
-        href: "https://t.me/global_basket_bot?start=site_home_lead",
-      },
-      note:
-        "Ответим в ближайшее рабочее время. Если удобнее, можно сразу написать нам в Telegram.",
+      secondaryCta: null,
+      note: "",
       consent:
-        'Согласен(а) на обработку контактных данных для ответа по моему запросу. <a href="/privacy/">Политика обработки персональных данных</a>.',
+        'Даю согласие ООО «ВОСТОК ИМПОРТ ПРОМ» на обработку моих персональных данных на условиях <a href="/sait-/legal/globalbasket_personal_data_consent.pdf" target="_blank" rel="noopener noreferrer">Согласия на обработку персональных данных</a> и подтверждаю ознакомление с <a href="/sait-/legal/globalbasket_privacy_policy.pdf" target="_blank" rel="noopener noreferrer">Политикой обработки персональных данных</a>.',
       topics: [
         { value: "retail", label: "Купить" },
         { value: "price", label: "Узнать цену" },
@@ -285,11 +285,10 @@ window.GlobalBasketData = {
   },
   catalogPage: {
     intro:
-      "В каталоге собраны товар и разделы, которые помогают быстро перейти от выбора к обращению.",
+      "В каталоге собраны товарные позиции с прямым переходом в карточки товаров и к запросу условий.",
     filters: [
       { label: "Все", value: "all" },
       { label: "В наличии", value: "active" },
-      { label: "Разделы", value: "sections" },
     ],
     sorts: [
       { value: "featured", label: "Сначала главное" },
@@ -301,22 +300,16 @@ window.GlobalBasketData = {
         title: "О бренде",
         description: "Узнайте, как фирменная подача Global Basket поддерживает доверие к продукту.",
         href: "/sait-/about/",
-        badge: "Материал",
-        tone: "editorial",
       },
       {
         title: "Доставка и оплата",
         description: "Посмотрите, как мы сопровождаем запрос, доставку и дальнейшее оформление заказа.",
         href: "/sait-/delivery/",
-        badge: "Покупателям",
-        tone: "service",
       },
       {
         title: "Контакты",
         description: "Перейдите к следующему шагу и отправьте запрос по товару, закупке или доставке.",
         href: "/sait-/contacts/?source=catalog",
-        badge: "Покупателям",
-        tone: "service",
       },
     ],
   },
@@ -342,7 +335,7 @@ window.GlobalBasketData = {
       },
     ],
     quoteForm: {
-      eyebrow: "Для бизнеса",
+      eyebrow: "",
       title: "Оставить запрос на поставку",
       text:
         "Заполните анкету, чтобы получить расчёт и следующий шаг по поставке. Telegram, телефон и email остаются резервными каналами связи.",
@@ -352,7 +345,7 @@ window.GlobalBasketData = {
       pricingHint:
         "Базовая цена — 700 ₽/кг. От 100 кг действует скидка 10%, от 500 кг — 15%, от 1000 кг — 20%. За каждые полные 1000 км от Москвы добавляется 5% к сумме. Расстояние рассчитывается автоматически по адресу доставки и затем подтверждается менеджером.",
       consent:
-        'Согласен(а) на обработку контактных данных для связи по запросу и расчёту. <a href="/privacy/">Политика обработки персональных данных</a>.',
+        'Даю согласие ООО «ВОСТОК ИМПОРТ ПРОМ» на обработку моих персональных данных на условиях <a href="/sait-/legal/globalbasket_personal_data_consent.pdf" target="_blank" rel="noopener noreferrer">Согласия на обработку персональных данных</a> и подтверждаю ознакомление с <a href="/sait-/legal/globalbasket_privacy_policy.pdf" target="_blank" rel="noopener noreferrer">Политикой обработки персональных данных</a>.',
       topics: [
         { value: "Купить", label: "Купить" },
         { value: "Оптовый запрос", label: "Оптовый запрос" },
@@ -400,7 +393,7 @@ window.GlobalBasketData = {
       formText:
         "Укажите один удобный канал связи и отметьте интересующие разделы. Профиль сохранит выбранные позиции в этом браузере.",
       consent:
-        "Согласен(а) на обработку контактных данных для сохранения аккаунта, корзины, предпочтений и последующей связи по запросу.",
+        'Даю согласие ООО «ВОСТОК ИМПОРТ ПРОМ» на обработку моих персональных данных на условиях <a href="/sait-/legal/globalbasket_personal_data_consent.pdf" target="_blank" rel="noopener noreferrer">Согласия на обработку персональных данных</a> и подтверждаю ознакомление с <a href="/sait-/legal/globalbasket_privacy_policy.pdf" target="_blank" rel="noopener noreferrer">Политикой обработки персональных данных</a>.',
       submitLabel: "Сохранить аккаунт",
       registeredTitle: "Профиль уже сохранён",
       registeredText:
@@ -414,9 +407,39 @@ window.GlobalBasketData = {
     },
     privacy: {
       title: "Политика обработки персональных данных",
-      text: "Global Basket использует контактные данные из форм сайта только для ответа по запросу, уточнения условий поставки и сопровождения обращения. Если нужно изменить или удалить переданные данные, можно написать нам на hello@globalbasket.ru или через страницу контактов.",
+      text: "Global Basket использует контактные данные из форм сайта только для ответа по запросу, уточнения условий поставки и сопровождения обращения. На сайте также применяются cookies, localStorage и sessionStorage для работы корзины, избранного, аккаунта в браузере и форм. Если нужно изменить или удалить переданные данные, можно написать нам на hello@globalbasket.ru или через страницу контактов.",
       primary: { label: "Связаться", href: "/sait-/contacts/?source=privacy" },
       secondary: { label: "В каталог", href: "/sait-/catalog/" },
+      sections: [
+        {
+          title: "Какие данные и технологии мы используем",
+          paragraphs: [
+            "На сайте используются cookies, localStorage и sessionStorage. Они помогают распознавать текущую сессию браузера, сохранять действия пользователя между страницами и не терять уже выбранные позиции.",
+          ],
+          items: [
+            "технические cookies и идентификаторы сессии браузера;",
+            "состав корзины и избранного в localStorage;",
+            "контактный профиль, если пользователь сам сохранил его в аккаунте этого браузера;",
+            "служебные данные форм и сессии в sessionStorage.",
+          ],
+        },
+        {
+          title: "Для каких целей это нужно",
+          items: [
+            "показывать выбранные товары в корзине и избранном;",
+            "сохранять профиль и интересующие разделы в этом браузере по запросу пользователя;",
+            "не терять введённые данные при переходах между страницами;",
+            "корректно обрабатывать обращения через формы сайта и возвращаться к ним в рамках одной сессии.",
+          ],
+        },
+        {
+          title: "Как управлять согласием и хранением данных",
+          paragraphs: [
+            "Вы можете в любой момент очистить cookies и локальные данные сайта в настройках браузера. После этого корзина, избранное и сохранённый профиль в этом браузере будут сброшены.",
+            "Если нужно изменить или удалить контактные данные, отправленные через формы, напишите на hello@globalbasket.ru или через страницу контактов.",
+          ],
+        },
+      ],
     },
   },
   aboutPage: {
@@ -603,7 +626,7 @@ window.GlobalBasketData = {
         src: "/sait-/assets/about/assortment-spoons.jpg",
         alt: "Ассорти орехов на деревянных ложках как образ продуманного и широкого ассортимента",
       },
-      leftLabel: "Многие бренды",
+      leftLabel: "Другие бренды",
       rightLabel: "Global Basket",
       rows: [
         {
@@ -879,7 +902,7 @@ window.GlobalBasketData = {
         title: "Каталог",
         links: [
           { label: "В каталог", href: "/sait-/catalog/" },
-          { label: "Премиальные орехи", href: "/sait-/categories/premium-nuts/" },
+          { label: "Премиальные орехи", href: "/sait-/catalog/?category=premium-nuts" },
           { label: "Очищенная макадамия", href: "/sait-/catalog/macadamia/" },
         ],
       },
@@ -889,6 +912,23 @@ window.GlobalBasketData = {
           { label: "Контакты", href: "/sait-/contacts/" },
           { label: "Доставка и оплата", href: "/sait-/delivery/" },
           { label: "Возвраты", href: "/sait-/delivery/#returns" },
+        ],
+      },
+      {
+        title: "Документы",
+        links: [
+          { label: "Публичная оферта", href: "/sait-/legal/globalbasket_public_offer.pdf", newTab: true },
+          {
+            label: "Политика обработки персональных данных",
+            href: "/sait-/legal/globalbasket_privacy_policy.pdf",
+            newTab: true,
+          },
+          {
+            label: "Согласие на обработку персональных данных",
+            href: "/sait-/legal/globalbasket_personal_data_consent.pdf",
+            newTab: true,
+          },
+          { label: "Юридические документы", href: "/sait-/legal/" },
         ],
       },
       {
@@ -1159,6 +1199,9 @@ const catalogPayload = {
       "detail_image": "media/products/macadamia-detail.png",
       "variant_type": "Вес",
       "default_variant": "250 г",
+      "hideDetailBadge": true,
+      "hidePurchaseLabel": true,
+      "hideFavoriteAction": true,
       "hideVariantRequestLabel": true,
       "uniformVariantChipWidth": true
     },
@@ -2051,7 +2094,7 @@ const catalogPayload = {
 };
 
 const mapCatalogMediaPath = (relativePath = "") =>
-  relativePath ? `/sait-/${String(relativePath).replace(/^media\//, "assets/catalog/")}` : "";
+  relativePath ? `/${String(relativePath).replace(/^media\//, "assets/catalog/")}` : "";
 
 const cleanText = (value = "") => String(value || "").trim();
 
@@ -2205,6 +2248,71 @@ const pagesBySlug = new Map(
   catalogPayload.product_pages.map((item) => [item.product_slug, item]),
 );
 
+const photoGalleryOverrides = {
+  "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg": [
+    "/sait-/assets/catalog/products/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg-photo-1.webp",
+    "/sait-/assets/catalog/products/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg-photo-2.webp",
+    "/sait-/assets/catalog/products/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg-photo-3.webp",
+  ],
+  "pekan-ochishchennyy-syroy-500-g": [
+    "/sait-/assets/catalog/products/pekan-ochishchennyy-syroy-500-g-photo-1.jpeg",
+    "/sait-/assets/catalog/products/pekan-ochishchennyy-syroy-500-g-photo-2.jpeg",
+    "/sait-/assets/catalog/products/pekan-ochishchennyy-syroy-500-g-photo-3.jpeg",
+    "/sait-/assets/catalog/products/pekan-ochishchennyy-syroy-500-g-photo-4.jpg",
+  ],
+  "gretskiy-oreh-ochishchennyy-polovinki-1-kg": [
+    "/sait-/assets/catalog/products/gretskiy-oreh-ochishchennyy-polovinki-1-kg-photo-1.jpeg",
+    "/sait-/assets/catalog/products/gretskiy-oreh-ochishchennyy-polovinki-1-kg-photo-2.jpeg",
+    "/sait-/assets/catalog/products/gretskiy-oreh-ochishchennyy-polovinki-1-kg-photo-3.jpg",
+    "/sait-/assets/catalog/products/gretskiy-oreh-ochishchennyy-polovinki-1-kg-photo-4.webp",
+  ],
+  "keshyu-syroy-sushenyy-1-kg": [
+    "/sait-/assets/catalog/products/keshyu-syroy-sushenyy-1-kg-photo-1.jpg",
+    "/sait-/assets/catalog/products/keshyu-syroy-sushenyy-1-kg-photo-2.jpg",
+    "/sait-/assets/catalog/products/keshyu-syroy-sushenyy-1-kg-photo-3.jpeg",
+    "/sait-/assets/catalog/products/keshyu-syroy-sushenyy-1-kg-photo-4.jpeg",
+  ],
+  "kuraga-monetka-bez-sahara-150-g": [
+    "/sait-/assets/catalog/products/kuraga-monetka-bez-sahara-150-g-photo-1.jpeg",
+    "/sait-/assets/catalog/products/kuraga-monetka-bez-sahara-150-g-photo-2.jpeg",
+    "/sait-/assets/catalog/products/kuraga-monetka-bez-sahara-150-g-photo-3.jpeg",
+    "/sait-/assets/catalog/products/kuraga-monetka-bez-sahara-150-g-photo-4.jpg",
+  ],
+  "finiki-bez-sahara-iran-1-kg": [
+    "/sait-/assets/catalog/products/finiki-bez-sahara-iran-1-kg-photo-1.jpg",
+    "/sait-/assets/catalog/products/finiki-bez-sahara-iran-1-kg-photo-2.jpg",
+    "/sait-/assets/catalog/products/finiki-bez-sahara-iran-1-kg-photo-3.jpeg",
+    "/sait-/assets/catalog/products/finiki-bez-sahara-iran-1-kg-photo-4.jpg",
+  ],
+  "klyukva-sushenaya-150-g": [
+    "/sait-/assets/catalog/products/klyukva-sushenaya-150-g-photo-1.jpg",
+    "/sait-/assets/catalog/products/klyukva-sushenaya-150-g-photo-2.png",
+    "/sait-/assets/catalog/products/klyukva-sushenaya-150-g-photo-3.jpg",
+    "/sait-/assets/catalog/products/klyukva-sushenaya-150-g-photo-4.jpg",
+  ],
+  "mango-sushenoe-naturalnoe-200-g": [
+    "/sait-/assets/catalog/products/mango-sushenoe-naturalnoe-200-g-photo-1.jpg",
+    "/sait-/assets/catalog/products/mango-sushenoe-naturalnoe-200-g-photo-2.jpg",
+    "/sait-/assets/catalog/products/mango-sushenoe-naturalnoe-200-g-photo-3.webp",
+  ],
+  "orehovaya-smes-s-izyumom-1-kg": [
+    "/sait-/assets/catalog/products/orehovaya-smes-s-izyumom-1-kg-photo-1.jpeg",
+    "/sait-/assets/catalog/products/orehovaya-smes-s-izyumom-1-kg-photo-2.jpeg",
+    "/sait-/assets/catalog/products/orehovaya-smes-s-izyumom-1-kg-photo-3.jpg",
+    "/sait-/assets/catalog/products/orehovaya-smes-s-izyumom-1-kg-photo-4.jpeg",
+  ],
+  "podarochnyy-nabor-orehov": [
+    "/sait-/assets/catalog/products/podarochnyy-nabor-orehov-photo-1.jpg",
+    "/sait-/assets/catalog/products/podarochnyy-nabor-orehov-photo-2.jpg",
+  ],
+};
+
+const buildPhotoGallery = (slug = "", title = "") =>
+  (photoGalleryOverrides[slug] || []).map((src, index) => ({
+    src,
+    alt: `${cleanText(title)} — фото товара ${index + 1}`,
+  }));
+
 const productsFromPack = catalogPayload.products_cards
   .slice()
   .sort((a, b) => Number(a.catalog_order) - Number(b.catalog_order))
@@ -2215,15 +2323,24 @@ const productsFromPack = catalogPayload.products_cards
     const variants = (variantsBySlug.get(card.product_slug) || []).slice();
     const defaultVariant = variants.find((item) => item.isDefault) || variants[0] || null;
     const variantType = cleanText(page.variant_type) || defaultVariant?.type || "Вес";
+    const photoGallery = buildPhotoGallery(
+      cleanText(card.product_slug),
+      cleanText(page.h1) || cleanText(card.product_title),
+    );
+    const primaryPhoto = photoGallery[0]?.src || "";
+    const secondaryPhoto = photoGallery[1]?.src || primaryPhoto;
     const images = {
-      hero: mapCatalogMediaPath(page.cover_image || card.cover_image),
-      packshot: mapCatalogMediaPath(card.cover_image),
-      main: mapCatalogMediaPath(page.cover_image || card.cover_image),
+      hero: primaryPhoto || mapCatalogMediaPath(page.cover_image || card.cover_image),
+      packshot: primaryPhoto || mapCatalogMediaPath(card.cover_image),
+      main: primaryPhoto || mapCatalogMediaPath(page.cover_image || card.cover_image),
       lifestyle:
         card.product_slug === "macadamia"
-          ? "/sait-/assets/catalog/products/macadamia-ozon-lifestyle.png"
-          : mapCatalogMediaPath(page.detail_image || card.detail_image),
-      poster: "/sait-/assets/catalog/products/macadamia-ozon-front.png",
+          ? "/sait-/assets/catalog/products/macadamia-gallery-packshot-white.png"
+          : secondaryPhoto || mapCatalogMediaPath(page.detail_image || card.detail_image),
+      poster:
+        card.product_slug === "macadamia"
+          ? "/sait-/assets/catalog/products/macadamia-gallery-packshot-spill-white.png"
+          : primaryPhoto || mapCatalogMediaPath(page.cover_image || card.cover_image),
     };
     const factCards = buildFactCards(specs, defaultVariant, variantType);
 
@@ -2239,7 +2356,7 @@ const productsFromPack = catalogPayload.products_cards
       badgeTone: cleanText(card.status) === "В наличии" ? "active" : "service",
       category: cleanText(card.category),
       categorySlug: cleanText(card.category_slug),
-      categoryHref: cleanText(card.category_url),
+      categoryHref: `/sait-/catalog/?category=${cleanText(card.category_slug)}`,
       subtitle: cleanText(card.card_subtitle),
       baseSubtitle: cleanText(card.card_subtitle),
       defaultVariantLabel: cleanText(page.default_variant) || defaultVariant?.label || "",
@@ -2276,32 +2393,25 @@ const productsFromPack = catalogPayload.products_cards
           : "Уточните наличие, фасовку и следующий шаг по выбранному варианту.",
       quickLinksLabel: card.product_slug === "macadamia" ? "Где купить" : "Следующий шаг",
       actionMode: card.product_slug === "macadamia" ? "marketplace-default" : "request",
+      hideDetailBadge: Boolean(page.hideDetailBadge),
+      hidePurchaseLabel: Boolean(page.hidePurchaseLabel),
+      hideFavoriteAction: Boolean(page.hideFavoriteAction),
       hideVariantRequestLabel: Boolean(page.hideVariantRequestLabel),
       uniformVariantChipWidth: Boolean(page.uniformVariantChipWidth),
-      imageKind:
-        card.product_slug === "macadamia" ||
-        card.product_slug === "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg"
-          ? "photo"
-          : "illustration",
+      imageKind: card.product_slug === "macadamia" || photoGallery.length ? "photo" : "illustration",
       images,
-      gallery: [
-        {
-          src: mapCatalogMediaPath(card.cover_image),
-          alt: `${cleanText(card.product_title)} — основное изображение товара Global Basket`,
-        },
-        {
-          src: mapCatalogMediaPath(page.detail_image || card.detail_image),
-          alt: `${cleanText(card.product_title)} — дополнительный вид товара Global Basket`,
-        },
-        ...(card.product_slug === "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg"
-          ? [
-              {
-                src: "/sait-/assets/catalog/products/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg-extra.png",
-                alt: "Орех макадамия в скорлупе с ключом — крупный план",
-              },
-            ]
-          : []),
-      ],
+      gallery: photoGallery.length
+        ? photoGallery
+        : [
+            {
+              src: mapCatalogMediaPath(card.cover_image),
+              alt: `${cleanText(card.product_title)} — основное изображение товара Global Basket`,
+            },
+            {
+              src: mapCatalogMediaPath(page.detail_image || card.detail_image),
+              alt: `${cleanText(card.product_title)} — дополнительный вид товара Global Basket`,
+            },
+          ],
       pills: buildPills(card, specs, defaultVariant),
       factCards,
       benefitCards: buildBenefitCards(factCards, card, page),
@@ -2310,35 +2420,35 @@ const productsFromPack = catalogPayload.products_cards
     };
   })
   .map((item) =>
-    item.slug !== "macadamia"
+        item.slug !== "macadamia"
       ? item
       : {
           ...item,
           imageKind: "photo",
           images: {
             ...item.images,
-            hero: "/sait-/assets/catalog/products/macadamia-ozon-front.png",
-            packshot: "/sait-/assets/catalog/products/macadamia-ozon-packshot.png",
-            main: "/sait-/assets/catalog/products/macadamia-ozon-front.png",
-            lifestyle: "/sait-/assets/catalog/products/macadamia-ozon-lifestyle.png",
-            poster: "/sait-/assets/catalog/products/macadamia-ozon-front.png",
+            hero: "/sait-/assets/catalog/products/macadamia-gallery-packshot-spill-white.png",
+            packshot: "/sait-/assets/catalog/products/macadamia-gallery-packshot-white.png",
+            main: "/sait-/assets/catalog/products/macadamia-gallery-packshot-spill-white.png",
+            lifestyle: "/sait-/assets/catalog/products/macadamia-gallery-packshot-white.png",
+            poster: "/sait-/assets/catalog/products/macadamia-gallery-packshot-spill-white.png",
           },
           gallery: [
             {
-              src: "/sait-/assets/catalog/products/macadamia-ozon-front.png",
-              alt: "Очищенная макадамия Global Basket в упаковке с россыпью орехов",
+              src: "/sait-/assets/catalog/products/macadamia-gallery-packshot-spill-white.png",
+              alt: "Очищенная макадамия Global Basket в прозрачной упаковке на белом фоне",
             },
             {
-              src: "/sait-/assets/catalog/products/macadamia-ozon-packshot.png",
-              alt: "Фронтальный packshot очищенной макадамии Global Basket",
+              src: "/sait-/assets/catalog/products/macadamia-gallery-packshot-white.png",
+              alt: "Фронтальный packshot очищенной макадамии Global Basket на белом фоне",
             },
             {
-              src: "/sait-/assets/catalog/products/macadamia-ozon-kernels-pile.png",
-              alt: "Очищенные ядра макадамии крупным планом",
+              src: "/sait-/assets/catalog/products/macadamia-gallery-kernels-pile-white.png",
+              alt: "Очищенные ядра макадамии крупным планом на белом фоне",
             },
             {
-              src: "/sait-/assets/catalog/products/macadamia-ozon-kernels-scatter.png",
-              alt: "Очищенные ядра макадамии на белом фоне",
+              src: "/sait-/assets/catalog/products/macadamia-gallery-kernels-scatter-white.png",
+              alt: "Очищенные ядра макадамии россыпью на белом фоне",
             },
           ],
         },
@@ -2347,6 +2457,18 @@ const productsFromPack = catalogPayload.products_cards
 const productCountByCategory = new Map();
 productsFromPack.forEach((item) => {
   productCountByCategory.set(item.categorySlug, (productCountByCategory.get(item.categorySlug) || 0) + 1);
+});
+
+const categoryPreviewImageBySlug = new Map();
+productsFromPack.forEach((item) => {
+  if (categoryPreviewImageBySlug.has(item.categorySlug)) {
+    return;
+  }
+
+  const previewImage = item.gallery?.[0]?.src || item.images?.hero || item.images?.main || "";
+  if (previewImage) {
+    categoryPreviewImageBySlug.set(item.categorySlug, previewImage);
+  }
 });
 
 const categoriesFromPack = catalogPayload.categories
@@ -2358,12 +2480,13 @@ const categoriesFromPack = catalogPayload.categories
     title: cleanText(item.category_title),
     description: cleanText(item.card_description),
     intro: cleanText(item.page_intro),
-    href: cleanText(item.category_url),
+    href: `/sait-/catalog/?category=${cleanText(item.category_slug)}`,
     status: cleanText(item.status) === "В наличии" ? "active" : "request",
     statusLabel: cleanText(item.status) || "В наличии",
     badge: "Раздел",
     tone: categoryTone(item.category_slug),
-    image: mapCatalogMediaPath(item.cover_image),
+    image:
+      categoryPreviewImageBySlug.get(cleanText(item.category_slug)) || mapCatalogMediaPath(item.cover_image),
     productCount: productCountByCategory.get(item.category_slug) || 0,
   }));
 
@@ -2375,9 +2498,8 @@ if (primaryProduct) {
 gb.products = productsFromPack;
 gb.categories = categoriesFromPack;
 gb.catalogPage.intro =
-  "В каталоге собраны 11 товарных позиций и 4 реальные категории с понятным переходом к детальным страницам и запросу условий.";
+  "В каталоге собраны 11 товарных позиций без промежуточных страниц категорий: сразу выбор товара и переход к запросу условий.";
 gb.catalogPage.sorts = [
   { value: "featured", label: "Сначала по каталогу" },
   { value: "available", label: "Сначала товары" },
-  { value: "sections", label: "Сначала разделы" },
 ];

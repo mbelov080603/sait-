@@ -11,6 +11,7 @@ const MIME_TYPES = {
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
   ".js": "application/javascript; charset=utf-8",
+  ".pdf": "application/pdf",
   ".png": "image/png",
 };
 
@@ -78,7 +79,8 @@ const checks = [
     includes: [
       "<h1>Связаться с Global Basket</h1>",
       'name="product_id" value=""',
-      'href="/privacy/"',
+      'href="/legal/globalbasket_privacy_policy.pdf"',
+      'href="/legal/globalbasket_public_offer.pdf"',
       '"@type":"Organization"',
     ],
   },
@@ -120,49 +122,46 @@ const checks = [
   {
     path: "/categories/premium-nuts/",
     includes: [
-      'id="category-title">Премиальные орехи</h1>',
-      "Очищенная макадамия",
-      "Кешью сырой сушеный",
+      "Переходим в каталог",
+      'http-equiv="refresh"',
+      "/catalog/?category=premium-nuts",
       '"@type":"BreadcrumbList"',
     ],
-    excludes: ["Описание раздела появится здесь автоматически."],
   },
   {
     path: "/categories/dried-fruits/",
     includes: [
-      'id="category-title">Сухофрукты</h1>',
-      "Курага монетка",
-      "Манго сушеное",
+      "Переходим в каталог",
+      'http-equiv="refresh"',
+      "/catalog/?category=dried-fruits",
       '"@type":"BreadcrumbList"',
     ],
-    excludes: ["Описание раздела появится здесь автоматически."],
   },
   {
     path: "/categories/nut-mixes/",
     includes: [
-      'id="category-title">Ореховые смеси</h1>',
-      "Ореховая смесь с изюмом",
+      "Переходим в каталог",
+      'http-equiv="refresh"',
+      "/catalog/?category=nut-mixes",
       '"@type":"BreadcrumbList"',
     ],
-    excludes: ["Описание раздела появится здесь автоматически."],
   },
   {
     path: "/categories/gift-sets/",
     includes: [
-      'id="category-title">Подарочные наборы</h1>',
-      "Подарочный набор орехов",
+      "Переходим в каталог",
+      'http-equiv="refresh"',
+      "/catalog/?category=gift-sets",
       '"@type":"BreadcrumbList"',
     ],
-    excludes: ["Описание раздела появится здесь автоматически."],
   },
   {
     path: "/catalog/macadamia/",
     includes: [
       "<h1>Очищенная макадамия 250 г</h1>",
-      "Характеристики",
+      "Ключевые данные о товаре",
       "Состав",
       '"@type":"Product"',
-      '"@type":"FAQPage"',
       '"@type":"BreadcrumbList"',
     ],
   },
@@ -170,10 +169,8 @@ const checks = [
     path: "/catalog/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg/",
     includes: [
       "<h1>Орех макадамия в скорлупе с ключом 1 кг</h1>",
-      "Характеристики",
-      "Как открыть орех?",
+      "Ключевые данные о товаре",
       '"@type":"Product"',
-      '"@type":"FAQPage"',
       '"@type":"BreadcrumbList"',
     ],
   },
@@ -181,30 +178,24 @@ const checks = [
     path: "/catalog/pekan-ochishchennyy-syroy-500-g/",
     includes: [
       "<h1>Пекан очищенный сырой 500 г</h1>",
-      "Характеристики",
-      "Чем пекан отличается от грецкого ореха?",
+      "Ключевые данные о товаре",
       '"@type":"Product"',
-      '"@type":"FAQPage"',
     ],
   },
   {
     path: "/catalog/gretskiy-oreh-ochishchennyy-polovinki-1-kg/",
     includes: [
       "<h1>Грецкий орех очищенный половинки 1 кг</h1>",
-      "Характеристики",
-      "Это половинки или крошка?",
+      "Ключевые данные о товаре",
       '"@type":"Product"',
-      '"@type":"FAQPage"',
     ],
   },
   {
     path: "/catalog/keshyu-syroy-sushenyy-1-kg/",
     includes: [
       "<h1>Кешью сырой сушеный 1 кг</h1>",
-      "Характеристики",
-      "Можно ли использовать для растительного молока?",
+      "Ключевые данные о товаре",
       '"@type":"Product"',
-      '"@type":"FAQPage"',
     ],
   },
   {
@@ -214,6 +205,64 @@ const checks = [
       '"@type":"BreadcrumbList"',
     ],
   },
+  {
+    path: "/legal/",
+    includes: [
+      "<h1>Юридические документы</h1>",
+      "Публичная оферта",
+      "Политика обработки персональных данных",
+      "Согласие на обработку персональных данных",
+      'href="/legal/globalbasket_public_offer.pdf"',
+      '"@type":"BreadcrumbList"',
+    ],
+  },
+  {
+    path: "/legal/public-offer/",
+    includes: [
+      "<h1>Публичная оферта</h1>",
+      "<h2>1. Общие положения</h2>",
+      "о продаже товаров дистанционным способом на сайте Global Basket",
+      "Редакция от 21.04.2026",
+      '"@type":"BreadcrumbList"',
+    ],
+    excludes: ["### "],
+  },
+  {
+    path: "/legal/privacy-policy/",
+    includes: [
+      "<h1>Политика обработки персональных данных</h1>",
+      "и конфиденциальности сайта Global Basket",
+      "Cookies, localStorage и sessionStorage",
+      '"@type":"BreadcrumbList"',
+    ],
+  },
+  {
+    path: "/legal/personal-data-consent/",
+    includes: [
+      "<h1>Согласие на обработку персональных данных</h1>",
+      "для форм и обращений на сайте Global Basket",
+      "Чекбокс не должен быть отмечен заранее.",
+      '"@type":"BreadcrumbList"',
+    ],
+  },
+];
+
+const assetChecks = [
+  {
+    path: "/scripts/main.js",
+    contentTypeIncludes: "application/javascript",
+    includes: [
+      "gb_cookie_notice_accepted",
+      "Сайт использует технические cookies, localStorage и sessionStorage",
+      "LEGAL_ROUTES.privacyPolicyPdf",
+    ],
+  },
+];
+
+const pdfChecks = [
+  "/legal/globalbasket_public_offer.pdf",
+  "/legal/globalbasket_privacy_policy.pdf",
+  "/legal/globalbasket_personal_data_consent.pdf",
 ];
 
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -243,7 +292,40 @@ try {
     }
   }
 
-  console.log(`Smoke HTML checks passed: ${checks.length} routes`);
+  for (const check of assetChecks) {
+    const response = await fetch(new URL(check.path, baseUrl));
+    if (!response.ok) {
+      throw new Error(`${check.path}: expected 200, received ${response.status}`);
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    if (check.contentTypeIncludes && !contentType.includes(check.contentTypeIncludes)) {
+      throw new Error(`${check.path}: expected content-type to include ${check.contentTypeIncludes}, received ${contentType}`);
+    }
+
+    const body = await response.text();
+    for (const expected of check.includes || []) {
+      if (!body.includes(expected)) {
+        throw new Error(`${check.path}: missing ${expected}`);
+      }
+    }
+  }
+
+  for (const pdfPath of pdfChecks) {
+    const response = await fetch(new URL(pdfPath, baseUrl));
+    if (!response.ok) {
+      throw new Error(`${pdfPath}: expected 200, received ${response.status}`);
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/pdf")) {
+      throw new Error(`${pdfPath}: expected application/pdf, received ${contentType}`);
+    }
+  }
+
+  console.log(
+    `Smoke HTML checks passed: ${checks.length} routes, ${assetChecks.length} assets, ${pdfChecks.length} PDFs`,
+  );
 } finally {
   await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
 }

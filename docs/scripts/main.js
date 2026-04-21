@@ -4,6 +4,7 @@ const products =
     ? store.products
     : [store.product].filter(Boolean);
 const categories = Array.isArray(store.categories) ? store.categories : [];
+const GITHUB_PAGES_BASE_PATH = "/sait-";
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -11,12 +12,81 @@ const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selec
 const escapeQuery = (value = "") => value.trim().toLowerCase();
 const queryTokens = (value = "") => escapeQuery(value).split(/\s+/).filter(Boolean);
 const trimHeadingPeriod = (value = "") => String(value).trim().replace(/\.$/, "");
+const trimSlashes = (value = "") => String(value).trim().replace(/^\/+|\/+$/g, "");
 const escapeAttribute = (value = "") =>
   String(value)
     .replaceAll("&", "&amp;")
     .replaceAll('"', "&quot;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
+
+const isGithubPagesRuntime = () =>
+  /github\.io$/i.test(window.location.hostname) ||
+  window.location.pathname === GITHUB_PAGES_BASE_PATH ||
+  window.location.pathname.startsWith(`${GITHUB_PAGES_BASE_PATH}/`);
+
+const getSitePathname = (pathname = window.location.pathname) => {
+  const current = String(pathname || "").trim();
+  if (!current) return "/";
+  if (current === GITHUB_PAGES_BASE_PATH || current === `${GITHUB_PAGES_BASE_PATH}/`) return "/";
+  if (current.startsWith(`${GITHUB_PAGES_BASE_PATH}/`)) {
+    return current.slice(GITHUB_PAGES_BASE_PATH.length) || "/";
+  }
+  return current;
+};
+
+const normalizeInternalPath = (value = "/") => {
+  const [pathname = "/"] = String(value || "").split(/[?#]/);
+  const normalized = getSitePathname(pathname);
+  if (normalized === "/") return "/";
+  const trimmed = trimSlashes(normalized);
+  return trimmed ? `/${trimmed}/` : "/";
+};
+
+const toSiteHref = (value = "/") => {
+  const current = String(value || "").trim();
+  if (!current || /^(?:[a-z]+:|#|\/\/)/i.test(current)) return current;
+
+  const normalized = current.startsWith("/") ? current : `/${current}`;
+  if (
+    normalized === GITHUB_PAGES_BASE_PATH ||
+    normalized.startsWith(`${GITHUB_PAGES_BASE_PATH}/`) ||
+    !isGithubPagesRuntime()
+  ) {
+    return normalized;
+  }
+  return normalized === "/" ? `${GITHUB_PAGES_BASE_PATH}/` : `${GITHUB_PAGES_BASE_PATH}${normalized}`;
+};
+
+const LEGAL_ROUTES = {
+  legalHub: "/sait-/legal/",
+  publicOfferPdf: "/sait-/legal/globalbasket_public_offer.pdf",
+  privacyPolicyPdf: "/sait-/legal/globalbasket_privacy_policy.pdf",
+  personalDataConsentPdf: "/sait-/legal/globalbasket_personal_data_consent.pdf",
+  publicOfferHtml: "/sait-/legal/public-offer/",
+  privacyPolicyHtml: "/sait-/legal/privacy-policy/",
+  personalDataConsentHtml: "/sait-/legal/personal-data-consent/",
+};
+
+const LEGAL_DOCUMENT_LABELS = new Map([
+  ["public-offer", "Публичная оферта"],
+  ["privacy-policy", "Политика обработки персональных данных"],
+  ["personal-data-consent", "Согласие на обработку персональных данных"],
+]);
+
+const NEW_TAB_ATTRS = ' target="_blank" rel="noopener noreferrer"';
+
+const getSitePathSegments = (pathname = window.location.pathname) => {
+  const normalized = trimSlashes(getSitePathname(pathname));
+  return normalized ? normalized.split("/") : [];
+};
+
+const humanizePathSegment = (value = "") =>
+  decodeURIComponent(String(value || ""))
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 
 const isProductActive = (item) =>
   Boolean(item) &&
@@ -37,8 +107,8 @@ products.forEach((item) => {
   });
 });
 
-const normalizeProductKey = (value = "") => String(value).trim().replace(/^\/+|\/+$/g, "");
-const normalizeLookupValue = (value = "") => String(value).trim().replace(/^\/+|\/+$/g, "");
+const normalizeProductKey = (value = "") => trimSlashes(value);
+const normalizeLookupValue = (value = "") => trimSlashes(value);
 
 const findProduct = (value = "") => {
   const normalized = normalizeProductKey(value);
@@ -59,7 +129,7 @@ const resolveProductFromLocation = () => {
   }
 
   if (document.body.dataset.page === "product") {
-    const segments = window.location.pathname.split("/").filter(Boolean);
+    const segments = getSitePathSegments();
     const slug = segments[segments[0] === "catalog" ? 1 : segments.length - 1];
     const pathMatch = findProduct(slug);
     if (pathMatch) return pathMatch;
@@ -96,7 +166,7 @@ const resolveCategoryFromLocation = () => {
   }
 
   if (document.body.dataset.page === "category") {
-    const segments = window.location.pathname.split("/").filter(Boolean);
+    const segments = getSitePathSegments();
     const slug = segments[segments[0] === "categories" ? 1 : segments.length - 1];
     const pathMatch = findCategory(slug);
     if (pathMatch) return pathMatch;
@@ -106,12 +176,169 @@ const resolveCategoryFromLocation = () => {
 };
 
 const currentCategory = resolveCategoryFromLocation();
+const journalPosts = Array.isArray(store.journal?.posts) ? store.journal.posts : [];
+const journalPostIndex = new Map();
+
+journalPosts.forEach((item) => {
+  if (!item?.slug) return;
+  journalPostIndex.set(item.slug, item);
+});
+
+const breadcrumbRouteBySegment = new Map();
+
+const registerBreadcrumbRoute = (path, label) => {
+  const normalizedPath = normalizeInternalPath(path);
+  const [segment] = getSitePathSegments(normalizedPath);
+  if (!segment || !label || breadcrumbRouteBySegment.has(segment)) return;
+  breadcrumbRouteBySegment.set(segment, {
+    label,
+    href: normalizedPath,
+  });
+};
+
+(store.primaryNav || []).forEach((item) => registerBreadcrumbRoute(item?.href, item?.label));
+Object.entries(store.utilityPages || {}).forEach(([slug, page]) => {
+  registerBreadcrumbRoute(`/${slug}/`, page?.title || humanizePathSegment(slug));
+});
+registerBreadcrumbRoute("/sait-/catalog/", "Каталог");
+registerBreadcrumbRoute("/sait-/journal/", "Журнал");
+registerBreadcrumbRoute("/sait-/legal/", "Юридические документы");
+
+const buildBreadcrumbItems = ({
+  pathname = window.location.pathname,
+  search = window.location.search,
+} = {}) => {
+  const routePath = normalizeInternalPath(pathname);
+  const segments = getSitePathSegments(pathname);
+  const items = [{ label: "Главная", href: "/" }];
+
+  if (!segments.length) return items;
+
+  const [section, slug] = segments;
+
+  if (section === "catalog") {
+    const catalogRoute = breadcrumbRouteBySegment.get("catalog") || { label: "Каталог", href: "/sait-/catalog/" };
+    items.push(catalogRoute);
+
+    if (slug) {
+      const productItem = findProduct(slug) || findProduct(routePath);
+      items.push({
+        label: productItem?.shortName || humanizePathSegment(slug),
+        href: routePath,
+      });
+      return items;
+    }
+
+    const params = new URLSearchParams(search || "");
+    const categoryId = params.get("category") || "";
+    const categoryItem = findCategory(categoryId);
+    if (categoryItem) {
+      items.push({
+        label: categoryItem.title || categoryItem.name || humanizePathSegment(categoryId),
+        href: `/sait-/catalog/?category=${categoryItem.id}`,
+      });
+    }
+
+    return items;
+  }
+
+  if (section === "categories") {
+    const catalogRoute = breadcrumbRouteBySegment.get("catalog") || { label: "Каталог", href: "/sait-/catalog/" };
+    const categoryItem = findCategory(slug) || currentCategory;
+    const categoryId = categoryItem?.id || slug || "";
+    items.push(catalogRoute);
+    if (categoryId) {
+      items.push({
+        label: categoryItem?.title || categoryItem?.name || humanizePathSegment(categoryId),
+        href: `/sait-/catalog/?category=${categoryId}`,
+      });
+    }
+    return items;
+  }
+
+  if (section === "journal") {
+    const journalRoute = breadcrumbRouteBySegment.get("journal") || { label: "Журнал", href: "/sait-/journal/" };
+    items.push(journalRoute);
+    if (slug) {
+      const post = journalPostIndex.get(slug);
+      items.push({
+        label: post?.title || humanizePathSegment(slug),
+        href: routePath,
+      });
+    }
+    return items;
+  }
+
+  if (section === "legal") {
+    const legalRoute =
+      breadcrumbRouteBySegment.get("legal") || { label: "Юридические документы", href: "/sait-/legal/" };
+    items.push(legalRoute);
+
+    if (slug) {
+      items.push({
+        label: LEGAL_DOCUMENT_LABELS.get(slug) || humanizePathSegment(slug),
+        href: routePath,
+      });
+    }
+
+    return items;
+  }
+
+  const staticRoute = breadcrumbRouteBySegment.get(section);
+  if (staticRoute) {
+    items.push({
+      label: staticRoute.label,
+      href: routePath,
+    });
+    return items;
+  }
+
+  let accumulatedPath = "";
+  segments.forEach((segment) => {
+    accumulatedPath += `/${segment}`;
+    items.push({
+      label: humanizePathSegment(segment),
+      href: `${accumulatedPath}/`,
+    });
+  });
+
+  return items;
+};
+
+const renderBreadcrumbTrail = (items = buildBreadcrumbItems()) =>
+  items
+    .filter((item) => item?.label)
+    .map((item, index, list) => {
+      const isCurrent = index === list.length - 1;
+      const content =
+        !isCurrent && item.href
+          ? `<a href="${toSiteHref(item.href)}">${item.label}</a>`
+          : `<span>${item.label}</span>`;
+      return `${index ? "<span>/</span>" : ""}${content}`;
+    })
+    .join("");
+
+const renderBreadcrumbs = (items = buildBreadcrumbItems()) => `
+  <div class="breadcrumb" role="navigation" aria-label="Breadcrumbs">
+    ${renderBreadcrumbTrail(items)}
+  </div>
+`;
+
+const syncPageBreadcrumbs = (root = document) => {
+  $$(".breadcrumb", root).forEach((breadcrumb) => {
+    breadcrumb.innerHTML = renderBreadcrumbTrail(buildBreadcrumbItems());
+    breadcrumb.setAttribute("role", "navigation");
+    breadcrumb.setAttribute("aria-label", "Breadcrumbs");
+  });
+};
 
 const STORAGE_KEYS = {
   accountProfile: "gb-account-profile",
   cartItems: "gb-cart-items",
   favoriteItems: "gb-favorite-items",
   lastAccountPayload: "gb-last-account-payload",
+  cookieConsent: "gb_cookie_notice_accepted",
+  legacyCookieConsent: "gb-cookie-consent",
 };
 
 const DEFAULT_ACCOUNT_NAME = "Покупатель Global Basket";
@@ -142,6 +369,14 @@ const removeStorageItem = (key) => {
   }
 };
 
+const readStorageItem = (key) => {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
 const createLocalId = (prefix = "gb") =>
   `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -167,6 +402,24 @@ const setAccountProfile = (profile) => {
     return;
   }
   writeJsonStorage(STORAGE_KEYS.accountProfile, profile);
+};
+
+const hasCookieConsent = () => {
+  if (readStorageItem(STORAGE_KEYS.cookieConsent) === "true") {
+    return true;
+  }
+
+  const legacyConsent = readJsonStorage(STORAGE_KEYS.legacyCookieConsent, null);
+  return legacyConsent?.status === "accepted";
+};
+
+const setCookieConsent = () => {
+  try {
+    window.localStorage.setItem(STORAGE_KEYS.cookieConsent, "true");
+  } catch {
+    // ignore storage errors to keep the UI usable in private mode
+  }
+  removeStorageItem(STORAGE_KEYS.legacyCookieConsent);
 };
 
 const getStoredVariantLabel = (variant = null) =>
@@ -553,7 +806,22 @@ const iconPaths = {
 };
 
 const externalAttrs = (href) =>
-  href && /^https?:\/\//.test(href) ? ' target="_blank" rel="noreferrer"' : "";
+  href && /^https?:\/\//.test(href) ? NEW_TAB_ATTRS : "";
+
+const resolveSiteHref = (href = "") =>
+  href && /^(?:[a-z]+:|#|\/\/)/i.test(href) ? href : toSiteHref(href);
+
+const resolveLinkAttrs = (link = {}) => {
+  const href = resolveSiteHref(link.href || "");
+  const attrs = link.newTab ? NEW_TAB_ATTRS : externalAttrs(href);
+  return { href, attrs };
+};
+
+const renderLegalConsentText = () =>
+  `Даю согласие ООО «ВОСТОК ИМПОРТ ПРОМ» на обработку моих персональных данных на условиях <a href="${toSiteHref(LEGAL_ROUTES.personalDataConsentPdf)}"${NEW_TAB_ATTRS}>Согласия на обработку персональных данных</a> и подтверждаю ознакомление с <a href="${toSiteHref(LEGAL_ROUTES.privacyPolicyPdf)}"${NEW_TAB_ATTRS}>Политикой обработки персональных данных</a>.`;
+
+const renderLegalOfferNote = (className = "legal-offer-note") =>
+  `<p class="${className}">Оформляя заказ или отправляя запрос на покупку, вы принимаете условия <a href="${toSiteHref(LEGAL_ROUTES.publicOfferPdf)}"${NEW_TAB_ATTRS}>Публичной оферты</a> после согласования существенных условий заказа с продавцом.</p>`;
 
 const isCurrentNav = (item, currentPath) =>
   (item.match || [item.href]).some((prefix) => currentPath.startsWith(prefix));
@@ -564,8 +832,13 @@ const renderIcon = (name) => `
   </svg>
 `;
 
-const renderBadge = (label, tone = "active") =>
-  `<span class="meta-badge meta-badge--${tone}">${label}</span>`;
+const renderBadge = (label, tone = "active") => {
+  if (tone === "service" || tone === "editorial") {
+    return "";
+  }
+
+  return `<span class="meta-badge meta-badge--${tone}">${label}</span>`;
+};
 
 const renderHeaderIconLink = (item) => {
   const state = getHeaderState();
@@ -733,10 +1006,10 @@ const renderFooter = () => {
                 <div class="footer-column">
                   <strong>${column.title}</strong>
                   ${column.links
-                    .map(
-                      (link) =>
-                        `<a href="${link.href}"${externalAttrs(link.href)}>${link.label}</a>`,
-                    )
+                    .map((link) => {
+                      const { href, attrs } = resolveLinkAttrs(link);
+                      return `<a href="${href}"${attrs}>${link.label}</a>`;
+                    })
                     .join("")}
                 </div>
               `,
@@ -746,6 +1019,43 @@ const renderFooter = () => {
       </div>
     </footer>
   `;
+};
+
+const renderCookieBanner = () => {
+  if (hasCookieConsent() || $("[data-cookie-banner]")) return;
+
+  const mount = document.createElement("div");
+  mount.className = "cookie-banner";
+  mount.dataset.cookieBanner = "true";
+  mount.innerHTML = `
+    <div class="cookie-banner__inner shell">
+      <div class="cookie-banner__copy">
+        <p>
+          Сайт использует технические cookies, localStorage и sessionStorage для работы корзины,
+          избранного и форм. Продолжая пользоваться сайтом или нажимая «Принять», вы соглашаетесь
+          с использованием этих технологий. Подробнее - в
+          <a href="${toSiteHref(LEGAL_ROUTES.privacyPolicyPdf)}"${NEW_TAB_ATTRS}>Политике обработки персональных данных</a>.
+        </p>
+      </div>
+      <div class="cookie-banner__actions">
+        <button class="button button--small" type="button" data-cookie-accept>
+          Принять
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.append(mount);
+};
+
+const dismissCookieBanner = () => {
+  const banner = $("[data-cookie-banner]");
+  if (!banner) return;
+
+  banner.classList.add("is-hidden");
+  window.setTimeout(() => {
+    banner.remove();
+  }, 220);
 };
 
 const renderFactCard = (item) => `
@@ -800,7 +1110,7 @@ const renderCategoryCard = (item) => `
     <p>${item.description}</p>
     ${
       item.href
-        ? `<a class="text-link text-link--inline category-card__cta" href="${item.href}">Смотреть раздел</a>`
+        ? `<a class="text-link text-link--inline category-card__cta" href="${item.href}">Смотреть товары</a>`
         : `<span class="card-note">Скоро откроем.</span>`
     }
   </article>
@@ -820,7 +1130,7 @@ const renderSectionCard = (item) => `
         ? `<a class="section-card__media" href="${item.href || "#"}"><img src="${item.image}" alt="${item.title || item.name}" loading="lazy" decoding="async" /></a>`
         : ""
     }
-    ${renderBadge(item.badge || item.statusLabel, item.tone || item.status || "service")}
+    ${item.badge || item.statusLabel ? renderBadge(item.badge || item.statusLabel, item.tone || item.status || "service") : ""}
     <h3>${item.href ? `<a href="${item.href}">${item.title || item.name}</a>` : item.title || item.name}</h3>
     <p>${item.description}</p>
     ${
@@ -831,11 +1141,11 @@ const renderSectionCard = (item) => `
   </article>
 `;
 
-const renderJournalCard = (post, featured = false) => `
+const renderJournalCard = (post, { featured = false, showBadge = true } = {}) => `
   <article class="journal-card ${featured ? "journal-card--featured" : ""}">
     ${post.image ? `<a class="journal-card__media" href="${post.href}"><img src="${post.image}" alt="${post.title}" loading="lazy" decoding="async" /></a>` : ""}
     <div class="journal-card__body">
-      ${renderBadge("Материал", "editorial")}
+      ${showBadge ? renderBadge("Материал", "editorial") : ""}
       <h3><a href="${post.href}">${post.title}</a></h3>
       <p>${featured ? post.lead : post.excerpt}</p>
       <a class="text-link text-link--inline journal-card__cta" href="${post.href}">Читать</a>
@@ -1001,7 +1311,7 @@ const renderLeadRequestForm = (config, context = {}) => {
       <div class="section-head section-head--compact">
         ${config.eyebrow ? `<p class="eyebrow">${config.eyebrow}</p>` : ""}
         <h2>${config.title}</h2>
-        <p>${config.text}</p>
+        ${config.text ? `<p>${config.text}</p>` : ""}
       </div>
       <form class="request-form request-form--lead" data-request-form data-request-adapter="crm-ready" novalidate>
         ${Object.entries(hiddenFields)
@@ -1057,13 +1367,16 @@ const renderLeadRequestForm = (config, context = {}) => {
         </label>
         <label class="request-form__consent">
           <input type="checkbox" name="consent" required />
-          <span>${config.consent}</span>
+          <span>${renderLegalConsentText()}</span>
         </label>
         <div class="request-form__actions">
           <button class="button" type="submit">${config.submitLabel}</button>
-          <a class="text-link text-link--inline request-form__action-link" href="${config.secondaryCta.href}"${externalAttrs(config.secondaryCta.href)}>${config.secondaryCta.label}</a>
+          ${config.secondaryCta
+            ? `<a class="text-link text-link--inline request-form__action-link" href="${config.secondaryCta.href}"${externalAttrs(config.secondaryCta.href)}>${config.secondaryCta.label}</a>`
+            : ""}
         </div>
-        <p class="request-form__note">${config.note}</p>
+        ${renderLegalOfferNote()}
+        ${config.note ? `<p class="request-form__note">${config.note}</p>` : ""}
         <p class="request-form__status" data-request-status aria-live="polite"></p>
       </form>
     </article>
@@ -1211,7 +1524,7 @@ const renderContactQuoteForm = (config, context = {}) => {
   return `
     <article class="request-panel request-panel--contact-form">
       <div class="section-head section-head--compact">
-        <p class="eyebrow">${config.eyebrow}</p>
+        ${config.eyebrow ? `<p class="eyebrow">${config.eyebrow}</p>` : ""}
         <h2>${config.title}</h2>
         <p>${config.text}</p>
       </div>
@@ -1374,12 +1687,13 @@ const renderContactQuoteForm = (config, context = {}) => {
           <legend>Согласие и отправка</legend>
           <label class="request-form__consent">
             <input type="checkbox" name="consent" required />
-            <span>${config.consent}</span>
+            <span>${renderLegalConsentText()}</span>
           </label>
           <div class="request-form__actions">
             <button class="button" type="submit">${config.submitLabel}</button>
             <a class="text-link text-link--inline request-form__action-link" href="${config.quickContactHref}"${externalAttrs(config.quickContactHref)}>${config.quickContactLabel}</a>
           </div>
+          ${renderLegalOfferNote()}
           <p class="request-form__note">${config.note}</p>
           <p class="request-form__status" data-request-status aria-live="polite"></p>
         </fieldset>
@@ -1402,9 +1716,6 @@ const renderHome = () => {
           <ul class="hero-stage__meta hero-stage__meta--brand">
             ${store.home.hero.chips.map((item) => `<li>${item}</li>`).join("")}
           </ul>
-          <div class="hero-stage__actions">
-            <a class="text-link text-link--inline" href="${store.home.hero.secondaryCta.href}"${externalAttrs(store.home.hero.secondaryCta.href)}>${store.home.hero.secondaryCta.label}</a>
-          </div>
         </div>
         <div class="hero-stage__media">
           <article class="media-stage media-stage--lifestyle">
@@ -1467,52 +1778,43 @@ const renderHome = () => {
   const [featuredPost, ...otherPosts] = store.journal.posts;
   const journalFeatured = $("#home-journal-featured");
   if (journalFeatured && featuredPost) {
-    journalFeatured.innerHTML = renderJournalCard(featuredPost, true);
+    journalFeatured.innerHTML = renderJournalCard(featuredPost, { featured: true, showBadge: false });
   }
 
   const journalList = $("#home-journal-list");
   if (journalList) {
-    journalList.innerHTML = otherPosts.map((item) => renderJournalCard(item)).join("");
+    journalList.innerHTML = otherPosts
+      .map((item) => renderJournalCard(item, { showBadge: false }))
+      .join("");
   }
 };
 
 const buildCatalogItems = () => {
-  return [
-    ...activeProducts.map((item) => ({
-      type: "product",
-      title: item.shortName,
-      keywords: [
-        item.shortName,
-        item.fullName,
-        item.h1,
-        item.subtitle,
-        item.origin,
-        item.weight,
-        item.packaging,
-        item.category,
-        item.catalogDescription,
-        item.annotation,
-        item.shortDescription,
-        item.fullDescription,
-        item.composition,
-        item.seoKeywords,
-      ]
-        .filter(Boolean)
-        .join(" "),
-      html: renderEnterpriseProductCard(item),
-      status: "active",
-    })),
-    ...activeCategories.map((item, index) => ({
-      type: "section",
-      title: item.name,
-      keywords: `${item.name} ${item.description} ${item.intro || ""} ${item.statusLabel}`,
-      html: renderSectionCard({
-        ...item,
-        className: index === 0 ? "section-card--catalog-start" : "",
-      }),
-      status: "active",
-    })),
-  ];
+  return activeProducts.map((item) => ({
+    type: "product",
+    title: item.shortName,
+    categorySlug: item.categorySlug || "",
+    keywords: [
+      item.shortName,
+      item.fullName,
+      item.h1,
+      item.subtitle,
+      item.origin,
+      item.weight,
+      item.packaging,
+      item.category,
+      item.catalogDescription,
+      item.annotation,
+      item.shortDescription,
+      item.fullDescription,
+      item.composition,
+      item.seoKeywords,
+    ]
+      .filter(Boolean)
+      .join(" "),
+    html: renderEnterpriseProductCard(item),
+    status: "active",
+  }));
 };
 
 const matchesCatalogSearch = (entry, query, scope = "catalog") => {
@@ -1520,10 +1822,42 @@ const matchesCatalogSearch = (entry, query, scope = "catalog") => {
   if (!tokens.length) return true;
 
   if (scope === "nuts" && entry.type !== "product") return false;
-  if (scope === "sections" && entry.type !== "section") return false;
 
   const haystack = escapeQuery(entry.keywords || "");
   return tokens.every((token) => haystack.includes(token));
+};
+
+const resolveCatalogCategoryParam = (params = new URLSearchParams(window.location.search)) => {
+  const category = params.get("category") || "";
+  return categories.some((item) => item?.id === category) ? category : "";
+};
+
+const getCatalogGridItems = ({
+  query = "",
+  scope = "catalog",
+  filter = "all",
+  sort = "featured",
+  category = "",
+} = {}) => {
+  let items = buildCatalogItems();
+
+  if (category) {
+    items = items.filter((entry) => entry.categorySlug === category);
+  }
+
+  if (query) {
+    items = items.filter((entry) => matchesCatalogSearch(entry, query, scope));
+  }
+
+  if (filter === "active") {
+    items = items.filter((item) => item.status === "active");
+  }
+
+  if (sort === "available") {
+    items = items.sort((a, b) => (a.status === "active" ? -1 : 1) - (b.status === "active" ? -1 : 1));
+  }
+
+  return items;
 };
 
 const renderCatalog = () => {
@@ -1582,10 +1916,8 @@ const renderCatalog = () => {
     const params = new URLSearchParams(window.location.search);
     const query = escapeQuery(params.get("q") || "");
     const scope = params.get("scope") || "catalog";
-    const items = buildCatalogItems().filter((entry) => {
-      if (!query) return true;
-      return matchesCatalogSearch(entry, query, scope);
-    });
+    const category = resolveCatalogCategoryParam(params);
+    const items = getCatalogGridItems({ query, scope, category });
 
     grid.innerHTML = items.length
       ? items.map((item) => item.html).join("")
@@ -1603,6 +1935,8 @@ const renderCatalog = () => {
     support.innerHTML = store.catalogPage.support.map(renderSectionCard).join("");
   }
 };
+
+const renderStaticPage = () => {};
 
 const renderProductPage = () => {
   const productItem = product;
@@ -1706,7 +2040,7 @@ const renderProductPage = () => {
         : productItem.priceNote;
 
     return `
-      ${renderBadge(productItem.badge, productItem.badgeTone)}
+      ${productItem.hideDetailBadge ? "" : renderBadge(productItem.badge, productItem.badgeTone)}
       <h1>${productItem.h1 || productItem.shortName}</h1>
       <p class="product-summary__subtitle">${subtitle}</p>
       <p class="product-page__lead">${productItem.annotation || productItem.lead}</p>
@@ -1727,10 +2061,27 @@ const renderProductPage = () => {
           .join("")}
       </dl>
       <div class="purchase-panel">
-        <div>
-          <span class="purchase-panel__label">Стоимость</span>
-          <strong>${productItem.price}</strong>
-          <p>${variantNote}</p>
+        <div class="purchase-panel__header">
+          <div class="purchase-panel__copy">
+            ${productItem.hidePurchaseLabel ? "" : '<span class="purchase-panel__label">Стоимость</span>'}
+            <strong>${productItem.price}</strong>
+            <p>${variantNote}</p>
+          </div>
+          <button
+            class="icon-button product-favorite-toggle"
+            type="button"
+            data-favorite-toggle
+            data-favorite-ui="heart"
+            data-product-id="${escapeAttribute(productItem.id || productItem.slug || "")}"
+            data-product-variant="${escapeAttribute(getStoredVariantLabel(variant))}"
+            data-action-source="product-page"
+            aria-pressed="false"
+            aria-label="Добавить в избранное"
+            title="Добавить в избранное"
+          >
+            <span class="sr-only">Добавить в избранное</span>
+            ${renderIcon("heart")}
+          </button>
         </div>
         <div class="purchase-panel__actions">
           <a class="button" href="${buildContactHref(productItem, "pdp", variant)}">Уточнить условия</a>
@@ -1744,21 +2095,8 @@ const renderProductPage = () => {
           >
             В корзину
           </button>
-          <button
-            class="text-link text-link--inline text-link--icon"
-            type="button"
-            data-favorite-toggle
-            data-favorite-icon="bag"
-            data-product-id="${escapeAttribute(productItem.id || productItem.slug || "")}"
-            data-product-variant="${escapeAttribute(getStoredVariantLabel(variant))}"
-            data-action-source="product-page"
-            aria-pressed="false"
-          >
-            <span>В избранное</span>
-            <span class="text-link__icon" aria-hidden="true">${renderIcon("bag")}</span>
-          </button>
-          <a class="text-link text-link--inline" href="/sait-/catalog/">Вернуться в каталог</a>
         </div>
+        ${renderLegalOfferNote("purchase-panel__note")}
       </div>
       <div class="market-links market-links--summary">
         <span>${productItem.actionMode === "marketplace-default" && (!variant || variant.label === resolveProductVariant(productItem)?.label) ? productItem.quickLinksLabel || "Где купить" : "Следующий шаг"}:</span>
@@ -1809,7 +2147,7 @@ const renderProductPage = () => {
       <article class="panel product-spec-card">
         <div class="section-head section-head--compact">
           <p class="eyebrow">Характеристики</p>
-          <h2>Ключевые данные по позиции</h2>
+          <h2>Ключевые данные о товаре</h2>
         </div>
         ${renderProductSpecs(productItem.specs || [])}
       </article>
@@ -1862,117 +2200,12 @@ const renderContactsPage = () => {
   const requestedVariant = requestedProduct
     ? resolveProductVariant(requestedProduct, params.get("variant") || "")
     : null;
-  const [retailCard, wholesaleCard, marketplacesCard, telegramCard] = store.contactsPage.leftCards;
   const intro = $("#contacts-intro");
   if (intro) {
-    const contactDisclosures = [
-      {
-        title: retailCard.title,
-        meta: "Подскажем по товару, наличию и каналу покупки",
-        body: `
-          <p>${retailCard.text}</p>
-          <div class="contact-disclosure__links">
-            <a class="text-link text-link--inline" href="/sait-/catalog/">Перейти в каталог</a>
-            <a class="text-link text-link--inline" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>Написать в Telegram</a>
-          </div>
-        `,
-      },
-      {
-        title: wholesaleCard.title,
-        meta: "Поставка для магазина, офиса или постоянных закупок",
-        body: `
-          <p>${wholesaleCard.text}</p>
-          <p>Форма запроса помогает сразу передать объём, формат поставки и адрес доставки без лишней переписки.</p>
-        `,
-      },
-      {
-        title: "Контакты",
-        meta: "Телефон, email, Telegram и часы работы",
-        body: `
-          <p>Телефон, email и Telegram остаются резервными каналами связи, если удобнее уточнить детали напрямую.</p>
-          <div class="contact-direct__list">
-            <p><a href="${store.contact.phoneHref}">${store.contact.phone}</a></p>
-            <p><a href="${store.contact.emailHref}">${store.contact.email}</a></p>
-            <p><a href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>${store.contact.telegram}</a></p>
-            <p>${store.contact.hours}</p>
-          </div>
-        `,
-      },
-      {
-        title: "Где купить",
-        meta: "Ozon, Wildberries и Яндекс.Маркет",
-        body: `
-          <p>${marketplacesCard.text}</p>
-          <div class="contact-marketplaces__links">
-            ${store.marketplaces
-              .map(
-                (item) =>
-                  `<a href="${item.href}"${externalAttrs(item.href)}>${item.name}</a>`,
-              )
-              .join("")}
-          </div>
-        `,
-      },
-    ];
-
     intro.innerHTML = `
-      <div class="hero-copy contacts-copy">
-        <p class="eyebrow">Контакты</p>
+      <div class="contacts-hero-form">
         <h1>Связаться с Global Basket</h1>
-        <p>${store.contactsPage.intro}</p>
-      </div>
-      <div class="contacts-disclosures contacts-disclosures--lead">
-        ${contactDisclosures
-          .map(
-            (item) => `
-              <details class="contact-disclosure contact-disclosure--lead">
-                <summary>
-                  <span class="contact-disclosure__title">${item.title}</span>
-                  <span class="contact-disclosure__meta">${item.meta}</span>
-                  <span class="contact-disclosure__chevron" aria-hidden="true"></span>
-                </summary>
-                <div class="contact-disclosure__body">
-                  ${item.body}
-                </div>
-              </details>
-            `,
-          )
-          .join("")}
-      </div>
-      <div class="contacts-disclosures contacts-disclosures--secondary">
-        <details class="contact-disclosure">
-          <summary>
-            <span class="contact-disclosure__title">Telegram и быстрые сообщения</span>
-            <span class="contact-disclosure__meta">Бот, жалобы и канал бренда</span>
-          </summary>
-          <div class="contact-disclosure__body">
-            <p>${telegramCard.text}</p>
-            <div class="contact-disclosure__links">
-              <a class="text-link text-link--inline" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>Открыть бота</a>
-              <a class="text-link text-link--inline" href="${store.contact.telegramComplaintHref}"${externalAttrs(store.contact.telegramComplaintHref)}>Оставить жалобу</a>
-              <a class="text-link text-link--inline" href="${store.contact.channelHref}"${externalAttrs(store.contact.channelHref)}>${store.contact.channel}</a>
-            </div>
-          </div>
-        </details>
-        <details class="contact-disclosure">
-          <summary>
-            <span class="contact-disclosure__title">Подсказки по запросу</span>
-            <span class="contact-disclosure__meta">Когда использовать форму и что указать</span>
-          </summary>
-          <div class="contact-disclosure__body">
-            <p>${retailCard.text}</p>
-            <p>${wholesaleCard.text}</p>
-          </div>
-        </details>
-      </div>
-    `;
-  }
-
-  const panel = $("#contact-panel");
-  if (panel) {
-    panel.innerHTML = `
-      <div class="contact-panel__stack">
-        ${renderContactQuoteForm(store.contactsPage.quoteForm, {
+        ${renderLeadRequestForm(store.home.leadForm, {
           source: requestedSource,
           page: "contacts",
           pageTitle: buildDocumentTitle("Контакты"),
@@ -1981,25 +2214,13 @@ const renderContactsPage = () => {
           productCategory: requestedProduct?.category || requestedCategory?.title || requestedCategory?.name || "",
           productVariant: requestedVariant?.label || "",
         })}
-        <details class="request-panel request-panel--compact request-panel--secondary contact-fallback-panel">
-          <summary class="contact-fallback-panel__summary">
-            <div>
-              <p class="eyebrow">Telegram и резервные каналы</p>
-              <strong>${store.contactsPage.telegramPanel.title}</strong>
-            </div>
-            <span class="contact-fallback-panel__toggle" aria-hidden="true"></span>
-          </summary>
-          <div class="contact-fallback-panel__body">
-            <p>${store.contactsPage.telegramPanel.text}</p>
-            <div class="contact-fallback-panel__actions">
-              <a class="button button--ghost button--small" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>${store.contactsPage.telegramPanel.primary}</a>
-              <a class="text-link text-link--inline" href="${store.contact.telegramComplaintHref}"${externalAttrs(store.contact.telegramComplaintHref)}>${store.contactsPage.telegramPanel.secondary}</a>
-            </div>
-            <p class="request-form__note">Бот: <a href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>${store.contact.telegram}</a>. Канал: <a href="${store.contact.channelHref}"${externalAttrs(store.contact.channelHref)}>${store.contact.channel}</a>. Резервный контакт: <a href="${store.contact.phoneHref}">${store.contact.phone}</a> / <a href="${store.contact.emailHref}">${store.contact.email}</a>.</p>
-          </div>
-        </details>
       </div>
     `;
+  }
+
+  const panel = $("#contact-panel");
+  if (panel) {
+    panel.innerHTML = "";
   }
 };
 
@@ -2302,12 +2523,7 @@ const renderAboutPage = () => {
   hero.innerHTML = `
     <div class="shell about-brand-hero__layout">
       <div class="about-brand-hero__copy">
-        <div class="breadcrumb">
-          <a href="/sait-/">Главная</a>
-          <span>/</span>
-          <span>О бренде</span>
-        </div>
-        <p class="eyebrow">${about.hero.eyebrow}</p>
+        ${renderBreadcrumbs()}
         <h1>${about.hero.title}</h1>
         <p class="about-brand-hero__lead">${about.hero.text}</p>
         <ul class="about-brand-hero__chips">
@@ -2347,7 +2563,6 @@ const renderAboutPage = () => {
     who.innerHTML = `
       <div class="about-split">
         <div class="about-section-copy" data-reveal>
-          <p class="eyebrow">Кто мы</p>
           <h2>${about.who.title}</h2>
           ${about.who.paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join("")}
         </div>
@@ -2362,7 +2577,6 @@ const renderAboutPage = () => {
   if (mission) {
     mission.innerHTML = `
       <div class="section-head about-section-head" data-reveal>
-        <p class="eyebrow">Платформа бренда</p>
         <h2>${about.mission.title}</h2>
         <p>${about.mission.text}</p>
       </div>
@@ -2378,7 +2592,6 @@ const renderAboutPage = () => {
       <section class="about-carousel" data-about-carousel aria-roledescription="carousel" aria-label="${about.facts.title}">
         <div class="about-carousel__top">
           <div class="section-head about-section-head" data-reveal>
-            <p class="eyebrow">Факты о бренде</p>
             <h2>${about.facts.title}</h2>
             <p>${about.facts.text}</p>
           </div>
@@ -2405,7 +2618,6 @@ const renderAboutPage = () => {
   if (values) {
     values.innerHTML = `
       <div class="section-head about-section-head" data-reveal>
-        <p class="eyebrow">Ценности бренда</p>
         <h2>${about.values.title}</h2>
       </div>
       <div class="about-values-grid">
@@ -2418,7 +2630,6 @@ const renderAboutPage = () => {
   if (why) {
     why.innerHTML = `
       <div class="section-head about-section-head" data-reveal>
-        <p class="eyebrow">Почему нас выбирают</p>
         <h2>${about.whyChoose.title}</h2>
       </div>
       <div class="about-why-grid">
@@ -2448,7 +2659,6 @@ const renderAboutPage = () => {
     selection.innerHTML = `
       <div class="about-section-top">
         <div class="section-head about-section-head" data-reveal>
-          <p class="eyebrow">Отбор продуктов</p>
           <h2>${about.selection.title}</h2>
           <p>${about.selection.text}</p>
         </div>
@@ -2477,7 +2687,6 @@ const renderAboutPage = () => {
     differences.innerHTML = `
       <div class="about-section-top">
         <div class="section-head about-section-head" data-reveal>
-          <p class="eyebrow">Отличия</p>
           <h2>${about.differences.title}</h2>
         </div>
         <article class="about-image-card about-image-card--compact" data-reveal>
@@ -2510,7 +2719,6 @@ const renderAboutPage = () => {
   if (character) {
     character.innerHTML = `
       <div class="section-head about-section-head" data-reveal>
-        <p class="eyebrow">Характер бренда</p>
         <h2>${about.character.title}</h2>
       </div>
       <div class="about-character" data-reveal>
@@ -2526,7 +2734,6 @@ const renderAboutPage = () => {
   if (legend) {
     legend.innerHTML = `
       <article class="about-legend" data-reveal>
-        <p class="eyebrow">Легенда бренда</p>
         <h2>${about.legend.title}</h2>
         <p>${about.legend.text}</p>
       </article>
@@ -2538,7 +2745,6 @@ const renderAboutPage = () => {
     cta.innerHTML = `
       <article class="about-final-cta" data-reveal>
         <div class="section-head section-head--compact">
-          <p class="eyebrow">Global Basket</p>
           <h2>${about.cta.title}</h2>
           <p>${about.cta.text}</p>
         </div>
@@ -2569,7 +2775,6 @@ const renderDeliveryPage = () => {
     returns.innerHTML = `
       <article class="request-panel request-panel--compact">
         <div class="section-head section-head--compact">
-          <p class="eyebrow">Возвраты</p>
           <h2>${store.deliveryPage.returns.title}</h2>
           <p>${store.deliveryPage.returns.text}</p>
         </div>
@@ -2635,6 +2840,7 @@ const renderCategoryPage = () => {
             <a class="button" href="${buildCategoryContactHref(category, "category-page")}">Уточнить условия</a>
             <a class="text-link text-link--inline" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>Написать в Telegram</a>
           </div>
+          ${renderLegalOfferNote()}
         </div>
       </article>
     `;
@@ -2659,12 +2865,12 @@ const renderJournalPage = () => {
   const [featuredPost, ...otherPosts] = store.journal.posts;
   const featured = $("#journal-featured");
   if (featured && featuredPost) {
-    featured.innerHTML = renderJournalCard(featuredPost, true);
+    featured.innerHTML = renderJournalCard(featuredPost, { featured: true, showBadge: false });
   }
 
   const list = $("#journal-list");
   if (!list) return;
-  list.innerHTML = otherPosts.map((post) => renderJournalCard(post)).join("");
+  list.innerHTML = otherPosts.map((post) => renderJournalCard(post, { showBadge: false })).join("");
 };
 
 const renderArticleCards = (cards = [], tone = "default") => {
@@ -2717,15 +2923,8 @@ const renderArticlePage = () => {
   const hero = $("#article-hero");
   if (hero) {
     hero.innerHTML = `
-      <div class="breadcrumb">
-        <a href="/sait-/">Главная</a>
-        <span>/</span>
-        <a href="/sait-/journal/">Журнал</a>
-        <span>/</span>
-        <span>${post.title}</span>
-      </div>
+      ${renderBreadcrumbs()}
       <div class="hero-copy">
-        <p class="eyebrow">Материал</p>
         <h1>${post.title}</h1>
         <p>${post.lead}</p>
       </div>
@@ -2758,7 +2957,6 @@ const renderArticlePage = () => {
     const productPanel = `
       <article class="request-panel request-panel--compact article-product-panel">
         <div class="section-head section-head--compact">
-          <p class="eyebrow">Товар</p>
           <h2>${product.shortName}</h2>
           <p>${product.lead}</p>
         </div>
@@ -2928,7 +3126,6 @@ const renderAccountSummaryPanel = (profile = null) => {
   return `
     <article class="request-panel account-summary-card">
       <div class="section-head section-head--compact">
-        <p class="eyebrow">Профиль</p>
         <h2>${profile ? store.utilityPages.account.registeredTitle : "Что сохранится после регистрации"}</h2>
         <p>${profile ? store.utilityPages.account.registeredText : "После сохранения профиля в этом браузере останутся контакт, корзина, избранное и выбранные разделы каталога."}</p>
       </div>
@@ -2961,7 +3158,6 @@ const renderAccountRegistrationPanel = (profile = null) => {
   return `
     <article class="request-panel account-register-panel" id="account-register">
       <div class="section-head section-head--compact">
-        <p class="eyebrow">Регистрация</p>
         <h2>${store.utilityPages.account.formTitle}</h2>
         <p>${store.utilityPages.account.formText}</p>
       </div>
@@ -3015,13 +3211,14 @@ const renderAccountRegistrationPanel = (profile = null) => {
         <fieldset class="request-form__section request-form__section--actions">
           <legend>Согласие и сохранение</legend>
           <label class="request-form__consent">
-            <input type="checkbox" name="consent" ${profile ? "checked" : ""} required />
-            <span>${store.utilityPages.account.consent}</span>
+            <input type="checkbox" name="consent" required />
+            <span>${renderLegalConsentText()}</span>
           </label>
           <div class="request-form__actions">
             <button class="button" type="submit">${store.utilityPages.account.submitLabel}</button>
             <a class="text-link text-link--inline request-form__action-link" href="/sait-/catalog/">Сначала выбрать товары</a>
           </div>
+          ${renderLegalOfferNote()}
           <p class="request-form__note">Профиль сохранится в этом браузере и подтянет корзину, избранное и выбранные интересы.</p>
           <p class="request-form__status" data-request-status aria-live="polite"></p>
         </fieldset>
@@ -3038,16 +3235,11 @@ const renderAccountPage = () => {
   if (!hero || !page) return;
 
   hero.innerHTML = `
-    <div class="breadcrumb">
-      <a href="/sait-/">Главная</a>
-      <span>/</span>
-      <span>${page.title}</span>
-    </div>
+    ${renderBreadcrumbs()}
     <div class="utility-stack utility-stack--account">
       <div class="utility-grid utility-grid--account-top">
         <article class="request-panel utility-page utility-page--account account-hero-card">
           <div class="section-head section-head--compact">
-            <p class="eyebrow">Раздел</p>
             <h1>${page.title}</h1>
             <p>${page.text}</p>
           </div>
@@ -3060,6 +3252,7 @@ const renderAccountPage = () => {
             <a class="button" href="${page.primary.href}">${page.primary.label}</a>
             <a class="button button--ghost" href="${page.secondary.href}">${page.secondary.label}</a>
           </div>
+          ${renderLegalOfferNote()}
         </article>
         ${renderAccountSummaryPanel(profile)}
       </div>
@@ -3079,16 +3272,11 @@ const renderFavoritesPage = () => {
   if (!hero || !page) return;
 
   hero.innerHTML = `
-    <div class="breadcrumb">
-      <a href="/sait-/">Главная</a>
-      <span>/</span>
-      <span>${page.title}</span>
-    </div>
+    ${renderBreadcrumbs()}
     <div class="utility-stack">
       <div class="utility-grid utility-grid--utility-top">
         <article class="request-panel utility-page">
           <div class="section-head section-head--compact">
-            <p class="eyebrow">Раздел</p>
             <h1>${page.title}</h1>
             <p>${page.text}</p>
           </div>
@@ -3096,10 +3284,10 @@ const renderFavoritesPage = () => {
             <a class="button" href="${page.primary.href}">${page.primary.label}</a>
             <a class="button button--ghost" href="${profile ? "/sait-/account/" : "/sait-/account/#account-register"}">${profile ? "Открыть аккаунт" : "Сохранить аккаунт"}</a>
           </div>
+          ${renderLegalOfferNote()}
         </article>
         <article class="request-panel utility-summary-card">
           <div class="section-head section-head--compact">
-            <p class="eyebrow">Сводка</p>
             <h2>Сохранённые позиции</h2>
             <p>${items.length ? "Выбранные товары уже лежат в личной подборке и могут быть добавлены в корзину." : "Подборка пока пустая. Сохраняйте понравившиеся позиции из каталога и со страницы товара."}</p>
           </div>
@@ -3136,16 +3324,11 @@ const renderCartPage = () => {
   if (!hero || !page) return;
 
   hero.innerHTML = `
-    <div class="breadcrumb">
-      <a href="/sait-/">Главная</a>
-      <span>/</span>
-      <span>${page.title}</span>
-    </div>
+    ${renderBreadcrumbs()}
     <div class="utility-stack">
       <div class="utility-grid utility-grid--utility-top">
         <article class="request-panel utility-page">
           <div class="section-head section-head--compact">
-            <p class="eyebrow">Раздел</p>
             <h1>${page.title}</h1>
             <p>${page.text}</p>
           </div>
@@ -3153,10 +3336,10 @@ const renderCartPage = () => {
             <a class="button" href="${page.primary.href}">${page.primary.label}</a>
             <a class="button button--ghost" href="/sait-/contacts/?source=cart">Добавить в запрос</a>
           </div>
+          ${renderLegalOfferNote()}
         </article>
         <article class="request-panel utility-summary-card">
           <div class="section-head section-head--compact">
-            <p class="eyebrow">Сводка</p>
             <h2>Текущее наполнение корзины</h2>
             <p>${items.length ? "Корзина хранится локально и будет прикреплена к аккаунту при регистрации." : "Корзина пока пустая. Добавьте товары из каталога или со страницы продукта."}</p>
           </div>
@@ -3204,17 +3387,43 @@ const renderUtilityPage = () => {
     return;
   }
 
+  const extraSections =
+    Array.isArray(page.sections) && page.sections.length
+      ? `
+        <section class="policy-sheet" aria-label="Подробности политики">
+          ${page.sections
+            .map(
+              (section) => `
+                <article class="request-panel policy-sheet__section">
+                  <div class="section-head section-head--compact">
+                    <h2>${section.title}</h2>
+                  </div>
+                  <div class="policy-sheet__body">
+                    ${(section.paragraphs || []).map((paragraph) => `<p>${paragraph}</p>`).join("")}
+                    ${
+                      Array.isArray(section.items) && section.items.length
+                        ? `
+                          <ul class="policy-list">
+                            ${section.items.map((item) => `<li>${item}</li>`).join("")}
+                          </ul>
+                        `
+                        : ""
+                    }
+                  </div>
+                </article>
+              `,
+            )
+            .join("")}
+        </section>
+      `
+      : "";
+
   const hero = $("#utility-page");
   if (hero) {
     hero.innerHTML = `
-      <div class="breadcrumb">
-        <a href="/sait-/">Главная</a>
-        <span>/</span>
-        <span>${page.title}</span>
-      </div>
+      ${renderBreadcrumbs()}
       <article class="request-panel utility-page">
         <div class="section-head section-head--compact">
-          <p class="eyebrow">Раздел</p>
           <h1>${page.title}</h1>
           <p>${page.text}</p>
         </div>
@@ -3223,6 +3432,7 @@ const renderUtilityPage = () => {
           <a class="button button--ghost" href="${page.secondary.href}">${page.secondary.label}</a>
         </div>
       </article>
+      ${extraSections}
     `;
   }
 };
@@ -3273,26 +3483,17 @@ const applyCatalogToolbarState = () => {
   if (!grid || !toolbar) return;
 
   const params = new URLSearchParams(window.location.search);
-  let filter = params.get("filter") || "all";
-  let sort = params.get("sort") || "featured";
+  const allowedFilters = new Set((store.catalogPage.filters || []).map((item) => item.value));
+  const allowedSorts = new Set((store.catalogPage.sorts || []).map((item) => item.value));
+  let filter = allowedFilters.has(params.get("filter")) ? params.get("filter") : "all";
+  let sort = allowedSorts.has(params.get("sort")) ? params.get("sort") : "featured";
 
   const rerender = () => {
     const params = new URLSearchParams(window.location.search);
     const query = escapeQuery(params.get("q") || "");
     const scope = params.get("scope") || "catalog";
-    let items = buildCatalogItems().filter((entry) => {
-      if (!query) return true;
-      return matchesCatalogSearch(entry, query, scope);
-    });
-    if (filter === "active") items = items.filter((item) => item.type === "product");
-    if (filter === "sections") items = items.filter((item) => item.type === "section");
-
-    if (sort === "available") {
-      items = items.sort((a, b) => (a.status === "active" ? -1 : 1) - (b.status === "active" ? -1 : 1));
-    }
-    if (sort === "sections") {
-      items = items.sort((a, b) => (a.type === "section" ? -1 : 1) - (b.type === "section" ? -1 : 1));
-    }
+    const category = resolveCatalogCategoryParam(params);
+    const items = getCatalogGridItems({ query, scope, filter, sort, category });
 
     grid.innerHTML = items.length
       ? items.map((item) => item.html).join("")
@@ -3414,6 +3615,46 @@ const bindHeaderSearch = () => {
   } else {
     close();
   }
+};
+
+const bindCompactHeader = () => {
+  const header = $(".site-header");
+  const searchRoot = $("[data-header-search]");
+  if (!header) return;
+
+  const allowCompactMode = document.body.dataset.page !== "about";
+  const prefersDesktop = () => window.matchMedia("(min-width: 1181px)").matches;
+
+  const closeSearch = () => {
+    if (!searchRoot) return;
+    searchRoot.classList.remove("is-open");
+    const toggle = $("[data-search-toggle]", searchRoot);
+    const form = $("[data-search-desktop]", searchRoot);
+    toggle?.setAttribute("aria-expanded", "false");
+    form?.setAttribute("aria-hidden", "true");
+  };
+
+  const sync = () => {
+    const isCondensed = allowCompactMode && prefersDesktop() && window.scrollY > 18;
+    header.classList.toggle("is-condensed", isCondensed);
+    document.body.classList.toggle("has-condensed-header", isCondensed);
+
+    if (isCondensed) {
+      closeSearch();
+    } else {
+      searchRoot?.classList.remove("is-open");
+    }
+  };
+
+  let frame = 0;
+  const requestSync = () => {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(sync);
+  };
+
+  window.addEventListener("scroll", requestSync, { passive: true });
+  window.addEventListener("resize", requestSync, { passive: true });
+  sync();
 };
 
 const bindFaq = () => {
@@ -3700,9 +3941,6 @@ const buildRuntimeMeta = () => {
     },
   };
 };
-
-const isGithubPagesRuntime = () =>
-  /github\.io$/i.test(window.location.hostname) || window.location.pathname.startsWith("/sait-/");
 
 const buildAccountRegistrationPayload = (form) => {
   const data = new FormData(form);
@@ -4127,11 +4365,25 @@ const updateStoredActionState = (root = document) => {
     if (!productItem) return;
     const active = isFavoriteSaved(productItem);
     button.setAttribute("aria-pressed", active ? "true" : "false");
-    const label = active ? "В избранном" : "В избранное";
-    if (button.dataset.favoriteIcon === "bag") {
-      button.innerHTML = `<span>${label}</span><span class="text-link__icon" aria-hidden="true">${renderIcon("bag")}</span>`;
+    if (button.dataset.favoriteUi === "heart") {
+      const label = active ? "Убрать из избранного" : "Добавить в избранное";
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-label", label);
+      button.setAttribute("title", label);
+      const helper = button.querySelector(".sr-only");
+      if (helper) helper.textContent = label;
     } else {
-      button.textContent = label;
+      const label = active ? "В избранном" : "В избранное";
+      button.classList.remove("is-active");
+      button.setAttribute("aria-label", label);
+      button.setAttribute("title", label);
+      const helper = button.querySelector(".sr-only");
+      if (helper) helper.textContent = label;
+      if (button.dataset.favoriteIcon === "bag") {
+      button.innerHTML = `<span>${label}</span><span class="text-link__icon" aria-hidden="true">${renderIcon("bag")}</span>`;
+      } else {
+        button.textContent = label;
+      }
     }
   });
 
@@ -4291,6 +4543,17 @@ const bindAccountRegistrationForms = (root = document) => {
   });
 };
 
+const bindCookieBanner = () => {
+  const banner = $("[data-cookie-banner]");
+  const acceptButton = $("[data-cookie-accept]", banner || document);
+  if (!banner || !acceptButton) return;
+
+  acceptButton.addEventListener("click", () => {
+    setCookieConsent();
+    dismissCookieBanner();
+  });
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   renderHeader();
   renderFooter();
@@ -4330,14 +4593,19 @@ document.addEventListener("DOMContentLoaded", () => {
       break;
   }
 
+  syncPageBreadcrumbs();
+  renderCookieBanner();
+
   bindMobileNav();
   bindHeaderSearch();
+  bindCompactHeader();
   bindSearchForms();
   bindFaq();
   bindQuoteCalculators();
   bindRequestForms();
   bindStoredProductActions();
   bindAccountRegistrationForms();
+  bindCookieBanner();
   syncChoiceChips();
   updateHeaderState();
   applyCatalogToolbarState();

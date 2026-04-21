@@ -237,7 +237,7 @@ window.GlobalBasketData = {
       secondaryCta: null,
       note: "",
       consent:
-        'Согласен(а) на обработку контактных данных для ответа по моему запросу. <a href="/privacy/">Политика обработки персональных данных</a>.',
+        'Даю согласие ООО «ВОСТОК ИМПОРТ ПРОМ» на обработку моих персональных данных на условиях <a href="/legal/globalbasket_personal_data_consent.pdf" target="_blank" rel="noopener noreferrer">Согласия на обработку персональных данных</a> и подтверждаю ознакомление с <a href="/legal/globalbasket_privacy_policy.pdf" target="_blank" rel="noopener noreferrer">Политикой обработки персональных данных</a>.',
       topics: [
         { value: "retail", label: "Купить" },
         { value: "price", label: "Узнать цену" },
@@ -345,7 +345,7 @@ window.GlobalBasketData = {
       pricingHint:
         "Базовая цена — 700 ₽/кг. От 100 кг действует скидка 10%, от 500 кг — 15%, от 1000 кг — 20%. За каждые полные 1000 км от Москвы добавляется 5% к сумме. Расстояние рассчитывается автоматически по адресу доставки и затем подтверждается менеджером.",
       consent:
-        'Согласен(а) на обработку контактных данных для связи по запросу и расчёту. <a href="/privacy/">Политика обработки персональных данных</a>.',
+        'Даю согласие ООО «ВОСТОК ИМПОРТ ПРОМ» на обработку моих персональных данных на условиях <a href="/legal/globalbasket_personal_data_consent.pdf" target="_blank" rel="noopener noreferrer">Согласия на обработку персональных данных</a> и подтверждаю ознакомление с <a href="/legal/globalbasket_privacy_policy.pdf" target="_blank" rel="noopener noreferrer">Политикой обработки персональных данных</a>.',
       topics: [
         { value: "Купить", label: "Купить" },
         { value: "Оптовый запрос", label: "Оптовый запрос" },
@@ -393,7 +393,7 @@ window.GlobalBasketData = {
       formText:
         "Укажите один удобный канал связи и отметьте интересующие разделы. Профиль сохранит выбранные позиции в этом браузере.",
       consent:
-        "Согласен(а) на обработку контактных данных для сохранения аккаунта, корзины, предпочтений и последующей связи по запросу.",
+        'Даю согласие ООО «ВОСТОК ИМПОРТ ПРОМ» на обработку моих персональных данных на условиях <a href="/legal/globalbasket_personal_data_consent.pdf" target="_blank" rel="noopener noreferrer">Согласия на обработку персональных данных</a> и подтверждаю ознакомление с <a href="/legal/globalbasket_privacy_policy.pdf" target="_blank" rel="noopener noreferrer">Политикой обработки персональных данных</a>.',
       submitLabel: "Сохранить аккаунт",
       registeredTitle: "Профиль уже сохранён",
       registeredText:
@@ -407,9 +407,39 @@ window.GlobalBasketData = {
     },
     privacy: {
       title: "Политика обработки персональных данных",
-      text: "Global Basket использует контактные данные из форм сайта только для ответа по запросу, уточнения условий поставки и сопровождения обращения. Если нужно изменить или удалить переданные данные, можно написать нам на hello@globalbasket.ru или через страницу контактов.",
+      text: "Global Basket использует контактные данные из форм сайта только для ответа по запросу, уточнения условий поставки и сопровождения обращения. На сайте также применяются cookies, localStorage и sessionStorage для работы корзины, избранного, аккаунта в браузере и форм. Если нужно изменить или удалить переданные данные, можно написать нам на hello@globalbasket.ru или через страницу контактов.",
       primary: { label: "Связаться", href: "/contacts/?source=privacy" },
       secondary: { label: "В каталог", href: "/catalog/" },
+      sections: [
+        {
+          title: "Какие данные и технологии мы используем",
+          paragraphs: [
+            "На сайте используются cookies, localStorage и sessionStorage. Они помогают распознавать текущую сессию браузера, сохранять действия пользователя между страницами и не терять уже выбранные позиции.",
+          ],
+          items: [
+            "технические cookies и идентификаторы сессии браузера;",
+            "состав корзины и избранного в localStorage;",
+            "контактный профиль, если пользователь сам сохранил его в аккаунте этого браузера;",
+            "служебные данные форм и сессии в sessionStorage.",
+          ],
+        },
+        {
+          title: "Для каких целей это нужно",
+          items: [
+            "показывать выбранные товары в корзине и избранном;",
+            "сохранять профиль и интересующие разделы в этом браузере по запросу пользователя;",
+            "не терять введённые данные при переходах между страницами;",
+            "корректно обрабатывать обращения через формы сайта и возвращаться к ним в рамках одной сессии.",
+          ],
+        },
+        {
+          title: "Как управлять согласием и хранением данных",
+          paragraphs: [
+            "Вы можете в любой момент очистить cookies и локальные данные сайта в настройках браузера. После этого корзина, избранное и сохранённый профиль в этом браузере будут сброшены.",
+            "Если нужно изменить или удалить контактные данные, отправленные через формы, напишите на hello@globalbasket.ru или через страницу контактов.",
+          ],
+        },
+      ],
     },
   },
   aboutPage: {
@@ -882,6 +912,23 @@ window.GlobalBasketData = {
           { label: "Контакты", href: "/contacts/" },
           { label: "Доставка и оплата", href: "/delivery/" },
           { label: "Возвраты", href: "/delivery/#returns" },
+        ],
+      },
+      {
+        title: "Документы",
+        links: [
+          { label: "Публичная оферта", href: "/legal/globalbasket_public_offer.pdf", newTab: true },
+          {
+            label: "Политика обработки персональных данных",
+            href: "/legal/globalbasket_privacy_policy.pdf",
+            newTab: true,
+          },
+          {
+            label: "Согласие на обработку персональных данных",
+            href: "/legal/globalbasket_personal_data_consent.pdf",
+            newTab: true,
+          },
+          { label: "Юридические документы", href: "/legal/" },
         ],
       },
       {
@@ -2201,6 +2248,71 @@ const pagesBySlug = new Map(
   catalogPayload.product_pages.map((item) => [item.product_slug, item]),
 );
 
+const photoGalleryOverrides = {
+  "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg": [
+    "/assets/catalog/products/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg-photo-1.webp",
+    "/assets/catalog/products/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg-photo-2.webp",
+    "/assets/catalog/products/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg-photo-3.webp",
+  ],
+  "pekan-ochishchennyy-syroy-500-g": [
+    "/assets/catalog/products/pekan-ochishchennyy-syroy-500-g-photo-1.jpeg",
+    "/assets/catalog/products/pekan-ochishchennyy-syroy-500-g-photo-2.jpeg",
+    "/assets/catalog/products/pekan-ochishchennyy-syroy-500-g-photo-3.jpeg",
+    "/assets/catalog/products/pekan-ochishchennyy-syroy-500-g-photo-4.jpg",
+  ],
+  "gretskiy-oreh-ochishchennyy-polovinki-1-kg": [
+    "/assets/catalog/products/gretskiy-oreh-ochishchennyy-polovinki-1-kg-photo-1.jpeg",
+    "/assets/catalog/products/gretskiy-oreh-ochishchennyy-polovinki-1-kg-photo-2.jpeg",
+    "/assets/catalog/products/gretskiy-oreh-ochishchennyy-polovinki-1-kg-photo-3.jpg",
+    "/assets/catalog/products/gretskiy-oreh-ochishchennyy-polovinki-1-kg-photo-4.webp",
+  ],
+  "keshyu-syroy-sushenyy-1-kg": [
+    "/assets/catalog/products/keshyu-syroy-sushenyy-1-kg-photo-1.jpg",
+    "/assets/catalog/products/keshyu-syroy-sushenyy-1-kg-photo-2.jpg",
+    "/assets/catalog/products/keshyu-syroy-sushenyy-1-kg-photo-3.jpeg",
+    "/assets/catalog/products/keshyu-syroy-sushenyy-1-kg-photo-4.jpeg",
+  ],
+  "kuraga-monetka-bez-sahara-150-g": [
+    "/assets/catalog/products/kuraga-monetka-bez-sahara-150-g-photo-1.jpeg",
+    "/assets/catalog/products/kuraga-monetka-bez-sahara-150-g-photo-2.jpeg",
+    "/assets/catalog/products/kuraga-monetka-bez-sahara-150-g-photo-3.jpeg",
+    "/assets/catalog/products/kuraga-monetka-bez-sahara-150-g-photo-4.jpg",
+  ],
+  "finiki-bez-sahara-iran-1-kg": [
+    "/assets/catalog/products/finiki-bez-sahara-iran-1-kg-photo-1.jpg",
+    "/assets/catalog/products/finiki-bez-sahara-iran-1-kg-photo-2.jpg",
+    "/assets/catalog/products/finiki-bez-sahara-iran-1-kg-photo-3.jpeg",
+    "/assets/catalog/products/finiki-bez-sahara-iran-1-kg-photo-4.jpg",
+  ],
+  "klyukva-sushenaya-150-g": [
+    "/assets/catalog/products/klyukva-sushenaya-150-g-photo-1.jpg",
+    "/assets/catalog/products/klyukva-sushenaya-150-g-photo-2.png",
+    "/assets/catalog/products/klyukva-sushenaya-150-g-photo-3.jpg",
+    "/assets/catalog/products/klyukva-sushenaya-150-g-photo-4.jpg",
+  ],
+  "mango-sushenoe-naturalnoe-200-g": [
+    "/assets/catalog/products/mango-sushenoe-naturalnoe-200-g-photo-1.jpg",
+    "/assets/catalog/products/mango-sushenoe-naturalnoe-200-g-photo-2.jpg",
+    "/assets/catalog/products/mango-sushenoe-naturalnoe-200-g-photo-3.webp",
+  ],
+  "orehovaya-smes-s-izyumom-1-kg": [
+    "/assets/catalog/products/orehovaya-smes-s-izyumom-1-kg-photo-1.jpeg",
+    "/assets/catalog/products/orehovaya-smes-s-izyumom-1-kg-photo-2.jpeg",
+    "/assets/catalog/products/orehovaya-smes-s-izyumom-1-kg-photo-3.jpg",
+    "/assets/catalog/products/orehovaya-smes-s-izyumom-1-kg-photo-4.jpeg",
+  ],
+  "podarochnyy-nabor-orehov": [
+    "/assets/catalog/products/podarochnyy-nabor-orehov-photo-1.jpg",
+    "/assets/catalog/products/podarochnyy-nabor-orehov-photo-2.jpg",
+  ],
+};
+
+const buildPhotoGallery = (slug = "", title = "") =>
+  (photoGalleryOverrides[slug] || []).map((src, index) => ({
+    src,
+    alt: `${cleanText(title)} — фото товара ${index + 1}`,
+  }));
+
 const productsFromPack = catalogPayload.products_cards
   .slice()
   .sort((a, b) => Number(a.catalog_order) - Number(b.catalog_order))
@@ -2211,18 +2323,24 @@ const productsFromPack = catalogPayload.products_cards
     const variants = (variantsBySlug.get(card.product_slug) || []).slice();
     const defaultVariant = variants.find((item) => item.isDefault) || variants[0] || null;
     const variantType = cleanText(page.variant_type) || defaultVariant?.type || "Вес";
+    const photoGallery = buildPhotoGallery(
+      cleanText(card.product_slug),
+      cleanText(page.h1) || cleanText(card.product_title),
+    );
+    const primaryPhoto = photoGallery[0]?.src || "";
+    const secondaryPhoto = photoGallery[1]?.src || primaryPhoto;
     const images = {
-      hero: mapCatalogMediaPath(page.cover_image || card.cover_image),
-      packshot: mapCatalogMediaPath(card.cover_image),
-      main: mapCatalogMediaPath(page.cover_image || card.cover_image),
+      hero: primaryPhoto || mapCatalogMediaPath(page.cover_image || card.cover_image),
+      packshot: primaryPhoto || mapCatalogMediaPath(card.cover_image),
+      main: primaryPhoto || mapCatalogMediaPath(page.cover_image || card.cover_image),
       lifestyle:
         card.product_slug === "macadamia"
           ? "/assets/catalog/products/macadamia-gallery-packshot-white.png"
-          : mapCatalogMediaPath(page.detail_image || card.detail_image),
+          : secondaryPhoto || mapCatalogMediaPath(page.detail_image || card.detail_image),
       poster:
         card.product_slug === "macadamia"
           ? "/assets/catalog/products/macadamia-gallery-packshot-spill-white.png"
-          : mapCatalogMediaPath(page.cover_image || card.cover_image),
+          : primaryPhoto || mapCatalogMediaPath(page.cover_image || card.cover_image),
     };
     const factCards = buildFactCards(specs, defaultVariant, variantType);
 
@@ -2280,30 +2398,20 @@ const productsFromPack = catalogPayload.products_cards
       hideFavoriteAction: Boolean(page.hideFavoriteAction),
       hideVariantRequestLabel: Boolean(page.hideVariantRequestLabel),
       uniformVariantChipWidth: Boolean(page.uniformVariantChipWidth),
-      imageKind:
-        card.product_slug === "macadamia" ||
-        card.product_slug === "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg"
-          ? "photo"
-          : "illustration",
+      imageKind: card.product_slug === "macadamia" || photoGallery.length ? "photo" : "illustration",
       images,
-      gallery: [
-        {
-          src: mapCatalogMediaPath(card.cover_image),
-          alt: `${cleanText(card.product_title)} — основное изображение товара Global Basket`,
-        },
-        {
-          src: mapCatalogMediaPath(page.detail_image || card.detail_image),
-          alt: `${cleanText(card.product_title)} — дополнительный вид товара Global Basket`,
-        },
-        ...(card.product_slug === "oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg"
-          ? [
-              {
-                src: "/assets/catalog/products/oreh-makadamiya-v-skorlupe-s-klyuchom-1-kg-extra.png",
-                alt: "Орех макадамия в скорлупе с ключом — крупный план",
-              },
-            ]
-          : []),
-      ],
+      gallery: photoGallery.length
+        ? photoGallery
+        : [
+            {
+              src: mapCatalogMediaPath(card.cover_image),
+              alt: `${cleanText(card.product_title)} — основное изображение товара Global Basket`,
+            },
+            {
+              src: mapCatalogMediaPath(page.detail_image || card.detail_image),
+              alt: `${cleanText(card.product_title)} — дополнительный вид товара Global Basket`,
+            },
+          ],
       pills: buildPills(card, specs, defaultVariant),
       factCards,
       benefitCards: buildBenefitCards(factCards, card, page),
@@ -2351,6 +2459,18 @@ productsFromPack.forEach((item) => {
   productCountByCategory.set(item.categorySlug, (productCountByCategory.get(item.categorySlug) || 0) + 1);
 });
 
+const categoryPreviewImageBySlug = new Map();
+productsFromPack.forEach((item) => {
+  if (categoryPreviewImageBySlug.has(item.categorySlug)) {
+    return;
+  }
+
+  const previewImage = item.gallery?.[0]?.src || item.images?.hero || item.images?.main || "";
+  if (previewImage) {
+    categoryPreviewImageBySlug.set(item.categorySlug, previewImage);
+  }
+});
+
 const categoriesFromPack = catalogPayload.categories
   .slice()
   .sort((a, b) => Number(a.catalog_order) - Number(b.catalog_order))
@@ -2365,7 +2485,8 @@ const categoriesFromPack = catalogPayload.categories
     statusLabel: cleanText(item.status) || "В наличии",
     badge: "Раздел",
     tone: categoryTone(item.category_slug),
-    image: mapCatalogMediaPath(item.cover_image),
+    image:
+      categoryPreviewImageBySlug.get(cleanText(item.category_slug)) || mapCatalogMediaPath(item.cover_image),
     productCount: productCountByCategory.get(item.category_slug) || 0,
   }));
 
