@@ -1198,17 +1198,6 @@ const renderEnterpriseProductCard = (productItem = product) => {
             </button>
           </div>
           <div class="product-card__utility">
-            <button
-              class="text-link text-link--inline text-link--button-reset"
-              type="button"
-              data-favorite-toggle
-              data-product-id="${escapeAttribute(productItem.id || productItem.slug || "")}"
-              data-product-variant="${escapeAttribute(variantLabel)}"
-              data-action-source="catalog-card"
-              aria-pressed="false"
-            >
-              В избранное
-            </button>
             <a class="text-link text-link--inline" href="${buildContactHref(productItem, "catalog-card")}">Уточнить условия</a>
           </div>
         </div>
@@ -3061,18 +3050,6 @@ const renderSavedSelectionCard = (entry, mode = "cart") => {
                   <span>${Math.max(1, Number(entry.quantity) || 1)}</span>
                   <button type="button" data-cart-quantity-action="increase" data-entry-id="${escapeAttribute(entry.entryId)}" aria-label="Увеличить количество">+</button>
                 </div>
-                <button
-                  class="text-link text-link--inline"
-                  type="button"
-                  data-favorite-toggle
-                  data-product-id="${escapeAttribute(entry.productId || "")}"
-                  data-product-variant="${escapeAttribute(entry.variantLabel || "")}"
-                  data-action-source="cart-page"
-                  aria-pressed="${isFavoriteSaved(productItem || entry) ? "true" : "false"}"
-                >
-                  В избранное
-                </button>
-                <button class="text-link text-link--inline" type="button" data-cart-remove data-entry-id="${escapeAttribute(entry.entryId)}">Удалить</button>
               `
               : `
                 <button
@@ -3085,7 +3062,6 @@ const renderSavedSelectionCard = (entry, mode = "cart") => {
                 >
                   В корзину
                 </button>
-                <button class="text-link text-link--inline" type="button" data-favorite-remove data-product-id="${escapeAttribute(entry.productId || "")}">Убрать</button>
               `
           }
         </div>
@@ -4450,24 +4426,6 @@ const bindStoredProductActions = (root = document) => {
       if (!entry) return;
       const delta = button.dataset.cartQuantityAction === "decrease" ? -1 : 1;
       updateCartItemQuantity(entryId, Math.max(0, Math.max(1, Number(entry.quantity) || 1) + delta));
-      refreshStatefulUi();
-    });
-  });
-
-  $$("[data-cart-remove]", root).forEach((button) => {
-    if (button.dataset.bound === "true") return;
-    button.dataset.bound = "true";
-    button.addEventListener("click", () => {
-      removeCartItem(button.dataset.entryId || "");
-      refreshStatefulUi();
-    });
-  });
-
-  $$("[data-favorite-remove]", root).forEach((button) => {
-    if (button.dataset.bound === "true") return;
-    button.dataset.bound = "true";
-    button.addEventListener("click", () => {
-      removeFavoriteItem(button.dataset.productId || "");
       refreshStatefulUi();
     });
   });

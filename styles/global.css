@@ -4925,7 +4925,7 @@ body.has-mobile-nav {
 
 .product-card__utility {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   align-items: center;
   gap: 10px;
   margin-top: auto;
@@ -4939,14 +4939,6 @@ body.has-mobile-nav {
   padding-top: 0;
   justify-content: center;
   text-align: center;
-}
-
-.product-card__utility button.text-link--button-reset {
-  appearance: none;
-  border: 0;
-  background: transparent;
-  padding: 0;
-  cursor: pointer;
 }
 
 .utility-page {
