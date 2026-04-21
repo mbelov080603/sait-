@@ -25,6 +25,7 @@ const publishEntries = [
   "favorites",
   "index.html",
   "journal",
+  "legal",
   "privacy",
   "scripts",
   "styles",
@@ -41,6 +42,7 @@ const internalPrefixes = [
   "contacts",
   "delivery",
   "journal",
+  "legal",
   "privacy",
   "favorites",
   "account",
@@ -131,6 +133,8 @@ mkdirSync(outputDir, { recursive: true });
 for (const entry of publishEntries) {
   copyEntry(entry);
 }
+
+rmSync(path.join(outputDir, "legal", "source"), { recursive: true, force: true });
 
 walkAndTransform(outputDir);
 

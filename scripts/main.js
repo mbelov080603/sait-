@@ -4,6 +4,7 @@ const products =
     ? store.products
     : [store.product].filter(Boolean);
 const categories = Array.isArray(store.categories) ? store.categories : [];
+const GITHUB_PAGES_BASE_PATH = "/sait-";
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -11,12 +12,81 @@ const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selec
 const escapeQuery = (value = "") => value.trim().toLowerCase();
 const queryTokens = (value = "") => escapeQuery(value).split(/\s+/).filter(Boolean);
 const trimHeadingPeriod = (value = "") => String(value).trim().replace(/\.$/, "");
+const trimSlashes = (value = "") => String(value).trim().replace(/^\/+|\/+$/g, "");
 const escapeAttribute = (value = "") =>
   String(value)
     .replaceAll("&", "&amp;")
     .replaceAll('"', "&quot;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
+
+const isGithubPagesRuntime = () =>
+  /github\.io$/i.test(window.location.hostname) ||
+  window.location.pathname === GITHUB_PAGES_BASE_PATH ||
+  window.location.pathname.startsWith(`${GITHUB_PAGES_BASE_PATH}/`);
+
+const getSitePathname = (pathname = window.location.pathname) => {
+  const current = String(pathname || "").trim();
+  if (!current) return "/";
+  if (current === GITHUB_PAGES_BASE_PATH || current === `${GITHUB_PAGES_BASE_PATH}/`) return "/";
+  if (current.startsWith(`${GITHUB_PAGES_BASE_PATH}/`)) {
+    return current.slice(GITHUB_PAGES_BASE_PATH.length) || "/";
+  }
+  return current;
+};
+
+const normalizeInternalPath = (value = "/") => {
+  const [pathname = "/"] = String(value || "").split(/[?#]/);
+  const normalized = getSitePathname(pathname);
+  if (normalized === "/") return "/";
+  const trimmed = trimSlashes(normalized);
+  return trimmed ? `/${trimmed}/` : "/";
+};
+
+const toSiteHref = (value = "/") => {
+  const current = String(value || "").trim();
+  if (!current || /^(?:[a-z]+:|#|\/\/)/i.test(current)) return current;
+
+  const normalized = current.startsWith("/") ? current : `/${current}`;
+  if (
+    normalized === GITHUB_PAGES_BASE_PATH ||
+    normalized.startsWith(`${GITHUB_PAGES_BASE_PATH}/`) ||
+    !isGithubPagesRuntime()
+  ) {
+    return normalized;
+  }
+  return normalized === "/" ? `${GITHUB_PAGES_BASE_PATH}/` : `${GITHUB_PAGES_BASE_PATH}${normalized}`;
+};
+
+const LEGAL_ROUTES = {
+  legalHub: "/sait-/legal/",
+  publicOfferPdf: "/sait-/legal/globalbasket_public_offer.pdf",
+  privacyPolicyPdf: "/sait-/legal/globalbasket_privacy_policy.pdf",
+  personalDataConsentPdf: "/sait-/legal/globalbasket_personal_data_consent.pdf",
+  publicOfferHtml: "/sait-/legal/public-offer/",
+  privacyPolicyHtml: "/sait-/legal/privacy-policy/",
+  personalDataConsentHtml: "/sait-/legal/personal-data-consent/",
+};
+
+const LEGAL_DOCUMENT_LABELS = new Map([
+  ["public-offer", "Публичная оферта"],
+  ["privacy-policy", "Политика обработки персональных данных"],
+  ["personal-data-consent", "Согласие на обработку персональных данных"],
+]);
+
+const NEW_TAB_ATTRS = ' target="_blank" rel="noopener noreferrer"';
+
+const getSitePathSegments = (pathname = window.location.pathname) => {
+  const normalized = trimSlashes(getSitePathname(pathname));
+  return normalized ? normalized.split("/") : [];
+};
+
+const humanizePathSegment = (value = "") =>
+  decodeURIComponent(String(value || ""))
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 
 const isProductActive = (item) =>
   Boolean(item) &&
@@ -37,8 +107,8 @@ products.forEach((item) => {
   });
 });
 
-const normalizeProductKey = (value = "") => String(value).trim().replace(/^\/+|\/+$/g, "");
-const normalizeLookupValue = (value = "") => String(value).trim().replace(/^\/+|\/+$/g, "");
+const normalizeProductKey = (value = "") => trimSlashes(value);
+const normalizeLookupValue = (value = "") => trimSlashes(value);
 
 const findProduct = (value = "") => {
   const normalized = normalizeProductKey(value);
@@ -59,7 +129,7 @@ const resolveProductFromLocation = () => {
   }
 
   if (document.body.dataset.page === "product") {
-    const segments = window.location.pathname.split("/").filter(Boolean);
+    const segments = getSitePathSegments();
     const slug = segments[segments[0] === "catalog" ? 1 : segments.length - 1];
     const pathMatch = findProduct(slug);
     if (pathMatch) return pathMatch;
@@ -96,7 +166,7 @@ const resolveCategoryFromLocation = () => {
   }
 
   if (document.body.dataset.page === "category") {
-    const segments = window.location.pathname.split("/").filter(Boolean);
+    const segments = getSitePathSegments();
     const slug = segments[segments[0] === "categories" ? 1 : segments.length - 1];
     const pathMatch = findCategory(slug);
     if (pathMatch) return pathMatch;
@@ -106,17 +176,172 @@ const resolveCategoryFromLocation = () => {
 };
 
 const currentCategory = resolveCategoryFromLocation();
+const journalPosts = Array.isArray(store.journal?.posts) ? store.journal.posts : [];
+const journalPostIndex = new Map();
+
+journalPosts.forEach((item) => {
+  if (!item?.slug) return;
+  journalPostIndex.set(item.slug, item);
+});
+
+const breadcrumbRouteBySegment = new Map();
+
+const registerBreadcrumbRoute = (path, label) => {
+  const normalizedPath = normalizeInternalPath(path);
+  const [segment] = getSitePathSegments(normalizedPath);
+  if (!segment || !label || breadcrumbRouteBySegment.has(segment)) return;
+  breadcrumbRouteBySegment.set(segment, {
+    label,
+    href: normalizedPath,
+  });
+};
+
+(store.primaryNav || []).forEach((item) => registerBreadcrumbRoute(item?.href, item?.label));
+Object.entries(store.utilityPages || {}).forEach(([slug, page]) => {
+  registerBreadcrumbRoute(`/${slug}/`, page?.title || humanizePathSegment(slug));
+});
+registerBreadcrumbRoute("/sait-/catalog/", "Каталог");
+registerBreadcrumbRoute("/sait-/journal/", "Журнал");
+registerBreadcrumbRoute("/sait-/legal/", "Юридические документы");
+
+const buildBreadcrumbItems = ({
+  pathname = window.location.pathname,
+  search = window.location.search,
+} = {}) => {
+  const routePath = normalizeInternalPath(pathname);
+  const segments = getSitePathSegments(pathname);
+  const items = [{ label: "Главная", href: "/" }];
+
+  if (!segments.length) return items;
+
+  const [section, slug] = segments;
+
+  if (section === "catalog") {
+    const catalogRoute = breadcrumbRouteBySegment.get("catalog") || { label: "Каталог", href: "/sait-/catalog/" };
+    items.push(catalogRoute);
+
+    if (slug) {
+      const productItem = findProduct(slug) || findProduct(routePath);
+      items.push({
+        label: productItem?.shortName || humanizePathSegment(slug),
+        href: routePath,
+      });
+      return items;
+    }
+
+    const params = new URLSearchParams(search || "");
+    const categoryId = params.get("category") || "";
+    const categoryItem = findCategory(categoryId);
+    if (categoryItem) {
+      items.push({
+        label: categoryItem.title || categoryItem.name || humanizePathSegment(categoryId),
+        href: `/sait-/catalog/?category=${categoryItem.id}`,
+      });
+    }
+
+    return items;
+  }
+
+  if (section === "categories") {
+    const catalogRoute = breadcrumbRouteBySegment.get("catalog") || { label: "Каталог", href: "/sait-/catalog/" };
+    const categoryItem = findCategory(slug) || currentCategory;
+    const categoryId = categoryItem?.id || slug || "";
+    items.push(catalogRoute);
+    if (categoryId) {
+      items.push({
+        label: categoryItem?.title || categoryItem?.name || humanizePathSegment(categoryId),
+        href: `/sait-/catalog/?category=${categoryId}`,
+      });
+    }
+    return items;
+  }
+
+  if (section === "journal") {
+    const journalRoute = breadcrumbRouteBySegment.get("journal") || { label: "Журнал", href: "/sait-/journal/" };
+    items.push(journalRoute);
+    if (slug) {
+      const post = journalPostIndex.get(slug);
+      items.push({
+        label: post?.title || humanizePathSegment(slug),
+        href: routePath,
+      });
+    }
+    return items;
+  }
+
+  if (section === "legal") {
+    const legalRoute =
+      breadcrumbRouteBySegment.get("legal") || { label: "Юридические документы", href: "/sait-/legal/" };
+    items.push(legalRoute);
+
+    if (slug) {
+      items.push({
+        label: LEGAL_DOCUMENT_LABELS.get(slug) || humanizePathSegment(slug),
+        href: routePath,
+      });
+    }
+
+    return items;
+  }
+
+  const staticRoute = breadcrumbRouteBySegment.get(section);
+  if (staticRoute) {
+    items.push({
+      label: staticRoute.label,
+      href: routePath,
+    });
+    return items;
+  }
+
+  let accumulatedPath = "";
+  segments.forEach((segment) => {
+    accumulatedPath += `/${segment}`;
+    items.push({
+      label: humanizePathSegment(segment),
+      href: `${accumulatedPath}/`,
+    });
+  });
+
+  return items;
+};
+
+const renderBreadcrumbTrail = (items = buildBreadcrumbItems()) =>
+  items
+    .filter((item) => item?.label)
+    .map((item, index, list) => {
+      const isCurrent = index === list.length - 1;
+      const content =
+        !isCurrent && item.href
+          ? `<a href="${toSiteHref(item.href)}">${item.label}</a>`
+          : `<span>${item.label}</span>`;
+      return `${index ? "<span>/</span>" : ""}${content}`;
+    })
+    .join("");
+
+const renderBreadcrumbs = (items = buildBreadcrumbItems()) => `
+  <div class="breadcrumb" role="navigation" aria-label="Breadcrumbs">
+    ${renderBreadcrumbTrail(items)}
+  </div>
+`;
+
+const syncPageBreadcrumbs = (root = document) => {
+  $$(".breadcrumb", root).forEach((breadcrumb) => {
+    breadcrumb.innerHTML = renderBreadcrumbTrail(buildBreadcrumbItems());
+    breadcrumb.setAttribute("role", "navigation");
+    breadcrumb.setAttribute("aria-label", "Breadcrumbs");
+  });
+};
 
 const STORAGE_KEYS = {
   accountProfile: "gb-account-profile",
   cartItems: "gb-cart-items",
   favoriteItems: "gb-favorite-items",
   lastAccountPayload: "gb-last-account-payload",
-  cookieConsent: "gb-cookie-consent",
+  cookieConsent: "gb_cookie_notice_accepted",
+  legacyCookieConsent: "gb-cookie-consent",
 };
 
 const DEFAULT_ACCOUNT_NAME = "Покупатель Global Basket";
-const COOKIE_CONSENT_VERSION = 1;
 
 const readJsonStorage = (key, fallback) => {
   try {
@@ -141,6 +366,14 @@ const removeStorageItem = (key) => {
     window.localStorage.removeItem(key);
   } catch {
     // ignore storage errors to keep the UI usable in private mode
+  }
+};
+
+const readStorageItem = (key) => {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
   }
 };
 
@@ -171,19 +404,22 @@ const setAccountProfile = (profile) => {
   writeJsonStorage(STORAGE_KEYS.accountProfile, profile);
 };
 
-const getCookieConsent = () => readJsonStorage(STORAGE_KEYS.cookieConsent, null);
-
 const hasCookieConsent = () => {
-  const consent = getCookieConsent();
-  return consent?.status === "accepted" && consent?.version === COOKIE_CONSENT_VERSION;
+  if (readStorageItem(STORAGE_KEYS.cookieConsent) === "true") {
+    return true;
+  }
+
+  const legacyConsent = readJsonStorage(STORAGE_KEYS.legacyCookieConsent, null);
+  return legacyConsent?.status === "accepted";
 };
 
 const setCookieConsent = () => {
-  writeJsonStorage(STORAGE_KEYS.cookieConsent, {
-    status: "accepted",
-    version: COOKIE_CONSENT_VERSION,
-    acceptedAt: toIsoNow(),
-  });
+  try {
+    window.localStorage.setItem(STORAGE_KEYS.cookieConsent, "true");
+  } catch {
+    // ignore storage errors to keep the UI usable in private mode
+  }
+  removeStorageItem(STORAGE_KEYS.legacyCookieConsent);
 };
 
 const getStoredVariantLabel = (variant = null) =>
@@ -570,7 +806,22 @@ const iconPaths = {
 };
 
 const externalAttrs = (href) =>
-  href && /^https?:\/\//.test(href) ? ' target="_blank" rel="noreferrer"' : "";
+  href && /^https?:\/\//.test(href) ? NEW_TAB_ATTRS : "";
+
+const resolveSiteHref = (href = "") =>
+  href && /^(?:[a-z]+:|#|\/\/)/i.test(href) ? href : toSiteHref(href);
+
+const resolveLinkAttrs = (link = {}) => {
+  const href = resolveSiteHref(link.href || "");
+  const attrs = link.newTab ? NEW_TAB_ATTRS : externalAttrs(href);
+  return { href, attrs };
+};
+
+const renderLegalConsentText = () =>
+  `Даю согласие ООО «ВОСТОК ИМПОРТ ПРОМ» на обработку моих персональных данных на условиях <a href="${toSiteHref(LEGAL_ROUTES.personalDataConsentPdf)}"${NEW_TAB_ATTRS}>Согласия на обработку персональных данных</a> и подтверждаю ознакомление с <a href="${toSiteHref(LEGAL_ROUTES.privacyPolicyPdf)}"${NEW_TAB_ATTRS}>Политикой обработки персональных данных</a>.`;
+
+const renderLegalOfferNote = (className = "legal-offer-note") =>
+  `<p class="${className}">Оформляя заказ или отправляя запрос на покупку, вы принимаете условия <a href="${toSiteHref(LEGAL_ROUTES.publicOfferPdf)}"${NEW_TAB_ATTRS}>Публичной оферты</a> после согласования существенных условий заказа с продавцом.</p>`;
 
 const isCurrentNav = (item, currentPath) =>
   (item.match || [item.href]).some((prefix) => currentPath.startsWith(prefix));
@@ -755,10 +1006,10 @@ const renderFooter = () => {
                 <div class="footer-column">
                   <strong>${column.title}</strong>
                   ${column.links
-                    .map(
-                      (link) =>
-                        `<a href="${link.href}"${externalAttrs(link.href)}>${link.label}</a>`,
-                    )
+                    .map((link) => {
+                      const { href, attrs } = resolveLinkAttrs(link);
+                      return `<a href="${href}"${attrs}>${link.label}</a>`;
+                    })
                     .join("")}
                 </div>
               `,
@@ -779,17 +1030,16 @@ const renderCookieBanner = () => {
   mount.innerHTML = `
     <div class="cookie-banner__inner shell">
       <div class="cookie-banner__copy">
-        <strong>Мы используем cookies и локальное хранилище</strong>
         <p>
-          Global Basket сохраняет cookies, localStorage и sessionStorage, чтобы работали корзина,
-          избранное, профиль в браузере и формы сайта. Подробнее о составе данных и целях хранения
-          — в политике обработки персональных данных.
+          Сайт использует технические cookies, localStorage и sessionStorage для работы корзины,
+          избранного и форм. Продолжая пользоваться сайтом или нажимая «Принять», вы соглашаетесь
+          с использованием этих технологий. Подробнее - в
+          <a href="${toSiteHref(LEGAL_ROUTES.privacyPolicyPdf)}"${NEW_TAB_ATTRS}>Политике обработки персональных данных</a>.
         </p>
       </div>
       <div class="cookie-banner__actions">
-        <a class="button button--ghost button--small" href="/sait-/privacy/">Политика</a>
         <button class="button button--small" type="button" data-cookie-accept>
-          Понятно
+          Принять
         </button>
       </div>
     </div>
@@ -1117,7 +1367,7 @@ const renderLeadRequestForm = (config, context = {}) => {
         </label>
         <label class="request-form__consent">
           <input type="checkbox" name="consent" required />
-          <span>${config.consent}</span>
+          <span>${renderLegalConsentText()}</span>
         </label>
         <div class="request-form__actions">
           <button class="button" type="submit">${config.submitLabel}</button>
@@ -1125,6 +1375,7 @@ const renderLeadRequestForm = (config, context = {}) => {
             ? `<a class="text-link text-link--inline request-form__action-link" href="${config.secondaryCta.href}"${externalAttrs(config.secondaryCta.href)}>${config.secondaryCta.label}</a>`
             : ""}
         </div>
+        ${renderLegalOfferNote()}
         ${config.note ? `<p class="request-form__note">${config.note}</p>` : ""}
         <p class="request-form__status" data-request-status aria-live="polite"></p>
       </form>
@@ -1436,12 +1687,13 @@ const renderContactQuoteForm = (config, context = {}) => {
           <legend>Согласие и отправка</legend>
           <label class="request-form__consent">
             <input type="checkbox" name="consent" required />
-            <span>${config.consent}</span>
+            <span>${renderLegalConsentText()}</span>
           </label>
           <div class="request-form__actions">
             <button class="button" type="submit">${config.submitLabel}</button>
             <a class="text-link text-link--inline request-form__action-link" href="${config.quickContactHref}"${externalAttrs(config.quickContactHref)}>${config.quickContactLabel}</a>
           </div>
+          ${renderLegalOfferNote()}
           <p class="request-form__note">${config.note}</p>
           <p class="request-form__status" data-request-status aria-live="polite"></p>
         </fieldset>
@@ -1844,6 +2096,7 @@ const renderProductPage = () => {
             В корзину
           </button>
         </div>
+        ${renderLegalOfferNote("purchase-panel__note")}
       </div>
       <div class="market-links market-links--summary">
         <span>${productItem.actionMode === "marketplace-default" && (!variant || variant.label === resolveProductVariant(productItem)?.label) ? productItem.quickLinksLabel || "Где купить" : "Следующий шаг"}:</span>
@@ -2270,11 +2523,7 @@ const renderAboutPage = () => {
   hero.innerHTML = `
     <div class="shell about-brand-hero__layout">
       <div class="about-brand-hero__copy">
-        <div class="breadcrumb">
-          <a href="/sait-/">Главная</a>
-          <span>/</span>
-          <span>О бренде</span>
-        </div>
+        ${renderBreadcrumbs()}
         <h1>${about.hero.title}</h1>
         <p class="about-brand-hero__lead">${about.hero.text}</p>
         <ul class="about-brand-hero__chips">
@@ -2591,6 +2840,7 @@ const renderCategoryPage = () => {
             <a class="button" href="${buildCategoryContactHref(category, "category-page")}">Уточнить условия</a>
             <a class="text-link text-link--inline" href="${store.contact.telegramHref}"${externalAttrs(store.contact.telegramHref)}>Написать в Telegram</a>
           </div>
+          ${renderLegalOfferNote()}
         </div>
       </article>
     `;
@@ -2673,13 +2923,7 @@ const renderArticlePage = () => {
   const hero = $("#article-hero");
   if (hero) {
     hero.innerHTML = `
-      <div class="breadcrumb">
-        <a href="/sait-/">Главная</a>
-        <span>/</span>
-        <a href="/sait-/journal/">Журнал</a>
-        <span>/</span>
-        <span>${post.title}</span>
-      </div>
+      ${renderBreadcrumbs()}
       <div class="hero-copy">
         <h1>${post.title}</h1>
         <p>${post.lead}</p>
@@ -2967,13 +3211,14 @@ const renderAccountRegistrationPanel = (profile = null) => {
         <fieldset class="request-form__section request-form__section--actions">
           <legend>Согласие и сохранение</legend>
           <label class="request-form__consent">
-            <input type="checkbox" name="consent" ${profile ? "checked" : ""} required />
-            <span>${store.utilityPages.account.consent}</span>
+            <input type="checkbox" name="consent" required />
+            <span>${renderLegalConsentText()}</span>
           </label>
           <div class="request-form__actions">
             <button class="button" type="submit">${store.utilityPages.account.submitLabel}</button>
             <a class="text-link text-link--inline request-form__action-link" href="/sait-/catalog/">Сначала выбрать товары</a>
           </div>
+          ${renderLegalOfferNote()}
           <p class="request-form__note">Профиль сохранится в этом браузере и подтянет корзину, избранное и выбранные интересы.</p>
           <p class="request-form__status" data-request-status aria-live="polite"></p>
         </fieldset>
@@ -2990,11 +3235,7 @@ const renderAccountPage = () => {
   if (!hero || !page) return;
 
   hero.innerHTML = `
-    <div class="breadcrumb">
-      <a href="/sait-/">Главная</a>
-      <span>/</span>
-      <span>${page.title}</span>
-    </div>
+    ${renderBreadcrumbs()}
     <div class="utility-stack utility-stack--account">
       <div class="utility-grid utility-grid--account-top">
         <article class="request-panel utility-page utility-page--account account-hero-card">
@@ -3011,6 +3252,7 @@ const renderAccountPage = () => {
             <a class="button" href="${page.primary.href}">${page.primary.label}</a>
             <a class="button button--ghost" href="${page.secondary.href}">${page.secondary.label}</a>
           </div>
+          ${renderLegalOfferNote()}
         </article>
         ${renderAccountSummaryPanel(profile)}
       </div>
@@ -3030,11 +3272,7 @@ const renderFavoritesPage = () => {
   if (!hero || !page) return;
 
   hero.innerHTML = `
-    <div class="breadcrumb">
-      <a href="/sait-/">Главная</a>
-      <span>/</span>
-      <span>${page.title}</span>
-    </div>
+    ${renderBreadcrumbs()}
     <div class="utility-stack">
       <div class="utility-grid utility-grid--utility-top">
         <article class="request-panel utility-page">
@@ -3046,6 +3284,7 @@ const renderFavoritesPage = () => {
             <a class="button" href="${page.primary.href}">${page.primary.label}</a>
             <a class="button button--ghost" href="${profile ? "/sait-/account/" : "/sait-/account/#account-register"}">${profile ? "Открыть аккаунт" : "Сохранить аккаунт"}</a>
           </div>
+          ${renderLegalOfferNote()}
         </article>
         <article class="request-panel utility-summary-card">
           <div class="section-head section-head--compact">
@@ -3085,11 +3324,7 @@ const renderCartPage = () => {
   if (!hero || !page) return;
 
   hero.innerHTML = `
-    <div class="breadcrumb">
-      <a href="/sait-/">Главная</a>
-      <span>/</span>
-      <span>${page.title}</span>
-    </div>
+    ${renderBreadcrumbs()}
     <div class="utility-stack">
       <div class="utility-grid utility-grid--utility-top">
         <article class="request-panel utility-page">
@@ -3101,6 +3336,7 @@ const renderCartPage = () => {
             <a class="button" href="${page.primary.href}">${page.primary.label}</a>
             <a class="button button--ghost" href="/sait-/contacts/?source=cart">Добавить в запрос</a>
           </div>
+          ${renderLegalOfferNote()}
         </article>
         <article class="request-panel utility-summary-card">
           <div class="section-head section-head--compact">
@@ -3185,11 +3421,7 @@ const renderUtilityPage = () => {
   const hero = $("#utility-page");
   if (hero) {
     hero.innerHTML = `
-      <div class="breadcrumb">
-        <a href="/sait-/">Главная</a>
-        <span>/</span>
-        <span>${page.title}</span>
-      </div>
+      ${renderBreadcrumbs()}
       <article class="request-panel utility-page">
         <div class="section-head section-head--compact">
           <h1>${page.title}</h1>
@@ -3709,9 +3941,6 @@ const buildRuntimeMeta = () => {
     },
   };
 };
-
-const isGithubPagesRuntime = () =>
-  /github\.io$/i.test(window.location.hostname) || window.location.pathname.startsWith("/sait-/");
 
 const buildAccountRegistrationPayload = (form) => {
   const data = new FormData(form);
@@ -4364,6 +4593,7 @@ document.addEventListener("DOMContentLoaded", () => {
       break;
   }
 
+  syncPageBreadcrumbs();
   renderCookieBanner();
 
   bindMobileNav();

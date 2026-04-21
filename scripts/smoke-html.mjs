@@ -11,6 +11,7 @@ const MIME_TYPES = {
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
   ".js": "application/javascript; charset=utf-8",
+  ".pdf": "application/pdf",
   ".png": "image/png",
 };
 
@@ -78,7 +79,8 @@ const checks = [
     includes: [
       "<h1>Связаться с Global Basket</h1>",
       'name="product_id" value=""',
-      'href="/privacy/"',
+      'href="/legal/globalbasket_privacy_policy.pdf"',
+      'href="/legal/globalbasket_public_offer.pdf"',
       '"@type":"Organization"',
     ],
   },
@@ -203,6 +205,64 @@ const checks = [
       '"@type":"BreadcrumbList"',
     ],
   },
+  {
+    path: "/legal/",
+    includes: [
+      "<h1>Юридические документы</h1>",
+      "Публичная оферта",
+      "Политика обработки персональных данных",
+      "Согласие на обработку персональных данных",
+      'href="/legal/globalbasket_public_offer.pdf"',
+      '"@type":"BreadcrumbList"',
+    ],
+  },
+  {
+    path: "/legal/public-offer/",
+    includes: [
+      "<h1>Публичная оферта</h1>",
+      "<h2>1. Общие положения</h2>",
+      "о продаже товаров дистанционным способом на сайте Global Basket",
+      "Редакция от 21.04.2026",
+      '"@type":"BreadcrumbList"',
+    ],
+    excludes: ["### "],
+  },
+  {
+    path: "/legal/privacy-policy/",
+    includes: [
+      "<h1>Политика обработки персональных данных</h1>",
+      "и конфиденциальности сайта Global Basket",
+      "Cookies, localStorage и sessionStorage",
+      '"@type":"BreadcrumbList"',
+    ],
+  },
+  {
+    path: "/legal/personal-data-consent/",
+    includes: [
+      "<h1>Согласие на обработку персональных данных</h1>",
+      "для форм и обращений на сайте Global Basket",
+      "Чекбокс не должен быть отмечен заранее.",
+      '"@type":"BreadcrumbList"',
+    ],
+  },
+];
+
+const assetChecks = [
+  {
+    path: "/scripts/main.js",
+    contentTypeIncludes: "application/javascript",
+    includes: [
+      "gb_cookie_notice_accepted",
+      "Сайт использует технические cookies, localStorage и sessionStorage",
+      "LEGAL_ROUTES.privacyPolicyPdf",
+    ],
+  },
+];
+
+const pdfChecks = [
+  "/legal/globalbasket_public_offer.pdf",
+  "/legal/globalbasket_privacy_policy.pdf",
+  "/legal/globalbasket_personal_data_consent.pdf",
 ];
 
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -232,7 +292,40 @@ try {
     }
   }
 
-  console.log(`Smoke HTML checks passed: ${checks.length} routes`);
+  for (const check of assetChecks) {
+    const response = await fetch(new URL(check.path, baseUrl));
+    if (!response.ok) {
+      throw new Error(`${check.path}: expected 200, received ${response.status}`);
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    if (check.contentTypeIncludes && !contentType.includes(check.contentTypeIncludes)) {
+      throw new Error(`${check.path}: expected content-type to include ${check.contentTypeIncludes}, received ${contentType}`);
+    }
+
+    const body = await response.text();
+    for (const expected of check.includes || []) {
+      if (!body.includes(expected)) {
+        throw new Error(`${check.path}: missing ${expected}`);
+      }
+    }
+  }
+
+  for (const pdfPath of pdfChecks) {
+    const response = await fetch(new URL(pdfPath, baseUrl));
+    if (!response.ok) {
+      throw new Error(`${pdfPath}: expected 200, received ${response.status}`);
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/pdf")) {
+      throw new Error(`${pdfPath}: expected application/pdf, received ${contentType}`);
+    }
+  }
+
+  console.log(
+    `Smoke HTML checks passed: ${checks.length} routes, ${assetChecks.length} assets, ${pdfChecks.length} PDFs`,
+  );
 } finally {
   await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
 }

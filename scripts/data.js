@@ -237,7 +237,7 @@ window.GlobalBasketData = {
       secondaryCta: null,
       note: "",
       consent:
-        'Согласен(а) на обработку контактных данных для ответа по моему запросу. <a href="/sait-/privacy/">Политика обработки персональных данных</a>.',
+        'Даю согласие ООО «ВОСТОК ИМПОРТ ПРОМ» на обработку моих персональных данных на условиях <a href="/sait-/legal/globalbasket_personal_data_consent.pdf" target="_blank" rel="noopener noreferrer">Согласия на обработку персональных данных</a> и подтверждаю ознакомление с <a href="/sait-/legal/globalbasket_privacy_policy.pdf" target="_blank" rel="noopener noreferrer">Политикой обработки персональных данных</a>.',
       topics: [
         { value: "retail", label: "Купить" },
         { value: "price", label: "Узнать цену" },
@@ -345,7 +345,7 @@ window.GlobalBasketData = {
       pricingHint:
         "Базовая цена — 700 ₽/кг. От 100 кг действует скидка 10%, от 500 кг — 15%, от 1000 кг — 20%. За каждые полные 1000 км от Москвы добавляется 5% к сумме. Расстояние рассчитывается автоматически по адресу доставки и затем подтверждается менеджером.",
       consent:
-        'Согласен(а) на обработку контактных данных для связи по запросу и расчёту. <a href="/sait-/privacy/">Политика обработки персональных данных</a>.',
+        'Даю согласие ООО «ВОСТОК ИМПОРТ ПРОМ» на обработку моих персональных данных на условиях <a href="/sait-/legal/globalbasket_personal_data_consent.pdf" target="_blank" rel="noopener noreferrer">Согласия на обработку персональных данных</a> и подтверждаю ознакомление с <a href="/sait-/legal/globalbasket_privacy_policy.pdf" target="_blank" rel="noopener noreferrer">Политикой обработки персональных данных</a>.',
       topics: [
         { value: "Купить", label: "Купить" },
         { value: "Оптовый запрос", label: "Оптовый запрос" },
@@ -393,7 +393,7 @@ window.GlobalBasketData = {
       formText:
         "Укажите один удобный канал связи и отметьте интересующие разделы. Профиль сохранит выбранные позиции в этом браузере.",
       consent:
-        "Согласен(а) на обработку контактных данных для сохранения аккаунта, корзины, предпочтений и последующей связи по запросу.",
+        'Даю согласие ООО «ВОСТОК ИМПОРТ ПРОМ» на обработку моих персональных данных на условиях <a href="/sait-/legal/globalbasket_personal_data_consent.pdf" target="_blank" rel="noopener noreferrer">Согласия на обработку персональных данных</a> и подтверждаю ознакомление с <a href="/sait-/legal/globalbasket_privacy_policy.pdf" target="_blank" rel="noopener noreferrer">Политикой обработки персональных данных</a>.',
       submitLabel: "Сохранить аккаунт",
       registeredTitle: "Профиль уже сохранён",
       registeredText:
@@ -912,7 +912,23 @@ window.GlobalBasketData = {
           { label: "Контакты", href: "/sait-/contacts/" },
           { label: "Доставка и оплата", href: "/sait-/delivery/" },
           { label: "Возвраты", href: "/sait-/delivery/#returns" },
-          { label: "Политика данных и cookies", href: "/sait-/privacy/" },
+        ],
+      },
+      {
+        title: "Документы",
+        links: [
+          { label: "Публичная оферта", href: "/sait-/legal/globalbasket_public_offer.pdf", newTab: true },
+          {
+            label: "Политика обработки персональных данных",
+            href: "/sait-/legal/globalbasket_privacy_policy.pdf",
+            newTab: true,
+          },
+          {
+            label: "Согласие на обработку персональных данных",
+            href: "/sait-/legal/globalbasket_personal_data_consent.pdf",
+            newTab: true,
+          },
+          { label: "Юридические документы", href: "/sait-/legal/" },
         ],
       },
       {
