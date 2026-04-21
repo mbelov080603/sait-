@@ -6,6 +6,10 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SITE_URL = "https://globalbasket.ru";
+const DEFAULT_SHARE_IMAGE = "/assets/social/globalbasket-share-card-20260421.jpg";
+const DEFAULT_SHARE_IMAGE_WIDTH = 1200;
+const DEFAULT_SHARE_IMAGE_HEIGHT = 630;
+const DEFAULT_SHARE_IMAGE_ALT = "Логотип Global Basket на фирменной карточке";
 const SEO_START = "<!-- prerender-seo:start -->";
 const SEO_END = "<!-- prerender-seo:end -->";
 const HEADER_START = "<!-- prerender-header:start -->";
@@ -653,6 +657,7 @@ const applySeo = (html, { path: routePath, title, description, keywords = "", im
   let next = replaceTitle(html, title);
   next = upsertMetaName(next, "description", description);
   next = upsertMetaName(next, "keywords", keywords);
+  const socialImage = DEFAULT_SHARE_IMAGE;
 
   const markerPattern = new RegExp(`${escapeRegex(SEO_START)}[\\s\\S]*?${escapeRegex(SEO_END)}\\n?`, "m");
   next = next.replace(markerPattern, "");
@@ -664,11 +669,16 @@ const applySeo = (html, { path: routePath, title, description, keywords = "", im
     `    <meta property="og:title" content="${escapeAttribute(buildDocumentTitle(title))}" />`,
     `    <meta property="og:description" content="${escapeAttribute(description)}" />`,
     `    <meta property="og:url" content="${absoluteUrl(routePath)}" />`,
-    image ? `    <meta property="og:image" content="${absoluteUrl(image)}" />` : "",
-    `    <meta name="twitter:card" content="${image ? "summary_large_image" : "summary"}" />`,
+    `    <meta property="og:image" content="${absoluteUrl(socialImage)}" />`,
+    `    <meta property="og:image:width" content="${DEFAULT_SHARE_IMAGE_WIDTH}" />`,
+    `    <meta property="og:image:height" content="${DEFAULT_SHARE_IMAGE_HEIGHT}" />`,
+    `    <meta property="og:image:alt" content="${escapeAttribute(DEFAULT_SHARE_IMAGE_ALT)}" />`,
+    `    <meta property="og:image:type" content="image/jpeg" />`,
+    `    <meta name="twitter:card" content="summary_large_image" />`,
     `    <meta name="twitter:title" content="${escapeAttribute(buildDocumentTitle(title))}" />`,
     `    <meta name="twitter:description" content="${escapeAttribute(description)}" />`,
-    image ? `    <meta name="twitter:image" content="${absoluteUrl(image)}" />` : "",
+    `    <meta name="twitter:image" content="${absoluteUrl(socialImage)}" />`,
+    `    <meta name="twitter:image:alt" content="${escapeAttribute(DEFAULT_SHARE_IMAGE_ALT)}" />`,
     ...schemas.map(
       (schema) =>
         `    <script type="application/ld+json">${serializeJsonLd(schema)}</script>`,
