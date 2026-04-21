@@ -3929,6 +3929,10 @@ a:focus-visible {
   --heading-tight: 1.14;
   --body-leading: 1.6;
   --hero-portrait-ratio: 5 / 6;
+  --ghost-surface: rgba(255, 255, 255, 0.1);
+  --ghost-surface-soft: rgba(255, 255, 255, 0.08);
+  --ghost-border: rgba(255, 255, 255, 0.24);
+  --ghost-shadow: 0 18px 36px rgba(87, 60, 31, 0.035);
 }
 
 body {
@@ -5259,6 +5263,68 @@ body.has-mobile-nav {
   border-radius: 24px;
   background: var(--surface);
   box-shadow: var(--shadow);
+}
+
+.category-card,
+.advantage-card,
+.section-card,
+.product-card,
+.journal-card,
+.marketplace-card,
+.trust-card,
+.fact-card,
+.benefit-card,
+.request-panel,
+.empty-state,
+.sidebar-card,
+.article-prose section,
+.faq-item,
+.about-image-card,
+.about-brand-card,
+.about-list-card,
+.about-step-card,
+.about-fact-slide,
+.contact-direct,
+.step-card,
+.panel,
+.product-gallery,
+.product-summary,
+.journal-home,
+.category-spotlight,
+.account-hero-card,
+.utility-summary-card,
+.account-summary-card,
+.account-snapshot-card,
+.account-register-panel,
+.saved-item-card,
+.footer-brand,
+.footer-column {
+  background: var(--ghost-surface);
+  border-color: var(--ghost-border);
+  box-shadow: var(--ghost-shadow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.product-card__media,
+.product-card__media--photo,
+.product-gallery__main,
+.product-gallery__thumb,
+.account-summary-card__list > div {
+  background: var(--ghost-surface-soft);
+  border-color: var(--ghost-border);
+}
+
+.site-footer__inner,
+.footer-columns {
+  align-items: stretch;
+}
+
+.footer-brand,
+.footer-column {
+  min-height: 100%;
+  padding: var(--card-padding);
+  border-radius: 24px;
 }
 
 @media (min-width: 1181px) {
