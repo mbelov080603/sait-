@@ -889,10 +889,10 @@ await writeRenderedPage({
   rendered: renderMounts({
     path: "/delivery/",
     bodyDataset: { page: "delivery", nav: "delivery" },
-    mountKeys: ["delivery-story-grid", "delivery-steps", "delivery-cards", "delivery-returns"],
+    mountKeys: ["delivery-story-grid", "delivery-steps", "delivery-cards"],
     renderMethod: "renderDeliveryPage",
   }),
-  htmlMounts: ["delivery-story-grid", "delivery-steps", "delivery-cards", "delivery-returns"],
+  htmlMounts: ["delivery-story-grid", "delivery-steps", "delivery-cards"],
   seo: {
     path: "/delivery/",
     title: "Доставка и оплата",

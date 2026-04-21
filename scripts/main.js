@@ -1167,7 +1167,7 @@ const renderDeliveryStoryCard = (item) => `
     </div>
     <div class="delivery-story-card__body">
       <h3>${item.title}</h3>
-      <p>${item.text}</p>
+      ${item.text ? `<p>${item.text}</p>` : ""}
     </div>
   </article>
 `;
@@ -2774,19 +2774,6 @@ const renderDeliveryPage = () => {
   const cards = $("#delivery-cards");
   if (cards) {
     cards.innerHTML = store.deliveryPage.cards.map(renderFactCard).join("");
-  }
-
-  const returns = $("#delivery-returns");
-  if (returns) {
-    returns.innerHTML = `
-      <article class="request-panel request-panel--compact">
-        <div class="section-head section-head--compact">
-          <h2>${store.deliveryPage.returns.title}</h2>
-          <p>${store.deliveryPage.returns.text}</p>
-        </div>
-        <a class="button button--small" href="${store.deliveryPage.returns.cta.href}">${store.deliveryPage.returns.cta.label}</a>
-      </article>
-    `;
   }
 };
 

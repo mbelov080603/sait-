@@ -1804,27 +1804,20 @@ body[data-page="catalog"] .page-section {
 }
 
 body[data-page="delivery"] .page-hero {
-  padding-bottom: 12px;
-}
-
-body[data-page="delivery"] .content-grid--hero {
-  grid-template-columns: minmax(0, 1fr);
-  align-items: start;
-  gap: 20px;
+  padding-bottom: 4px;
 }
 
 body[data-page="delivery"] .page-hero .hero-copy {
-  max-width: 74ch;
+  max-width: 760px;
+}
+
+body[data-page="delivery"] .page-hero .hero-copy h1 {
+  margin-bottom: 0;
 }
 
 body[data-page="delivery"] .page-section {
   padding-top: 32px;
   padding-bottom: 32px;
-}
-
-body[data-page="delivery"] .page-hero .panel {
-  max-width: 760px;
-  justify-self: start;
 }
 
 .page-section--delivery-story {
@@ -1884,8 +1877,41 @@ body[data-page="delivery"] .page-hero .panel {
 }
 
 body[data-page="delivery"] .page-section--delivery-story .section-head {
-  max-width: 64ch;
+  max-width: none;
   margin-bottom: 18px;
+}
+
+body[data-page="delivery"] .delivery-section-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+body[data-page="delivery"] .delivery-section-bar .section-head {
+  margin-bottom: 0;
+}
+
+body[data-page="delivery"] .delivery-layout {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  align-items: stretch;
+}
+
+body[data-page="delivery"] .delivery-layout > * {
+  min-width: 0;
+}
+
+body[data-page="delivery"] .steps-list,
+body[data-page="delivery"] #delivery-cards {
+  grid-template-columns: 1fr;
+  grid-auto-rows: 1fr;
+  gap: var(--space-4);
+}
+
+body[data-page="delivery"] #delivery-cards .fact-card {
+  min-height: 100%;
 }
 
 .steps-list {
@@ -3698,6 +3724,16 @@ a:focus-visible {
 
   .delivery-story-grid {
     grid-template-columns: 1fr;
+  }
+
+  body[data-page="delivery"] .delivery-section-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  body[data-page="delivery"] .delivery-section-bar .button {
+    width: 100%;
+    justify-content: center;
   }
 
   body[data-page="catalog"] .page-hero {
