@@ -1160,6 +1160,19 @@ const renderDeliveryStep = (item) => `
   </article>
 `;
 
+const renderDeliveryStoryCard = (item) => `
+  <article class="delivery-story-card">
+    <div class="delivery-story-card__media">
+      <img src="${item.image}" alt="${item.alt || item.title}" loading="lazy" decoding="async" />
+    </div>
+    <div class="delivery-story-card__body">
+      ${item.badge ? `<span class="meta-badge meta-badge--service">${item.badge}</span>` : ""}
+      <h3>${item.title}</h3>
+      <p>${item.text}</p>
+    </div>
+  </article>
+`;
+
 const formatCatalogCount = (count) => {
   if (count % 10 === 1 && count % 100 !== 11) return `${count} позиция`;
   if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) {
@@ -2752,6 +2765,11 @@ const renderDeliveryPage = () => {
   const steps = $("#delivery-steps");
   if (steps) {
     steps.innerHTML = store.deliveryPage.steps.map(renderDeliveryStep).join("");
+  }
+
+  const story = $("#delivery-story-grid");
+  if (story) {
+    story.innerHTML = store.deliveryPage.story.map(renderDeliveryStoryCard).join("");
   }
 
   const cards = $("#delivery-cards");
