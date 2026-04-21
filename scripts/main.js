@@ -1166,7 +1166,6 @@ const renderDeliveryStoryCard = (item) => `
       <img src="${item.image}" alt="${item.alt || item.title}" loading="lazy" decoding="async" />
     </div>
     <div class="delivery-story-card__body">
-      ${item.badge ? `<span class="meta-badge meta-badge--service">${item.badge}</span>` : ""}
       <h3>${item.title}</h3>
       <p>${item.text}</p>
     </div>

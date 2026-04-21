@@ -1803,6 +1803,30 @@ body[data-page="catalog"] .page-section {
   align-items: start;
 }
 
+body[data-page="delivery"] .page-hero {
+  padding-bottom: 12px;
+}
+
+body[data-page="delivery"] .content-grid--hero {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+}
+
+body[data-page="delivery"] .page-hero .hero-copy {
+  max-width: 74ch;
+}
+
+body[data-page="delivery"] .page-section {
+  padding-top: 32px;
+  padding-bottom: 32px;
+}
+
+body[data-page="delivery"] .page-hero .panel {
+  max-width: 760px;
+  justify-self: start;
+}
+
 .page-section--delivery-story {
   padding-top: 0;
 }
@@ -1846,10 +1870,6 @@ body[data-page="catalog"] .page-section {
   padding: var(--card-padding);
 }
 
-.delivery-story-card__body .meta-badge {
-  justify-self: start;
-}
-
 .delivery-story-card__body h3 {
   margin: 0;
   font-family: "Rubik", sans-serif;
@@ -1861,6 +1881,11 @@ body[data-page="catalog"] .page-section {
 .delivery-story-card__body p {
   margin: 0;
   color: var(--muted);
+}
+
+body[data-page="delivery"] .page-section--delivery-story .section-head {
+  max-width: 64ch;
+  margin-bottom: 18px;
 }
 
 .steps-list {
