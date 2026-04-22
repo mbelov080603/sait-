@@ -1141,8 +1141,8 @@ const renderSectionCard = (item) => `
   </article>
 `;
 
-const renderJournalCard = (post, { featured = false, showBadge = true } = {}) => `
-  <article class="journal-card ${featured ? "journal-card--featured" : ""}">
+const renderJournalCard = (post, { featured = false, showBadge = true, compact = false, tail = false } = {}) => `
+  <article class="journal-card ${featured ? "journal-card--featured" : ""} ${compact ? "journal-card--compact" : ""} ${tail ? "journal-card--tail" : ""}">
     ${post.image ? `<a class="journal-card__media" href="${post.href}"><img src="${post.image}" alt="${post.title}" loading="lazy" decoding="async" /></a>` : ""}
     <div class="journal-card__body">
       ${showBadge ? renderBadge("Материал", "editorial") : ""}
@@ -2857,13 +2857,16 @@ const renderCategoryPage = () => {
 const renderJournalPage = () => {
   const [featuredPost, ...otherPosts] = store.journal.posts;
   const featured = $("#journal-featured");
-  if (featured && featuredPost) {
-    featured.innerHTML = renderJournalCard(featuredPost, { featured: true, showBadge: false });
+  if (featured) {
+    featured.innerHTML = "";
   }
 
   const list = $("#journal-list");
   if (!list) return;
-  list.innerHTML = otherPosts.map((post) => renderJournalCard(post, { showBadge: false })).join("");
+  list.innerHTML = [
+    ...otherPosts.map((post) => renderJournalCard(post, { showBadge: false, compact: true })),
+    featuredPost ? renderJournalCard(featuredPost, { featured: true, showBadge: false, tail: true }) : "",
+  ].join("");
 };
 
 const renderArticleCards = (cards = [], tone = "default") => {

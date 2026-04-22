@@ -4808,6 +4808,76 @@ body.has-mobile-nav {
   margin-bottom: clamp(20px, 2.4vw, 28px);
 }
 
+body[data-page="journal"] .content-grid--hero {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+body[data-page="journal"] .hero-copy {
+  max-width: 620px;
+}
+
+body[data-page="journal"] .hero-copy p {
+  max-width: 22ch;
+}
+
+body[data-page="journal"] #journal-featured:empty {
+  display: none;
+}
+
+body[data-page="journal"] .page-section--journal-feed {
+  padding-top: 8px;
+}
+
+body[data-page="journal"] .page-section--journal-feed .article-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(18px, 2vw, 24px);
+  align-items: start;
+}
+
+body[data-page="journal"] .page-section--journal-feed .journal-card {
+  grid-template-columns: minmax(196px, 34%) minmax(0, 1fr);
+  min-height: 226px;
+}
+
+body[data-page="journal"] .page-section--journal-feed .journal-card__media {
+  height: 100%;
+}
+
+body[data-page="journal"] .page-section--journal-feed .journal-card__body {
+  gap: 10px;
+  padding: 20px 22px;
+}
+
+body[data-page="journal"] .page-section--journal-feed .journal-card h3 {
+  font-size: clamp(1rem, 1.45vw, 1.28rem);
+  -webkit-line-clamp: 2;
+  min-height: calc(1.15em * 2);
+}
+
+body[data-page="journal"] .page-section--journal-feed .journal-card p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+body[data-page="journal"] .page-section--journal-feed .journal-card--featured {
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(260px, 36%) minmax(0, 1fr);
+  min-height: 0;
+}
+
+body[data-page="journal"] .page-section--journal-feed .journal-card--featured .journal-card__body {
+  padding: 24px 26px;
+}
+
+body[data-page="journal"] .page-section--journal-feed .journal-card--featured h3 {
+  font-size: clamp(1.2rem, 1.75vw, 1.6rem);
+  -webkit-line-clamp: 2;
+  min-height: calc(1.12em * 2);
+}
+
 .contacts-layout {
   grid-template-columns: 1fr;
 }
@@ -5628,6 +5698,15 @@ body[data-nav="catalog"] .product-gallery__thumb {
   .hero-stage--lead .hero-stage__media {
     justify-self: center;
   }
+
+  body[data-page="journal"] .page-section--journal-feed .article-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="journal"] .page-section--journal-feed .journal-card,
+  body[data-page="journal"] .page-section--journal-feed .journal-card--featured {
+    grid-template-columns: minmax(220px, 38%) minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 1024px) {
@@ -5741,6 +5820,12 @@ body[data-nav="catalog"] .product-gallery__thumb {
   .journal-card,
   .journal-card--featured {
     grid-template-columns: 1fr;
+  }
+
+  body[data-page="journal"] .page-section--journal-feed .journal-card,
+  body[data-page="journal"] .page-section--journal-feed .journal-card--featured {
+    grid-template-columns: 1fr;
+    min-height: 0;
   }
 
   .journal-card__media {
