@@ -3074,6 +3074,42 @@ const renderSavedSelectionCard = (entry, mode = "cart") => {
   `;
 };
 
+const renderCartStackItem = (entry, index = 0) => {
+  const productItem = resolveStoredProduct(entry);
+  const href = productItem?.href || entry.href || "/catalog/";
+  const quantity = Math.max(1, Number(entry.quantity) || 1);
+
+  return `
+    <a class="cart-stack-card" href="${href}" style="--stack-offset:${index};">
+      <span class="cart-stack-card__media">
+        <img src="${entry.image || productItem?.images?.packshot || "/assets/logo.jpg"}" alt="${entry.fullName || entry.shortName}" loading="lazy" decoding="async" />
+      </span>
+      <span class="cart-stack-card__copy">
+        <strong>${entry.shortName || entry.fullName}</strong>
+        <span>${quantity} шт.</span>
+      </span>
+    </a>
+  `;
+};
+
+const renderCartSummaryStack = (items = []) => {
+  if (!items.length) {
+    return `
+      <div class="cart-stack cart-stack--empty" aria-hidden="true">
+        <div class="cart-stack-card cart-stack-card--placeholder" style="--stack-offset:0;"></div>
+        <div class="cart-stack-card cart-stack-card--placeholder" style="--stack-offset:1;"></div>
+        <div class="cart-stack-card cart-stack-card--placeholder" style="--stack-offset:2;"></div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="cart-stack" aria-label="Товары в корзине">
+      ${items.slice(0, 4).map((entry, index) => renderCartStackItem(entry, index)).join("")}
+    </div>
+  `;
+};
+
 const renderAccountSummaryPanel = (profile = null) => {
   const summary = derivePreferenceSummary(profile);
   const contactValue = getProfileContactValue(profile);
@@ -3298,8 +3334,6 @@ const renderCartPage = () => {
   const hero = $("#utility-page");
   const page = store.utilityPages.cart;
   const items = getCartItems();
-  const profile = getAccountProfile();
-  const totalUnits = items.reduce((sum, entry) => sum + Math.max(1, Number(entry.quantity) || 1), 0);
 
   if (!hero || !page) return;
 
@@ -3318,16 +3352,9 @@ const renderCartPage = () => {
           </div>
           ${renderLegalOfferNote()}
         </article>
-        <article class="request-panel utility-summary-card">
-          <div class="section-head section-head--compact">
-            <h2>Текущее наполнение корзины</h2>
-            <p>${items.length ? "Корзина хранится локально и будет прикреплена к аккаунту при регистрации." : "Корзина пока пустая. Добавьте товары из каталога или со страницы продукта."}</p>
-          </div>
-          <dl class="account-summary-card__list">
-            <div><dt>Строк</dt><dd>${items.length}</dd></div>
-            <div><dt>Единиц</dt><dd>${totalUnits}</dd></div>
-            <div><dt>Аккаунт</dt><dd>${profile ? "Сохранён" : "Пока не сохранён"}</dd></div>
-          </dl>
+        <article class="request-panel utility-summary-card utility-summary-card--cart">
+          <h2 class="sr-only">Текущее наполнение корзины</h2>
+          ${renderCartSummaryStack(items)}
         </article>
       </div>
       <div class="saved-item-list">
@@ -3336,7 +3363,7 @@ const renderCartPage = () => {
             ? items.map((entry) => renderSavedSelectionCard(entry, "cart")).join("")
             : `
               <article class="empty-state">
-                <strong>Корзина пока пустая.</strong>
+                <strong>Корзина пока пустая...</strong>
                 <p>Добавьте товары из каталога. После регистрации эта подборка сохранится в аккаунте на устройстве.</p>
                 <a class="button button--small" href="/catalog/">Перейти в каталог</a>
               </article>
