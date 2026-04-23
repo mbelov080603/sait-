@@ -5900,6 +5900,547 @@ body[data-nav="catalog"] .product-gallery__thumb {
   }
 }
 
+/* Canonical responsive system */
+:root {
+  --viewport-compact-max: 479px;
+  --viewport-phone-max: 767px;
+  --viewport-tablet-max: 1023px;
+  --viewport-laptop-max: 1279px;
+  --shell-gutter: clamp(16px, 2.6vw, 28px);
+  --section-space: clamp(56px, 7vw, 96px);
+  --card-padding: clamp(16px, 2.2vw, 24px);
+  --grid-gap: clamp(16px, 2.2vw, 24px);
+  --header-height: clamp(64px, 8vw, 80px);
+  --header-icon-size: clamp(36px, 3.8vw, 40px);
+  --header-inline-gap: clamp(12px, 1.8vw, 24px);
+  --hero-title-size: clamp(2.35rem, 6vw, 4.8rem);
+  --hero-title-size-lead: clamp(2.1rem, 5vw, 4.2rem);
+  --section-title-size: clamp(1.9rem, 4vw, 3.2rem);
+  --split-min-narrow: min(100%, 280px);
+  --split-min: min(100%, 320px);
+  --split-min-wide: min(100%, 400px);
+  --hero-media-max-height: clamp(280px, 62vh, 640px);
+}
+
+.header-main {
+  gap: var(--header-inline-gap);
+}
+
+.brand-mark img {
+  width: clamp(36px, 4vw, 40px);
+  height: clamp(36px, 4vw, 40px);
+  border-radius: clamp(10px, 1.8vw, 12px);
+}
+
+.brand-mark strong {
+  font-size: clamp(0.96rem, 1.2vw, 1.04rem);
+}
+
+.brand-mark span {
+  font-size: clamp(0.72rem, 0.7vw, 0.82rem);
+}
+
+.mobile-menu-toggle,
+.filter-pill,
+.catalog-toolbar__sort select,
+.variant-chip {
+  min-height: 44px;
+}
+
+.icon-button {
+  width: var(--header-icon-size);
+  height: var(--header-icon-size);
+}
+
+.mobile-menu-toggle {
+  min-width: 44px;
+  padding-inline: clamp(14px, 2vw, 18px);
+}
+
+.search-form--desktop-popover {
+  width: min(calc(100vw - (var(--shell-gutter) * 2)), 340px);
+}
+
+.hero-copy h1,
+.hero-product h1,
+.product-summary h1,
+.utility-page h1,
+.hero-stage__copy h1,
+.about-brand-hero__copy h1 {
+  font-size: var(--hero-title-size);
+}
+
+.hero-stage--lead .hero-stage__copy h1 {
+  font-size: var(--hero-title-size-lead);
+}
+
+.section-head h2,
+.feature-split__copy h2,
+.about-section-copy h2,
+.about-legend h2,
+.request-panel h2 {
+  font-size: var(--section-title-size);
+}
+
+.hero-stage,
+.hero-stage--lead,
+.hero-stage--home.hero-stage--lead,
+.feature-split,
+.feature-split--home,
+.journal-home,
+.content-grid,
+.product-layout,
+.contacts-layout,
+.request-form__frame,
+.category-spotlight {
+  gap: var(--grid-gap);
+  grid-template-columns: repeat(auto-fit, minmax(var(--split-min-wide), 1fr));
+}
+
+.catalog-layout,
+.catalog-sidebar,
+.catalog-main,
+.site-footer__inner,
+.footer-columns {
+  gap: var(--grid-gap);
+}
+
+.journal-card,
+.journal-card--featured,
+.journal-home__list .journal-card,
+body[data-page="journal"] .page-section--journal-feed .journal-card,
+body[data-page="journal"] .page-section--journal-feed .journal-card--featured {
+  grid-template-columns: repeat(auto-fit, minmax(var(--split-min-narrow), 1fr));
+}
+
+.catalog-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+}
+
+.category-grid,
+.fact-grid,
+.benefit-grid,
+.info-grid,
+.marketplace-grid,
+.trust-grid,
+.about-mission-grid,
+.about-values-grid,
+.about-steps-grid,
+.contacts-focus-grid,
+.contacts-support-grid,
+.contacts-disclosures--lead,
+.contacts-disclosures--secondary,
+.account-snapshot-card__grid,
+.account-hero-card__highlights {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+}
+
+.summary-facts,
+.request-form__grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+}
+
+.hero-stage__copy,
+.feature-split__copy,
+.contacts-copy {
+  max-width: min(60ch, 100%);
+}
+
+.hero-stage--lead .hero-stage__media,
+.hero-stage--home.hero-stage--lead .hero-stage__media,
+.feature-split--home .hero-stage__media,
+.media-stage--lifestyle {
+  width: min(100%, clamp(320px, 42vw, 520px));
+  max-height: var(--hero-media-max-height);
+}
+
+.media-stage--lifestyle img {
+  max-height: var(--hero-media-max-height);
+}
+
+.product-card__media {
+  min-height: clamp(220px, 28vw, 280px);
+  padding: clamp(16px, 2.2vw, 24px);
+}
+
+.category-spotlight__media,
+.journal-card__media {
+  min-height: clamp(220px, 26vw, 320px);
+}
+
+.product-gallery,
+.product-summary,
+.request-form__section,
+.purchase-panel,
+.footer-brand,
+.footer-column {
+  padding: var(--card-padding);
+}
+
+.product-gallery__main {
+  padding: var(--card-padding);
+}
+
+.product-gallery__main img {
+  max-height: var(--hero-media-max-height);
+  object-fit: contain;
+}
+
+.summary-facts {
+  padding-top: clamp(16px, 3vw, 24px);
+}
+
+.mobile-nav__icons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.mobile-nav__icons .icon-button {
+  width: 100%;
+}
+
+body[data-page="journal"] .page-section--journal-feed .article-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: var(--grid-gap);
+}
+
+@supports (container-type: inline-size) {
+  .hero-stage,
+  .feature-split,
+  .catalog-main,
+  .product-layout,
+  .contacts-layout,
+  .request-form__frame,
+  .site-footer__inner,
+  .category-spotlight,
+  .journal-card,
+  .journal-home {
+    container-type: inline-size;
+  }
+
+  @container (max-width: 680px) {
+    .hero-stage__actions,
+    .hero-product__actions,
+    .purchase-panel__actions,
+    .panel-actions,
+    .aside-actions,
+    .request-form__actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .hero-stage__actions > *,
+    .hero-product__actions > *,
+    .purchase-panel__actions > *,
+    .panel-actions > *,
+    .aside-actions > *,
+    .request-form__actions > * {
+      width: 100%;
+    }
+
+    .hero-stage__meta {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+
+    .hero-stage__meta li,
+    .hero-product__pills li,
+    .variant-chip {
+      width: 100%;
+      justify-content: flex-start;
+    }
+
+    .hero-stage__copy,
+    .feature-split__copy,
+    .about-section-copy,
+    .contacts-copy {
+      max-width: none;
+    }
+
+    .hero-stage__media,
+    .hero-stage--lead .hero-stage__media,
+    .hero-stage--home.hero-stage--lead .hero-stage__media,
+    .media-stage--lifestyle {
+      width: 100%;
+      max-width: none;
+    }
+
+    .request-form__grid,
+    .spec-list__row,
+    .footer-columns {
+      grid-template-columns: 1fr;
+    }
+
+    .catalog-toolbar,
+    .catalog-toolbar__meta,
+    .catalog-toolbar__sort {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .catalog-toolbar__meta {
+      margin-left: 0;
+    }
+
+    .catalog-toolbar__filters {
+      display: grid;
+      grid-template-columns: 1fr;
+      width: 100%;
+    }
+
+    .catalog-toolbar__sort,
+    .catalog-toolbar__sort select {
+      width: 100%;
+    }
+
+    .filter-pill {
+      width: 100%;
+      justify-content: flex-start;
+    }
+
+    .journal-card__media {
+      aspect-ratio: 4 / 3;
+      height: auto;
+      min-height: 0;
+    }
+
+    .journal-card__body {
+      padding: clamp(18px, 4vw, 22px);
+    }
+
+    .product-gallery__thumbs {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scroll-snap-type: x proximity;
+    }
+
+    .product-gallery__thumb {
+      flex: 0 0 72px;
+      width: 72px;
+      scroll-snap-align: start;
+    }
+  }
+}
+
+@media (max-width: 1180px) {
+  .main-nav--desktop,
+  .header-actions {
+    display: none !important;
+    visibility: hidden;
+    pointer-events: none;
+    height: 0;
+    overflow: hidden;
+  }
+
+  .header-main {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .mobile-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .search-form--mobile {
+    display: grid;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .catalog-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .catalog-sidebar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .catalog-grid,
+  .category-grid,
+  .fact-grid,
+  .benefit-grid,
+  .info-grid,
+  .marketplace-grid,
+  .trust-grid,
+  .about-mission-grid,
+  .about-values-grid,
+  .about-steps-grid,
+  .contacts-focus-grid,
+  .contacts-support-grid,
+  .contacts-disclosures--lead,
+  .contacts-disclosures--secondary,
+  .account-snapshot-card__grid,
+  .account-hero-card__highlights,
+  .summary-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1023px) {
+  .page-hero,
+  .page-section {
+    padding: clamp(40px, 6vw, 72px) 0;
+  }
+
+  .catalog-layout,
+  .contacts-layout:has(#contact-panel:empty) {
+    grid-template-columns: 1fr;
+  }
+
+  .catalog-sidebar {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  }
+
+  #contact-panel,
+  .about-subnav-section {
+    position: static;
+    top: auto;
+  }
+
+  body[data-page="journal"] .page-section--journal-feed .article-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  .brand-mark span {
+    display: none;
+  }
+
+  .top-notice-bar__inner {
+    min-height: 34px;
+    justify-content: center;
+  }
+
+  .top-notice-bar__meta {
+    display: none;
+  }
+
+  .top-notice-bar__items > *:not(:first-child) {
+    display: none;
+  }
+
+  .page-hero::before,
+  .page-hero::after,
+  .site-footer::before,
+  .site-footer::after {
+    display: none;
+  }
+
+  .catalog-grid,
+  .category-grid,
+  .fact-grid,
+  .benefit-grid,
+  .info-grid,
+  .marketplace-grid,
+  .trust-grid,
+  .about-mission-grid,
+  .about-values-grid,
+  .about-steps-grid,
+  .contacts-focus-grid,
+  .contacts-support-grid,
+  .contacts-disclosures--lead,
+  .contacts-disclosures--secondary,
+  .account-snapshot-card__grid,
+  .account-hero-card__highlights,
+  .summary-facts,
+  .site-footer__inner,
+  .footer-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .catalog-toolbar,
+  .catalog-toolbar__meta,
+  .catalog-toolbar__sort {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .catalog-toolbar__meta {
+    margin-left: 0;
+  }
+
+  .catalog-toolbar__filters {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .filter-pill,
+  .catalog-toolbar__sort,
+  .catalog-toolbar__sort select {
+    width: 100%;
+  }
+
+  .filter-pill {
+    justify-content: flex-start;
+  }
+
+  .product-gallery__thumbs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scroll-snap-type: x proximity;
+  }
+
+  .product-gallery__thumb {
+    flex: 0 0 72px;
+    width: 72px;
+    scroll-snap-align: start;
+  }
+}
+
+@media (max-width: 479px) {
+  :root {
+    --shell-gutter: 14px;
+    --section-space: 48px;
+    --card-padding: 14px;
+    --grid-gap: 14px;
+    --hero-title-size: clamp(2rem, 10vw, 2.6rem);
+    --hero-title-size-lead: clamp(1.9rem, 9vw, 2.4rem);
+    --section-title-size: clamp(1.55rem, 7vw, 2rem);
+  }
+
+  .header-main {
+    gap: 10px;
+  }
+
+  .brand-mark strong {
+    font-size: 0.92rem;
+  }
+
+  .mobile-menu-toggle {
+    padding-inline: 12px;
+  }
+
+  .hero-stage__meta li,
+  .hero-product__pills li {
+    padding: 10px 12px;
+  }
+
+  .journal-home,
+  .journal-card__body,
+  .product-card__content {
+    padding: 14px;
+  }
+}
+
+@media (max-height: 760px) and (max-width: 1180px) {
+  .media-stage--hero,
+  .media-stage--lifestyle,
+  .about-brand-hero__visual,
+  .about-brand-hero__visual img,
+  .about-image-card img,
+  .about-image-card--portrait img,
+  .about-image-card--compact img {
+    min-height: 0;
+    max-height: 420px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

@@ -936,6 +936,7 @@ const renderHeader = () => {
           data-mobile-nav-toggle
           aria-controls="mobile-nav"
           aria-expanded="false"
+          aria-label="Открыть меню"
         >
           Меню
         </button>
@@ -3456,6 +3457,7 @@ const bindMobileNav = () => {
     nav.classList.remove("is-open");
     document.body.classList.remove("has-mobile-nav");
     toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-label", "Открыть меню");
   };
 
   toggle.addEventListener("click", () => {
@@ -3468,6 +3470,7 @@ const bindMobileNav = () => {
     nav.classList.add("is-open");
     document.body.classList.add("has-mobile-nav");
     toggle.setAttribute("aria-expanded", "true");
+    toggle.setAttribute("aria-label", "Закрыть меню");
   });
 
   $$("a", nav).forEach((link) => {
