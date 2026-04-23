@@ -6459,6 +6459,21 @@ body[data-page="journal"] .page-section--journal-feed .article-grid {
   display: none !important;
 }
 
+.feature-split--home .hero-stage__media:has(.request-panel--lead) {
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  align-self: stretch;
+  overflow: visible;
+}
+
+.feature-split--home .hero-stage__media:has(.request-panel--lead) .request-panel--lead {
+  width: 100%;
+  max-width: none;
+  height: auto;
+  min-height: 100%;
+}
+
 @media (max-width: 820px) {
   body {
     overflow-x: hidden;
