@@ -90,8 +90,12 @@ const transformText = (text) => {
   result = replaceRootHomeLinks(result);
   result = result.replaceAll("url(/", `url(${basePath}/`);
   result = result
+    .replaceAll(`${basePath}/styles/global.css"`, `${basePath}/styles/global.css?v=${scriptVersion}"`)
+    .replaceAll(`${basePath}/styles/global.css'`, `${basePath}/styles/global.css?v=${scriptVersion}'`)
     .replaceAll(`${basePath}/scripts/data.js"`, `${basePath}/scripts/data.js?v=${scriptVersion}"`)
     .replaceAll(`${basePath}/scripts/main.js"`, `${basePath}/scripts/main.js?v=${scriptVersion}"`)
+    .replaceAll('/styles/global.css"', `/styles/global.css?v=${scriptVersion}"`)
+    .replaceAll("/styles/global.css'", `/styles/global.css?v=${scriptVersion}'`)
     .replaceAll(`${basePath}/scripts/data.js'`, `${basePath}/scripts/data.js?v=${scriptVersion}'`)
     .replaceAll(`${basePath}/scripts/main.js'`, `${basePath}/scripts/main.js?v=${scriptVersion}'`)
     .replaceAll('/scripts/data.js"', `/scripts/data.js?v=${scriptVersion}"`)
