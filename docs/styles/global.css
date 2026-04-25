@@ -6474,6 +6474,18 @@ body[data-page="journal"] .page-section--journal-feed .article-grid {
   min-height: 100%;
 }
 
+#home-categories > .category-card:first-child .category-card__media img {
+  object-fit: contain;
+  object-position: center;
+  padding: clamp(8px, 1vw, 14px);
+}
+
+.page-section--journal-home .journal-card__media img {
+  object-fit: contain;
+  object-position: center;
+  padding: clamp(8px, 1vw, 14px);
+}
+
 @media (max-width: 820px) {
   body {
     overflow-x: hidden;
