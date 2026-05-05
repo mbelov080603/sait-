@@ -3146,8 +3146,8 @@ const renderAccountSummaryPanel = (profile = null) => {
   return `
     <article class="request-panel account-summary-card">
       <div class="section-head section-head--compact">
-        <h2>${profile ? store.utilityPages.account.registeredTitle : "Что сохранится после регистрации"}</h2>
-        <p>${profile ? store.utilityPages.account.registeredText : "После сохранения профиля в этом браузере останутся контакт, корзина, избранное и выбранные разделы каталога."}</p>
+        <h2>${profile ? store.utilityPages.account.registeredTitle : "Что будет доступно в личном кабинете"}</h2>
+        <p>${profile ? store.utilityPages.account.registeredText : "Мы готовим сохранение контакта, корзины, избранного и интересов в одном аккуратном профиле."}</p>
       </div>
       <dl class="account-summary-card__list">
         ${items
@@ -3170,79 +3170,25 @@ const renderAccountSummaryPanel = (profile = null) => {
 };
 
 const renderAccountRegistrationPanel = (profile = null) => {
-  const contactKey = resolvePreferredContactKey(profile?.preferredContact || "phone");
-  const contactValue = getProfileContactValue(profile);
-  const selectedInterests = new Set(Array.isArray(profile?.interestIds) ? profile.interestIds : []);
-  const interestOptions = buildInterestOptions();
-
   return `
-    <article class="request-panel account-register-panel" id="account-register">
+    <article class="request-panel account-register-panel account-register-panel--paused" id="account-register" aria-labelledby="account-register-title">
       <div class="section-head section-head--compact">
-        <h2>${store.utilityPages.account.formTitle}</h2>
+        <h2 id="account-register-title">${store.utilityPages.account.formTitle}</h2>
         <p>${store.utilityPages.account.formText}</p>
       </div>
-      <form class="request-form request-form--account" data-account-registration-form novalidate>
-        <fieldset class="request-form__section">
-          <legend>Контакт для аккаунта</legend>
-          <div class="request-form__grid">
-            <label>
-              <span>Какой контакт сохранить</span>
-              <select name="contact_preferred">
-                <option value="Телефон" ${contactKey === "phone" ? "selected" : ""}>Телефон</option>
-                <option value="Telegram" ${contactKey === "telegram" ? "selected" : ""}>Telegram</option>
-                <option value="Email" ${contactKey === "email" ? "selected" : ""}>Email</option>
-              </select>
-            </label>
-            <div class="request-form__contact-slot" data-contact-slot data-active-contact="${contactKey}">
-              <label class="request-form__contact-panel ${contactKey === "phone" ? "is-active" : ""}" data-contact-field="phone" aria-hidden="${contactKey === "phone" ? "false" : "true"}">
-                <span>Телефон</span>
-                <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" value="${contactKey === "phone" ? escapeAttribute(contactValue) : ""}" ${contactKey === "phone" ? "" : "disabled"} required />
-              </label>
-              <label class="request-form__contact-panel ${contactKey === "email" ? "is-active" : ""}" data-contact-field="email" aria-hidden="${contactKey === "email" ? "false" : "true"}">
-                <span>Email</span>
-                <input type="email" name="email" autocomplete="email" placeholder="name@example.com" value="${contactKey === "email" ? escapeAttribute(contactValue) : ""}" ${contactKey === "email" ? "" : "disabled"} required />
-              </label>
-              <label class="request-form__contact-panel ${contactKey === "telegram" ? "is-active" : ""}" data-contact-field="telegram" aria-hidden="${contactKey === "telegram" ? "false" : "true"}">
-                <span>Telegram</span>
-                <input type="text" name="telegram_username" autocomplete="off" placeholder="@username" value="${contactKey === "telegram" ? escapeAttribute(contactValue) : ""}" ${contactKey === "telegram" ? "" : "disabled"} required />
-              </label>
-            </div>
-          </div>
-          <p class="request-form__hint" data-contact-helper>
-            ${contactKey === "email" ? "Сохраним email для входа и связи по заказу." : contactKey === "telegram" ? "Сохраним Telegram для быстрого контакта и регистрации." : "Сохраним телефон для входа и связи по заказу."}
-          </p>
-        </fieldset>
-        <fieldset class="request-form__section">
-          <legend>Предпочтения</legend>
-          <div class="account-interest-grid">
-            ${interestOptions
-              .map(
-                (item) => `
-                  <label class="choice-chip ${selectedInterests.has(item.id) ? "is-selected" : ""}">
-                    <input type="checkbox" name="interest_categories" value="${escapeAttribute(item.id)}" ${selectedInterests.has(item.id) ? "checked" : ""} />
-                    <span>${item.label}</span>
-                  </label>
-                `,
-              )
-              .join("")}
-          </div>
-          <p class="request-form__hint">Разделы ниже помогут сохранить интересы пользователя, даже если корзина пока пустая.</p>
-        </fieldset>
-        <fieldset class="request-form__section request-form__section--actions">
-          <legend>Согласие и сохранение</legend>
-          <label class="request-form__consent">
-            <input type="checkbox" name="consent" required />
-            <span>${renderLegalConsentText()}</span>
-          </label>
-          <div class="request-form__actions">
-            <button class="button" type="submit">${store.utilityPages.account.submitLabel}</button>
-            <a class="text-link text-link--inline request-form__action-link" href="/sait-/catalog/">Сначала выбрать товары</a>
-          </div>
-          ${renderLegalOfferNote()}
-          <p class="request-form__note">Профиль сохранится в этом браузере и подтянет корзину, избранное и выбранные интересы.</p>
-          <p class="request-form__status" data-request-status aria-live="polite"></p>
-        </fieldset>
-      </form>
+      <div class="account-register-placeholder" role="status" aria-live="polite">
+        <span class="account-register-placeholder__status">Скоро станет возможным</span>
+        <p>Регистрацию сейчас не принимаем. Корзина и избранное продолжат работать локально, а заказ можно оформить через каталог или форму связи.</p>
+      </div>
+      <ul class="account-register-placeholder__list" aria-label="Что готовим">
+        <li>Сохранение контакта и истории обращений</li>
+        <li>Синхронизацию корзины и избранного между устройствами</li>
+        <li>Спокойный запуск без лишних уведомлений и обязательной регистрации</li>
+      </ul>
+      <div class="account-register-placeholder__actions">
+        <a class="button button--ghost button--small" href="/sait-/catalog/">Перейти в каталог</a>
+        <a class="text-link text-link--inline" href="/sait-/contacts/?source=account-paused">Связаться по заказу</a>
+      </div>
     </article>
   `;
 };
